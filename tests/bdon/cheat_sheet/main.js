@@ -62,4 +62,94 @@
 // const todoJSON = JSON.stringify(todos);
 // console.log(todoJSON);
 
+/* For Loops */
+// Format: for ([assignment of iterator]; [condition]; [increments])
+// for (let i = 0; i < 10; i++) {
+//   console.log(i)
+// }
+
+/* While Loops */
+// let i = 0;
+// while(i <= 10) {
+  // console.log(i)
+  // i++
+// }
+
+let arr = [2, 4, 6, 4, 5]
+// for (let i = 0; i < arr.length; i++){
+  // console.log(arr[i])
+// }
+
+// for (let a of arr) {
+  // console.log(a)
+// }
+
+/* Array Methods */
+// For Each <- another way to iterate through an array. The guy from the crash course video recommends this.
+// arr.forEach(function(a) {
+  // console.log(a)
+// });
+
+// Map <- This basically just creates a new array from another array.
+// const a2 = arr.map(function(a) {
+  // return a;
+// })
+
+// Filter <- Makes an array based on array items that pass the conditional
+// Side note: wtf why are javascript methods named so strangelly.
+// const a2 = arr.filter(function(a) {
+  // return !isNaN(a) && a <= 4
+// });
+
+/* Conditionals */
+// Note: == matches value, === matches value AND data type.
+// 10 == '10' in javascript lol.
+// const x = 5;
+// if (x === 10) {
+  // console.log('x is 10');
+// } else if(x > 10) {
+  // console.log('x is greater than 10');
+// }
+// else {
+  // console.log('x is less than 10');
+// }
+
+/* Ternary Operator */
+// ? <- ternary operator; can be read as "then"
+// : <- read as "else".
+// const x = 10;
+// const color = x > 10 ? 'red' : 'blue';
+
+/* Switch Statements */
+// const color = 'red'
+// switch(color) {
+  // case 'red':
+    // console.log('color is red');
+    // break;
+  // case 'blue':
+    // console.log('color is blue');
+    // break;
+  // default:
+    // console.log('color is NOT red or blue');
+    // break;
+// }
+
+/* Functions */
+// function addNums(num1 = 1, num2 = 1) {
+  // return num1 + num2;
+// }
+
+/* Arrow Functions */
+// const addNums = (num1 = 1, num2 = 1) => {
+  // return num1 + num2;
+// }
+// Short hand.
+// const addNums = (num1 = 1, num2 = 1) => num1 + num2;
+// const addNums = num1 => num1 + 5;
+
+/* OOP */
+function Person(firstName, lastName, dob) {
+  this.firstName = firstName
+}
+
 console.log(':|')

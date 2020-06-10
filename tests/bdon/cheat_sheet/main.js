@@ -148,8 +148,39 @@ let arr = [2, 4, 6, 4, 5]
 // const addNums = num1 => num1 + 5;
 
 /* OOP */
+// Constructor function.
+/*
 function Person(firstName, lastName, dob) {
-  this.firstName = firstName
+  this.firstName = firstName;
+  this.lastName = lastName;
+  this.dob = new Date(dob);
 }
 
-console.log(':|')
+Person.prototype.getBirthYear = function() {
+  return this.dob.getFullYear();
+}
+// Instantiate object.
+const person1 = new Person('John', 'Doe', '4-3-1980')
+
+console.log(person1);
+*/
+
+// Class
+/*
+class Person {
+  constructor(firstName, lastName, dob) {
+    this.firstName = firstName;
+    this.lastName = lastName;
+    this.dob = new Date(dob);
+  }
+
+  getBirthYear() {
+    return this.dob.getFullYear();
+  }
+}
+
+const person2 = new Person('John', 'Smith', '3-6-1970');
+console.log(person2);
+*/
+
+console.log(':|');

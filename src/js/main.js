@@ -2,23 +2,29 @@
  * main.js contains the game's mainloop.
 */
 
-const maxFPS = 60; // Maximum FPS we want to allow.
-var lastFrameTime = 0; // The last time the game loop was ran.
-    delta = 0; //
+let secondsPassed = 0;
+let oldTimeStamp = 0;
+let fps = 60;
 
 let app = createGameWindow();
 
 function initialize(){
   verifyPixiCompatibility();
-  changeWindowColor(0x061639);
   document.body.appendChild(app.view);
 }
 
 function update(){}
 
-function draw(){}
+function draw(){
+  changeWindowColor(0x061639);
+  displayText(fps.toString());
+}
 
-function main(){
+function main(timeStamp){
+  secondsPassed = (timeStamp - oldTimeStamp) / 1000;
+  oldTimeStamp = timeStamp;
+
+  fps = Math.round(1 / secondsPassed);
   update();
   draw();
   requestAnimationFrame(main);

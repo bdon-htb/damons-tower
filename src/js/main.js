@@ -4,6 +4,7 @@
 
 let secondsPassed = 0;
 let oldTimeStamp = 0;
+// const maxFPS = 30;
 let fps = 60;
 
 let app = createGameWindow();
@@ -20,11 +21,15 @@ function draw(){
   displayText(fps.toString());
 }
 
+/**
+ * timeStamp is the time it takes (in miliseconds) to reach the next iteration.
+ * secondsPassed is the difference between the current timestamp and previous timestamp in seconds.
+*/
 function main(timeStamp){
-  secondsPassed = (timeStamp - oldTimeStamp) / 1000;
+  timeDelta = (timeStamp - oldTimeStamp) / 1000;
   oldTimeStamp = timeStamp;
 
-  fps = Math.round(1 / secondsPassed);
+  fps = Math.round(1 / timeDelta);
   update();
   draw();
   requestAnimationFrame(main);

@@ -38,7 +38,7 @@ function displayText(msg){
     dropShadowAngle: Math.PI / 6,
     dropShadowDistance: 6,
   });
-  
+
   let message = new PIXI.Text(msg, style);
   app.stage.addChild(message);
 }

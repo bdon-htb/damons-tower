@@ -2,6 +2,7 @@
  * engine.js contains a majority of the game's system logic.
  */
 
+// :)
 class Engine {
   constructor(htmlDOM){
     this.windowWidth = 800;

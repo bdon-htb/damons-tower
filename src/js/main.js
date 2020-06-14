@@ -5,19 +5,13 @@
 let secondsPassed = 0;
 let oldTimeStamp = 0;
 let fps;
-
-let app = createGameWindow();
-
-function initialize(){
-  verifyPixiCompatibility();
-  document.body.appendChild(app.view);
-}
+const HTML_DOM = document.getElementById("game")
+let game = new Engine(HTML_DOM)
 
 function update(){}
 
 function draw(){
-  changeWindowColor(0x061639);
-  displayText(fps.toString());
+  game.drawText(fps);
 }
 
 /**
@@ -35,5 +29,4 @@ function main(timeStamp){
 }
 
 // Start things off.
-initialize();
 requestAnimationFrame(main);

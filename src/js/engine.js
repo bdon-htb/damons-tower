@@ -1,16 +1,17 @@
 /**
  * engine.js contains a majority of the game's system logic.
+ * the Engine class is basically the game object.
  */
 
-// :)
 class Engine {
   constructor(htmlDOM){
     this.windowWidth = 800;
     this.windowHeight = 600;
 
     this.verifyPixi();
+    // this.createRenderer();
     this.createApp(htmlDOM);
-  }
+    }
 
   verifyPixi(){
     let type = "WebGL";
@@ -29,6 +30,7 @@ class Engine {
     })
   }
 
+  // These functions are placeholders.
   drawText(msg){
     let style = new PIXI.TextStyle({
       fontFamily: "Arial",
@@ -47,4 +49,13 @@ class Engine {
     this.app.stage.addChild(message);
   }
 
+  drawRect(x, y, width, height){
+    let rectangle = new PIXI.Graphics();
+    rectangle.beginFill(0x66CCFF);
+    rectangle.drawRect(x, y, width, height);
+    rectangle.endFill();
+    this.app.stage.addChild(rectangle)
+  }
+
+  drawImage(){}
 }

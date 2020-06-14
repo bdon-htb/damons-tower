@@ -5,13 +5,15 @@
 let secondsPassed = 0;
 let oldTimeStamp = 0;
 let fps;
-const HTML_DOM = document.getElementById("game")
-let game = new Engine(HTML_DOM)
+const HTML_DOM = document.getElementById("game");
+let game = new Engine(HTML_DOM);
 
 function update(){}
 
 function draw(){
   game.drawText(fps);
+  game.drawRect(100,100,50,50);
+  game.drawImage();
 }
 
 /**

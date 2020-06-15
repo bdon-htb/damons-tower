@@ -9,8 +9,8 @@ class Engine {
     this.windowHeight = 600;
 
     this.verifyPixi();
-    // this.createRenderer();
     this.createApp(htmlDOM);
+    this.loadAssets();
     }
 
   verifyPixi(){
@@ -57,5 +57,20 @@ class Engine {
     this.app.stage.addChild(rectangle)
   }
 
-  drawImage(){}
+  loadAssets(){
+    PIXI.Loader.shared
+      .add("img/jo_the_pyro.png")
+      .on("progress", this.progressHandler)
+      .load();
+  }
+
+  progressHandler(loader, resource){
+    console.log(`loading: ${resource.url}`);
+    console.log(`progress: ${loader.progress}%`);
+  }
+
+  drawImage(){
+    let jo = new PIXI.Sprite(PIXI.Loader.shared.resources["img/jo_the_pyro.png"].texture);
+    this.app.stage.addChild(jo);
+  }
 }

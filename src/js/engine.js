@@ -61,29 +61,26 @@ Engine.prototype.loadAssets = function(){
   PIXI.Loader.shared
     .add("img/jo_the_pyro.png")
     .on("progress", this.progressHandler)
-    .load();
+    .load(this.setup);
 }
 
 Engine.prototype.setup = function(){
+  // This code basically sets the sprite to the single jo_the_pyro frame.
+  // I'm assuming this texture variable is an alias.
+  // Cannot display two different sprites from the one image like this.
   let texture = PIXI.utils.TextureCache["img/jo_the_pyro.png"];
   let rectangle = new PIXI.Rectangle(0, 0, 32, 32);
   texture.frame = rectangle;
-
-  this.mini_jo = new PIXI.Sprite(texture);
-  this.mini_jo.x = 32;
-  this.mini_jo.y = 32;
 }
 
 Engine.prototype.progressHandler = function(loader, resource){
-  console.log(`loading: ${resource.url}`);
-  console.log(`progress: ${loader.progress}%`);
+  // console.log(`loading: ${resource.url}`);
+  // console.log(`progress: ${loader.progress}%`);
 }
 
 Engine.prototype.drawImage = function(){
   this.jo = new PIXI.Sprite(PIXI.Loader.shared.resources["img/jo_the_pyro.png"].texture);
-  this.jo.x = 32;
-  this.jo.y = 32;
-  console.log(this.jo == this.mini_jo) // So they aren't the same thing?
+  this.jo.x = 150;
+  this.jo.y = 120;
   this.app.stage.addChild(this.jo);
-  //this.app.stage.addChild(this.mini_jo);
 }

@@ -7,6 +7,7 @@
 function Renderer(parent){
   this.parent = parent;
   this.createTextStyles();
+  this.loadAssets();
   this.verifyAPI();
   this.createApp();
 }
@@ -31,6 +32,7 @@ Renderer.prototype.createApp = function(){
 Renderer.prototype.loadAssets = function(){
   PIXI.Loader.shared
     .add("img/jo_the_pyro.png")
+    //.on("progress", this.progressHandler)
     .load();
 }
 

@@ -3,7 +3,7 @@
  * the Engine class is basically the game object.
  */
 
-function Engine(htmlDOM) {
+function Engine(htmlDOM){
   this.windowWidth = 800;
   this.windowHeight = 600;
 

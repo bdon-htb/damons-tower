@@ -4,4 +4,4 @@
  */
 
 // ignore - will work with later.
-class Renderer {}
+function Renderer(){}

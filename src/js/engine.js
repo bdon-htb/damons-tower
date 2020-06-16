@@ -15,42 +15,22 @@ function Engine(htmlDOM){
   this.renderer = new Renderer(this);
 }
 
-Engine.prototype.draw = function(){}
+Engine.prototype.draw = function(data){
+  this.renderer.drawText(data.fps)
+  this.renderer.drawRect(0x66CCFF, 96, 96, 50, 50)
+}
 
-Engine.prototype.update = function(){}
+Engine.prototype.update = function(data){}
 
-Engine.prototype.run = function(){
-  this.draw();
-  this.update();
+Engine.prototype.run = function(data){
+  this.draw(data);
+  // this.update(data);
 }
 /**
  * The following functions are placeholders.
  * todo: make cleaner versions and move over to graphic.js
  */
-Engine.prototype.drawText = function(msg){
-  let style = new PIXI.TextStyle({
-    fontFamily: "Arial",
-    fontSize: 36,
-    fill: "white",
-    stroke: '#ff3300',
-    strokeThickness: 4,
-    dropShadow: true,
-    dropShadowColor: "#000000",
-    dropShadowBlur: 4,
-    dropShadowAngle: Math.PI / 6,
-    dropShadowDistance: 6,
-  });
-  let message = new PIXI.Text(msg, style);
-  this.app.stage.addChild(message);
- }
 
-Engine.prototype.drawRect = function(x, y, width, height){
-  let rectangle = new PIXI.Graphics();
-  rectangle.beginFill(0x66CCFF);
-  rectangle.drawRect(x, y, width, height);
-  rectangle.endFill();
-  this.app.stage.addChild(rectangle)
-}
 
 Engine.prototype.loadAssets = function(){
   PIXI.Loader.shared

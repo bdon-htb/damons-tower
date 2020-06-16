@@ -5,16 +5,9 @@
 let secondsPassed = 0;
 let oldTimeStamp = 0;
 let fps;
+let data;
 const HTML_DOM = document.getElementById("game");
 let game = new Engine(HTML_DOM);
-
-function update(){}
-
-function draw(){
-  game.drawText(fps);
-  game.drawRect(100,100,50,50);
-  game.drawImage();
-}
 
 /**
  * timeStamp is the time it takes (in miliseconds) to reach the next iteration.
@@ -22,10 +15,17 @@ function draw(){
 */
 function main(timeStamp){
   timeDelta = (timeStamp - oldTimeStamp) / 1000;
-  oldTimeStamp = timeStamp;
 
   fps = Math.round(1 / timeDelta);
-  game.run();
+  data = {
+    timeStamp: timeStamp,
+    oldTimeStamp: oldTimeStamp,
+    timeDelta: timeDelta,
+    fps: fps
+  };
+
+  oldTimeStamp = timeStamp;
+  game.run(data);
   requestAnimationFrame(main);
 }
 

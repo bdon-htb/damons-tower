@@ -25,8 +25,7 @@ function main(timeStamp){
   oldTimeStamp = timeStamp;
 
   fps = Math.round(1 / timeDelta);
-  update();
-  draw();
+  game.run();
   requestAnimationFrame(main);
 }
 

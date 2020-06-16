@@ -1,36 +1,31 @@
 /**
- * engine.js contains a majority of the game's system logic.
- * the Engine class is basically the game object.
+ * engine.js contains a majority of the game's system logic
+ * and contains all other components.
+ * The Engine is essentially the game itself in a way.
+ * htmlDOM refers to the html element the game will run in.
+ * For this particular case it refers to the canvas.
  */
 
 function Engine(htmlDOM){
+  this.context = htmlDOM
   this.windowWidth = 800;
   this.windowHeight = 600;
+  this.backgroundColor = 0xB8D5EE;
 
-  this.verifyPixi();
-  this.createApp(htmlDOM);
-  this.loadAssets();
+  this.renderer = new Renderer(this);
 }
 
-Engine.prototype.verifyPixi = function(){
-  let type = "WebGL";
-  if(!PIXI.utils.isWebGLSupported()){
-    type = "canvas";
-  }
-  PIXI.utils.sayHello(type);
+Engine.prototype.draw = function(){}
+
+Engine.prototype.update = function(){}
+
+Engine.prototype.run = function(){
+  this.draw();
+  this.update();
 }
-
-Engine.prototype.createApp = function(element){
-  this.app = new PIXI.Application({
-    view: element,
-    width: this.windowWidth,
-    height: this.windowHeight,
-    backgroundColor: 0xB8D5EE
-  });
- }
-
 /**
  * The following functions are placeholders.
+ * todo: make cleaner versions and move over to graphic.js
  */
 Engine.prototype.drawText = function(msg){
   let style = new PIXI.TextStyle({

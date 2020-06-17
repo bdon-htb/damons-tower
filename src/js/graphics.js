@@ -4,10 +4,12 @@
  * todo: create primitives.
  */
 
+/*
+ * The renderer itself.
+ */
 function Renderer(parent){
   this.parent = parent;
   this.createTextStyles();
-  this.loadAssets();
   this.verifyAPI();
   this.createApp();
 }
@@ -20,6 +22,8 @@ Renderer.prototype.verifyAPI = function(){
   PIXI.utils.sayHello(type);
 }
 
+Renderer.prototype.loadAssets = function(){}
+
 Renderer.prototype.createApp = function(){
   this.app = new PIXI.Application({
     view: this.parent.context,
@@ -27,13 +31,6 @@ Renderer.prototype.createApp = function(){
     height: this.parent.windowHeight,
     backgroundColor: this.parent.backgroundColor
   });
-}
-
-Renderer.prototype.loadAssets = function(){
-  PIXI.Loader.shared
-    .add("img/jo_the_pyro.png")
-    //.on("progress", this.progressHandler)
-    .load();
 }
 
 Renderer.prototype.createTextStyles = function(){
@@ -64,4 +61,44 @@ Renderer.prototype.drawRect = function(colour, x, y, width, height){
   rectangle.drawRect(x, y, width, height);
   rectangle.endFill();
   this.app.stage.addChild(rectangle)
+}
+
+// Draws sprite from spritesheet only!
+Renderer.prototype.drawSprite = function(sprite){
+  this.app.stage.addChild(sprite);
+}
+
+// Placeholder functions
+Renderer.prototype.test = function(){
+  let jo = new SpriteSheet('img/jo_the_pyro.png', 192, 96, 32)
+  this.drawSprite(jo.getSprite(0,0));
+}
+
+/**
+ * Custom spritesheet object. This will make it easier to automatically pull
+ * single sprites from a larger sheet.
+ * This class will assume that the individual sprite's height = width.
+ */
+function SpriteSheet(url, sheetWidth, sheetHeight, spriteSize){
+  this.id = url;
+  this.texture = PIXI.Texture.fromImage(url)
+  this.width = sheetWidth;
+  this.height = sheetHeight;
+  this.spriteSize = spriteSize;
+  // Area of sheet / Area of individual sprites; No remainder. So it better be even!
+  this.numberOfSprites = Math.floor((this.width * this.height) / (this.spriteSize ** 2))
+}
+
+SpriteSheet.prototype._getRectFromIndex = function(index_X, index_Y){
+  size = this.spriteSize;
+  let posX = index_X * size;
+  let posY = index_Y * size;
+  let rectangle = new PIXI.Rectangle(posX, posY, size, size);
+  return rectangle;
+}
+
+SpriteSheet.prototype.getSprite = function(index_X, index_Y){
+  let rect = this._getRectFromIndex(index_X, index_Y);
+  this.texture.frame = rect;
+  return new PIXI.Sprite(this.texture);
 }

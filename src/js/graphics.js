@@ -4,7 +4,7 @@
  * todo: create primitives.
  */
 
-/*
+/**
  * The renderer itself.
  */
 function Renderer(parent){
@@ -27,6 +27,7 @@ Renderer.prototype.loadAssets = function(){}
 Renderer.prototype.createApp = function(){
   this.app = new PIXI.Application({
     view: this.parent.context,
+    antialias: false,
     width: this.parent.windowWidth,
     height: this.parent.windowHeight,
     backgroundColor: this.parent.backgroundColor
@@ -64,15 +65,24 @@ Renderer.prototype.drawRect = function(colour, x, y, width, height){
 }
 
 // Draws sprite from spritesheet only!
-Renderer.prototype.drawSprite = function(sprite){
+Renderer.prototype.drawSprite = function(sprite, x=0, y=0){
+  sprite.position.set(x, y)
   this.app.stage.addChild(sprite);
 }
 
 // Placeholder functions
 Renderer.prototype.test = function(){
-  let jo = new SpriteSheet('img/jo_the_pyro.png', 192, 96, 32)
-  this.drawSprite(jo.getSprite(0,0));
+  let parent = this.parent
+  // This is jo_the_pyro.png
+  let filename = parent.imgLocation + parent.data["images"][0];
+  let jo = new SpriteSheet(filename, 192, 96, 32);
+  this.drawSprite(jo.getSprite(0,0), 100, 100);
 }
+
+/**
+ * TODO (possibly way later): Texture Manager.
+ * this will handle saved pixi.js textures at runtime.
+*/
 
 /**
  * Custom spritesheet object. This will make it easier to automatically pull

@@ -1,7 +1,6 @@
 /**
  * renderer.js contains all of the game's graphics code,
  * everything pixi.js related goes here!
- * todo: create primitives.
  */
 
 /**
@@ -9,20 +8,20 @@
  */
 function Renderer(parent){
   this.parent = parent;
+  // Pixi.js loader alias.
+  this.loader = PIXI.Loader.shared;
   this.createTextStyles();
   this.verifyAPI();
   this.createApp();
-}
+};
 
 Renderer.prototype.verifyAPI = function(){
   let type = "WebGL";
   if(!PIXI.utils.isWebGLSupported()){
     type = "canvas";
-  }
+  };
   PIXI.utils.sayHello(type);
-}
-
-Renderer.prototype.loadAssets = function(){}
+};
 
 Renderer.prototype.createApp = function(){
   this.app = new PIXI.Application({
@@ -32,7 +31,7 @@ Renderer.prototype.createApp = function(){
     height: this.parent.windowHeight,
     backgroundColor: this.parent.backgroundColor
   });
-}
+};
 
 Renderer.prototype.createTextStyles = function(){
   this.textStyles = {};
@@ -48,40 +47,80 @@ Renderer.prototype.createTextStyles = function(){
     dropShadowAngle: Math.PI / 6,
     dropShadowDistance: 6,
   });
-}
+};
+
+// Texture related methods.
+
+// loadTextures accepts both strings (for a single url) and arrays (for multiple urls)
+Renderer.prototype.loadTextures = function(imageArray, callback=function(){}){
+  if(typeof imageArray === "string"){
+    imageArray = [imageArray];
+  };
+
+  imageArray.forEach((imageURL) => {
+    this.loader.add(imageURL);
+  });
+  this.loader.load();
+  this.loader.onComplete.add(callback);
+};
+
+Renderer.prototype.getTexture = function(imageURL, makeNew=true){
+  let resources = this.loader.resources;
+  let texture;
+  if(makeNew === true){
+    texture = new PIXI.Texture(resources[imageURL].baseTexture);
+  } else {
+    texture = resources[imageURL].texture;
+  }
+  return texture;
+};
+
+// Drawing related methods.
+
+Renderer.prototype.draw = function(child){
+  this.app.stage.addChild(child)
+};
 
 Renderer.prototype.drawText = function(msg, style=this.textStyles.debug, x=0, y=0){
   let message = new PIXI.Text(msg, style);
   message.position.set(x, y);
-  this.app.stage.addChild(message);
-}
+  this.draw(message);
+};
 
 Renderer.prototype.drawRect = function(colour, x, y, width, height){
   let rectangle = new PIXI.Graphics();
   rectangle.beginFill(0x66CCFF);
   rectangle.drawRect(x, y, width, height);
   rectangle.endFill();
-  this.app.stage.addChild(rectangle)
-}
+  this.draw(rectangle);
+};
 
 // Draws sprite from spritesheet only!
 Renderer.prototype.drawSprite = function(sprite, x=0, y=0){
   sprite.position.set(x, y)
-  this.app.stage.addChild(sprite);
-}
+  this.draw(sprite);
+};
 
 // Placeholder functions
 Renderer.prototype.test = function(){
-  let parent = this.parent
-  // This is jo_the_pyro.png
-  let filename = parent.imgLocation + parent.data["images"][0];
-  let jo = new SpriteSheet(filename, 192, 96, 32);
-  this.drawSprite(jo.getSprite(0,0), 100, 100);
-}
+  let parent = this.parent;
+  // This is more of a bandaid solution to a greater problem I think.
+  // When the game loop is more finalized there must be a way to check that
+  // all the assets have been loaded first.
+  if(this.parent.assetIsLoaded("images") && this.parent.allTexturesLoaded === true){
+    // This is jo_the_pyro.png
+    console.log(parent.assets.get("images"));
+    let imageURL = parent.imgLocation + "/" + parent.assets.get("images")[0];
+    let texture = this.getTexture(imageURL);
+    let jo = new SpriteSheet(imageURL, 192, 96, 32);
+    this.drawSprite(jo.getSprite(0,0), 100, 100);
+  };
+};
 
 /**
  * TODO (possibly way later): Texture Manager.
  * this will handle saved pixi.js textures at runtime.
+ * - Might be redundant if I learn to use the loader properly.
 */
 
 /**
@@ -89,15 +128,15 @@ Renderer.prototype.test = function(){
  * single sprites from a larger sheet.
  * This class will assume that the individual sprite's height = width.
  */
-function SpriteSheet(url, sheetWidth, sheetHeight, spriteSize){
+function SpriteSheet(imageURL, texture, sheetWidth, sheetHeight, spriteSize){
   this.id = url;
-  this.texture = PIXI.Texture.fromImage(url)
+  this.texture = texture
   this.width = sheetWidth;
   this.height = sheetHeight;
   this.spriteSize = spriteSize;
   // Area of sheet / Area of individual sprites; No remainder. So it better be even!
   this.numberOfSprites = Math.floor((this.width * this.height) / (this.spriteSize ** 2))
-}
+};
 
 SpriteSheet.prototype._getRectFromIndex = function(index_X, index_Y){
   size = this.spriteSize;
@@ -105,10 +144,10 @@ SpriteSheet.prototype._getRectFromIndex = function(index_X, index_Y){
   let posY = index_Y * size;
   let rectangle = new PIXI.Rectangle(posX, posY, size, size);
   return rectangle;
-}
+};
 
 SpriteSheet.prototype.getSprite = function(index_X, index_Y){
   let rect = this._getRectFromIndex(index_X, index_Y);
   this.texture.frame = rect;
   return new PIXI.Sprite(this.texture);
-}
+};

@@ -63,6 +63,8 @@ Renderer.prototype.loadTextures = function(imageArray, callback=function(){}){
 };
 
 // Recursion??? :O
+// Basically recursively loop through the array and load each image.
+// When all the loading is done. Fire off the callback.
 Renderer.prototype._loadTextureArray = function(imageURLArray, callback, i=0){
   if(i < imageURLArray.length){
     this.loader.add(imageURLArray[i]);
@@ -114,21 +116,12 @@ Renderer.prototype.drawSprite = function(sprite, x=0, y=0){
 // Placeholder functions
 Renderer.prototype.test = function(){
   let parent = this.parent;
-  // This is more of a bandaid solution to a greater problem I think.
-  // When the game loop is more finalized there must be a way to check that
-  // all the assets have been loaded first.
   // This is jo_the_pyro.png
   let imageURL = parent.imgLocation + "/" + parent.assets.get("images")[0];
   let texture = this.getTexture(imageURL);
   let jo = new SpriteSheet(imageURL, texture, 192, 96, 32);
   this.drawSprite(jo.getSprite(0,0), 100, 100);
 };
-
-/**
- * TODO (possibly way later): Texture Manager.
- * this will handle saved pixi.js textures at runtime.
- * - Might be redundant if I learn to use the loader properly.
-*/
 
 /**
  * Custom spritesheet object. This will make it easier to automatically pull

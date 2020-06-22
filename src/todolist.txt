@@ -1,0 +1,3 @@
+- Animations.
+- Event system.
+- A flexible Texture manager to optimize the game as much as possible.

@@ -6,8 +6,6 @@
  * For this particular case it refers to the canvas element.
  */
 
-// TODO: Implement a state machine with a loading state. Do this whenever I need to load assets.
-
 /**
  * The game engine itself..
 */
@@ -43,6 +41,7 @@ Engine.prototype.draw = function(data){
 
 Engine.prototype.update = function(data){}
 
+// This will obviously have to be more elaborate when the actual game is being made.
 Engine.prototype.run = function(data){
   let state = this.stateMachine.currentState;
   if(state == "starting"){
@@ -56,8 +55,8 @@ Engine.prototype.run = function(data){
   }
   else if(state == "running"){
     this.draw(data);
+    // this.update(data);
   };
-  // this.update(data);
 };
 
 // Loader specific methods.

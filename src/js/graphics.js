@@ -9,7 +9,7 @@
 function Renderer(parent){
   this.parent = parent;
   // Pixi.js loader alias.
-  this.loader = PIXI.Loader.shared;
+  this.loader = new PIXI.Loader();
   this.createTextStyles();
   this.verifyAPI();
   this.createApp();
@@ -57,18 +57,28 @@ Renderer.prototype.loadTextures = function(imageArray, callback=function(){}){
     imageArray = [imageArray];
   };
 
-  imageArray.forEach((imageURL) => {
-    this.loader.add(imageURL);
-  });
-  this.loader.load();
-  this.loader.onComplete.add(callback);
+  let imgLocation = this.parent.imgLocation;
+  let imageURLArray = imageArray.map(x => imgLocation + "/" + x);
+  this._loadTextureArray(imageURLArray, callback);
+};
+
+// Recursion??? :O
+Renderer.prototype._loadTextureArray = function(imageURLArray, callback, i=0){
+  if(i < imageURLArray.length){
+    this.loader.add(imageURLArray[i]);
+    func = this._loadTextureArray(imageURLArray, callback, i + 1)
+    this.loader.onComplete.add(() => func);
+  } else {
+    this.loader.load();
+    this.loader.onComplete.add(() => {callback()});
+  };
 };
 
 Renderer.prototype.getTexture = function(imageURL, makeNew=true){
   let resources = this.loader.resources;
   let texture;
   if(makeNew === true){
-    texture = new PIXI.Texture(resources[imageURL].baseTexture);
+    texture = new PIXI.Texture(resources[imageURL].texture.baseTexture);
   } else {
     texture = resources[imageURL].texture;
   }
@@ -107,14 +117,11 @@ Renderer.prototype.test = function(){
   // This is more of a bandaid solution to a greater problem I think.
   // When the game loop is more finalized there must be a way to check that
   // all the assets have been loaded first.
-  if(this.parent.assetIsLoaded("images") && this.parent.allTexturesLoaded === true){
-    // This is jo_the_pyro.png
-    console.log(parent.assets.get("images"));
-    let imageURL = parent.imgLocation + "/" + parent.assets.get("images")[0];
-    let texture = this.getTexture(imageURL);
-    let jo = new SpriteSheet(imageURL, 192, 96, 32);
-    this.drawSprite(jo.getSprite(0,0), 100, 100);
-  };
+  // This is jo_the_pyro.png
+  let imageURL = parent.imgLocation + "/" + parent.assets.get("images")[0];
+  let texture = this.getTexture(imageURL);
+  let jo = new SpriteSheet(imageURL, texture, 192, 96, 32);
+  this.drawSprite(jo.getSprite(0,0), 100, 100);
 };
 
 /**
@@ -126,10 +133,10 @@ Renderer.prototype.test = function(){
 /**
  * Custom spritesheet object. This will make it easier to automatically pull
  * single sprites from a larger sheet.
- * This class will assume that the individual sprite's height = width.
+ * This class will assume that an individual sprite's height = width.
  */
 function SpriteSheet(imageURL, texture, sheetWidth, sheetHeight, spriteSize){
-  this.id = url;
+  this.id = imageURL;
   this.texture = texture
   this.width = sheetWidth;
   this.height = sheetHeight;

@@ -16,11 +16,10 @@ function Engine(htmlDOM){
   this.windowWidth = 800;
   this.windowHeight = 600;
   this.backgroundColor = 0xB8D5EE;
-  // this.allAssetsLoaded = false; <- would have to rework assetLoader.getAsset.
-  // this.allTexturesLoaded = false;
 
-  // TODO: implement image storage and identification.
   // the image array in assets only stores links to images.
+  // TODO: Might need to change how assets are stored. Having a straight array
+  // of hundreds of pngs could get annoying without keys.
   this.assets = new Map();
   // Key in this.assets that contains the array of image urls.
   this.imageKey = "images"
@@ -30,10 +29,9 @@ function Engine(htmlDOM){
   this.imgLocation = "img";
 
   // Create components.
+  this.stateMachine = new StateMachine(this);
   this.assetLoader = new AssetLoader(this);
-  this.loadAllAssets(); // Loader must be initialized first.
   this.renderer = new Renderer(this);
-  this.loadAllTextures();
 
 };
 
@@ -46,7 +44,19 @@ Engine.prototype.draw = function(data){
 Engine.prototype.update = function(data){}
 
 Engine.prototype.run = function(data){
-  this.draw(data);
+  let state = this.stateMachine.currentState;
+  if(state == "starting"){
+    this.stateMachine.changeState("loading assets"); // Start loading the assets.
+    this.loadAllAssets();
+  }
+  else if(state == "loading assets" && this.assets.has(this.imageKey) === true){
+    this.stateMachine.changeState("loading textures");
+    let callback = () => {this.stateMachine.changeState("running")};
+    this.loadAllTextures(callback);
+  }
+  else if(state == "running"){
+    this.draw(data);
+  };
   // this.update(data);
 };
 
@@ -68,11 +78,9 @@ Engine.prototype.assetIsLoaded = function(id){
 
 // Renderer specific methods.
 
-// loadAllGraphics should be called before the game starts.
-Engine.prototype.loadAllTextures = function(){
-  // TODO: PROBLEM: this does not account for if the assets have been loaded yet.
+Engine.prototype.loadAllTextures = function(callback){
   imageArray = this.assets.get(this.imageKey);
-  this.renderer.loadTextures(imageArray, () => {this.allTexturesLoaded = true});
+  this.renderer.loadTextures(imageArray, callback);
 };
 
 /**
@@ -103,6 +111,28 @@ AssetLoader.prototype.loadJson = function(data, success){
 };
 
 function StateMachine(parent){
-  this.allStates;
-  this.currentState;
+  this.parent = parent;
+  // A lot of the states are currently placeholder. Will be adapted as needed.
+  this.allStates = [
+    "starting",
+    "running",
+    "paused",
+    "loading",
+    "loading assets",
+    "loading textures",
+    "error",
+    "debug"
+  ];
+  this.currentState = "starting";
+};
+
+StateMachine.prototype.isValidState = function(string){
+  return this.allStates.includes(string);
+};
+
+StateMachine.prototype.changeState = function(newState){
+  if(this.isValidState(newState) === true){
+    this.currentState = newState;
+  };
+  // Perhaps add a case for catching errors here?
 };

@@ -14,12 +14,12 @@ InputManager.prototype.addDevices = function(){
   // this.inputDevices.set("controller", new Controller());
 };
 
-InputManager.prototype.captureInputs = function(events, clearFirst=true){
+InputManager.prototype.captureInputs = function(clearFirst=true){
   if (clearFirst === true) {
     this.clearEvents();
   };
   this.inputDevices.forEach((device) => {
-    this.events.set(device, device.captureInputs(events))
+    this.events.set(device, device.captureInputs())
   });
 };
 
@@ -38,16 +38,19 @@ function Keyboard = function(){
 
   this.keys;
   this.setDefaultKeys();
+  console.log("Keys: ", this.keys)
 
   // An object of valid keys and whether the keydown event for them has been triggered.
-  this.keydown = {
-    up:false,
-    down:false,
-    left:false,
-    right:false
-  };
+  this.keydown;
+  // Apologize for the naming. This oneliner basically sets this.keydown = this.keys
+  // but instead of keycodes, it's set to false.
+  (objKeys = Object.keys(this.keys)) => objKeys.forEach((objKey) => this.keydown.objKey = false);
+  console.log("Keydown: ", this.keydown)
 };
 
+Keyboard.prototype.captureInputs = function(){
+  return Object.assign({}, this.keydown); // Return a copy of the current state of keydown.
+}
 Keyboard.prototype.addListeners = function(element){
   element.addEventListener('keydown', this.keyDownHandler, false);
   element.addEventListener('keyup', this.keyUpHandler, false);
@@ -87,13 +90,13 @@ Keyboard.prototype.keyUpHandler = function(event){
 // Sets this.key to the default keys defined.
 Keyboard.prototype.setDefaultKeys = function(){
   this.keys = Array.from(this.defaultKeys);
-}
+};
 
 // Sets all of this.keyDown to false.
 Keyboard.prototype.resetKeyDown = function(){
   keys = Object.keys(this.keydown);
   keys.forEach((key) => this.keydown.key = false);
-}
+};
 
 // Will worry about this later.
 function Controller(){};

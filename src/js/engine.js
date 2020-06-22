@@ -30,6 +30,7 @@ function Engine(htmlDOM){
   this.stateMachine = new StateMachine(this);
   this.assetLoader = new AssetLoader(this);
   this.renderer = new Renderer(this);
+  this.inputManager = new InputManager(this);
 
 };
 
@@ -55,7 +56,7 @@ Engine.prototype.run = function(data){
   }
   else if(state == "running"){
     this.draw(data);
-    // this.update(data);
+    this.update(data);
   };
 };
 
@@ -116,7 +117,6 @@ function StateMachine(parent){
     "starting",
     "running",
     "paused",
-    "loading",
     "loading assets",
     "loading textures",
     "error",

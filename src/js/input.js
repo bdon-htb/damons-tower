@@ -7,10 +7,12 @@ function InputManager(parent){
   this.parent = parent;
   this.events = new Map();
   this.inputDevices = new Map();
+  this.addDevices();
 };
 
 InputManager.prototype.addDevices = function(){
   this.inputDevices.set("keyboard", new Keyboard());
+  this.inputDevices.get("keyboard").addListeners(this.parent.context);
   // this.inputDevices.set("controller", new Controller());
 };
 
@@ -25,9 +27,9 @@ InputManager.prototype.captureInputs = function(clearFirst=true){
 
 InputManager.prototype.clearEvents = function(){
   this.events.clear();
-}
+};
 
-function Keyboard = function(){
+function Keyboard(){
   // An object of valid keys and their corresponding key code.
   this.defaultKeys = {
     up:87, // W
@@ -37,59 +39,51 @@ function Keyboard = function(){
   };
 
   this.keys;
-  this.setDefaultKeys();
-  console.log("Keys: ", this.keys)
+  this.setToDefaultKeys();
 
   // An object of valid keys and whether the keydown event for them has been triggered.
-  this.keydown;
+  this.keydown = {};
   // Apologize for the naming. This oneliner basically sets this.keydown = this.keys
   // but instead of keycodes, it's set to false.
-  (objKeys = Object.keys(this.keys)) => objKeys.forEach((objKey) => this.keydown.objKey = false);
-  console.log("Keydown: ", this.keydown)
+  let objKeys = Object.keys(this.keys);
+  objKeys.forEach((objKey) => this.keydown[objKey] = false);
 };
 
 Keyboard.prototype.captureInputs = function(){
   return Object.assign({}, this.keydown); // Return a copy of the current state of keydown.
 }
 Keyboard.prototype.addListeners = function(element){
-  element.addEventListener('keydown', this.keyDownHandler, false);
-  element.addEventListener('keyup', this.keyUpHandler, false);
+  element.addEventListener('keydown', this.keyDownHandler.bind(this), false);
+  element.addEventListener('keyup', this.keyUpHandler.bind(this), false);
 };
 
 Keyboard.prototype.removeListeners = function(element){
-  element.removeEventListener('keydown', this.keyDownHandler, false);
-  element.removeEventListener('keyup', this.keyUpHandler, false);
+  element.removeEventListener('keydown', this.keyDownHandler.bind(this), false);
+  element.removeEventListener('keyup', this.keyUpHandler.bind(this), false);
+};
+
+// Key handle function; key DOWN handler by default.
+// If keyDown is false it will be treated as a key UP handler.
+Keyboard.prototype.keyHandler = function(event, keyDown=true){
+  for (const [key, code] of Object.entries(this.keys)){
+    if(event.keyCode == code){
+      this.keydown[key] = keyDown;
+    };
+  };
 };
 
 Keyboard.prototype.keyDownHandler = function(event){
-  if(event.keyCode == this.keys.up){
-    this.keydown.up = true;
-  } else if(event.keyCode == this.keys.down){
-    this.keydown.down = true;
-  };
-  if(event.keyCode == this.keys.left){
-    this.keydown.left = true;
-  } else if(event.keyCode == this.keys.right){
-    this.keydown.right = true;
-  };
+  this.keyHandler(event);
 };
 
 Keyboard.prototype.keyUpHandler = function(event){
-  if(event.keyCode == this.keys.up){
-    this.keydown.up = false;
-  } else if(event.keyCode == this.keys.down){
-    this.keydown.down = false;
-  };
-  if(event.keyCode == this.keys.left){
-    this.keydown.left = false;
-  } else if(event.keyCode == this.keys.right){
-    this.keydown.right = false;
-  };
+  this.keyHandler(event, false);
 };
 
 // Sets this.key to the default keys defined.
-Keyboard.prototype.setDefaultKeys = function(){
-  this.keys = Array.from(this.defaultKeys);
+Keyboard.prototype.setToDefaultKeys = function(){
+  // Create a copy of the default keys.
+  this.keys = Object.assign(this.defaultKeys);
 };
 
 // Sets all of this.keyDown to false.
@@ -98,5 +92,6 @@ Keyboard.prototype.resetKeyDown = function(){
   keys.forEach((key) => this.keydown.key = false);
 };
 
-// Will worry about this later.
+// Will worry about these later.
+function Mouse(){};
 function Controller(){};

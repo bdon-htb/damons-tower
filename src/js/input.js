@@ -21,7 +21,8 @@ InputManager.prototype.captureInputs = function(clearFirst=true){
     this.clearEvents();
   };
   this.inputDevices.forEach((device) => {
-    this.events.set(device, device.captureInputs())
+    let inputs = device.captureInputs();
+    if(inputs.length > 0){this.events.set(device.name, inputs)};
   });
 };
 
@@ -30,12 +31,13 @@ InputManager.prototype.clearEvents = function(){
 };
 
 function Keyboard(){
+  this.name = "keyboard"
   // An object of valid keys and their corresponding key code.
   this.defaultKeys = {
-    up:87, // W
-    down:83, // S
-    left:65, // A
-    right:68 // D
+    up:"w", // W
+    down:"s", // S
+    left:"a", // A
+    right:"d" // D
   };
 
   this.keys;
@@ -50,7 +52,12 @@ function Keyboard(){
 };
 
 Keyboard.prototype.captureInputs = function(){
-  return Object.assign({}, this.keydown); // Return a copy of the current state of keydown.
+  let inputs = [];
+  for(const [key, bool] of Object.entries(this.keydown)){
+    if(bool == true){inputs.push(key)};
+  };
+  // Return a array of strings of only the keys pressed.
+  return inputs;
 }
 Keyboard.prototype.addListeners = function(element){
   element.addEventListener('keydown', this.keyDownHandler.bind(this), false);
@@ -65,10 +72,9 @@ Keyboard.prototype.removeListeners = function(element){
 // Key handle function; key DOWN handler by default.
 // If keyDown is false it will be treated as a key UP handler.
 Keyboard.prototype.keyHandler = function(event, keyDown=true){
+  let keyCode = event.key;
   for (const [key, code] of Object.entries(this.keys)){
-    if(event.keyCode == code){
-      this.keydown[key] = keyDown;
-    };
+    if(keyCode == code){this.keydown[key] = keyDown};
   };
 };
 
@@ -84,6 +90,10 @@ Keyboard.prototype.keyUpHandler = function(event){
 Keyboard.prototype.setToDefaultKeys = function(){
   // Create a copy of the default keys.
   this.keys = Object.assign(this.defaultKeys);
+};
+
+Keyboard.prototype.changeKeyCode = function (key, newCode){
+  this.keys[key] = newCode;
 };
 
 // Sets all of this.keyDown to false.

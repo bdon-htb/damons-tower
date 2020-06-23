@@ -40,7 +40,9 @@ Engine.prototype.draw = function(data){
   this.renderer.test()
 };
 
-Engine.prototype.update = function(data){}
+Engine.prototype.update = function(data){
+  this.inputManager.captureInputs();
+};
 
 // This will obviously have to be more elaborate when the actual game is being made.
 Engine.prototype.run = function(data){
@@ -55,8 +57,8 @@ Engine.prototype.run = function(data){
     this.loadAllTextures(callback);
   }
   else if(state == "running"){
-    this.draw(data);
     this.update(data);
+    this.draw(data);
   };
 };
 

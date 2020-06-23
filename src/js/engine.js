@@ -42,6 +42,9 @@ Engine.prototype.draw = function(data){
 
 Engine.prototype.update = function(data){
   this.inputManager.captureInputs();
+  if(this.inputManager.events.size > 0){
+    console.log(this.inputManager.events.get("mouse"));
+  };
 };
 
 // This will obviously have to be more elaborate when the actual game is being made.

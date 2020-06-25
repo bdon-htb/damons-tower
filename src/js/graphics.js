@@ -51,12 +51,7 @@ Renderer.prototype.createTextStyles = function(){
 
 // Texture related methods.
 
-// loadTextures accepts both strings (for a single url) and arrays (for multiple urls)
 Renderer.prototype.loadTextures = function(imageArray, callback=function(){}){
-  if(typeof imageArray === "string"){
-    imageArray = [imageArray];
-  };
-
   let imgLocation = this.parent.imgLocation;
   let imageURLArray = imageArray.map(x => imgLocation + "/" + x);
   this._loadTextureArray(imageURLArray, callback);
@@ -93,6 +88,11 @@ Renderer.prototype.draw = function(child){
   this.app.stage.addChild(child)
 };
 
+// Clear the screen.
+Renderer.prototype.clear = function(){
+  this.app.stage.removeChildren()
+}
+
 Renderer.prototype.drawText = function(msg, style=this.textStyles.debug, x=0, y=0){
   let message = new PIXI.Text(msg, style);
   message.position.set(x, y);
@@ -117,7 +117,8 @@ Renderer.prototype.drawSprite = function(sprite, x=0, y=0){
 Renderer.prototype.test = function(){
   let parent = this.parent;
   // This is jo_the_pyro.png
-  let imageURL = parent.imgLocation + "/" + parent.assets.get("images")[0];
+  let image = parent.getImage("jo_the_pyro");
+  let imageURL = parent.imgLocation + "/" + image
   let texture = this.getTexture(imageURL);
   let jo = new SpriteSheet(imageURL, texture, 192, 96, 32);
   this.drawSprite(jo.getSprite(0,0), 100, 100);
@@ -151,3 +152,14 @@ SpriteSheet.prototype.getSprite = function(index_X, index_Y){
   this.texture.frame = rect;
   return new PIXI.Sprite(this.texture);
 };
+
+// TODO: Implement.
+function Animation(id, spriteSheet, animationData){
+  this.id = id;
+  this.spriteSheet = spriteSheet;
+  this.currentFrame;
+  this.frames;
+  this.loops;
+  // Frames it takes to reach the next animation frame.
+  this.speed;
+}

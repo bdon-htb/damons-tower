@@ -35,16 +35,18 @@ function Engine(htmlDOM){
 };
 
 Engine.prototype.draw = function(data){
-  this.renderer.drawText(data.fps)
-  this.renderer.drawRect(0x66CCFF, 96, 96, 50, 50)
-  this.renderer.test()
+  this.renderer.clear();
+  this.renderer.drawText(data.fps);
+  this.renderer.drawRect(0x66CCFF, 96, 96, 50, 50);
+  this.renderer.test();
 };
 
 Engine.prototype.update = function(data){
+  // console.log(this.inputManager.inputDevices)
   this.inputManager.captureInputs();
-  if(this.inputManager.events.size > 0){
-    console.log(this.inputManager.events.get("mouse"));
-  };
+  //if(this.inputManager.events.size > 0){
+    // console.log(this.inputManager.events.get("mouse"));
+  // };
 };
 
 // This will obviously have to be more elaborate when the actual game is being made.
@@ -54,8 +56,10 @@ Engine.prototype.run = function(data){
     this.stateMachine.changeState("loading assets"); // Start loading the assets.
     this.loadAllAssets();
   }
+  // Check if current state is "loading assets" and the engine assets has images loaded.
   else if(state == "loading assets" && this.assets.has(this.imageKey) === true){
     this.stateMachine.changeState("loading textures");
+    // Set it so that when the textures finish loading, the state changes to "running."
     let callback = () => {this.stateMachine.changeState("running")};
     this.loadAllTextures(callback);
   }
@@ -70,8 +74,8 @@ Engine.prototype.run = function(data){
 // loadAllAssets should be called before the game starts.
 Engine.prototype.loadAllAssets = function(){
   // Set aliases.
-  dataLocation = this.dataLocation;
-  imgLocation = this.imgLocation;
+  let dataLocation = this.dataLocation;
+  let imgLocation = this.imgLocation;
 
   // Load image locations.
   this.assetLoader.getAsset(dataLocation + "/" + "image.json", true);
@@ -84,10 +88,15 @@ Engine.prototype.assetIsLoaded = function(id){
 // Renderer specific methods.
 
 Engine.prototype.loadAllTextures = function(callback){
-  imageArray = this.assets.get(this.imageKey);
+  let imageMap = this.assets.get(this.imageKey);
+  let imageArray = Array.from(imageMap.values());
   this.renderer.loadTextures(imageArray, callback);
 };
 
+// Get the image filename from its id in assets.
+Engine.prototype.getImage = function(id){
+  return this.assets.get(this.imageKey).get(id);
+}
 /**
  * Custom loader. Is responsible for loading data file assets.
 */
@@ -95,6 +104,7 @@ function AssetLoader(parent){
   this.parent = parent;
 };
 
+// Method has the option to immediately load the asset into the game.
 AssetLoader.prototype.getAsset = function(url, load=false){
   let loadFunc;
   if (url.endsWith('.json')){
@@ -108,10 +118,13 @@ AssetLoader.prototype.getAsset = function(url, load=false){
 };
 
 AssetLoader.prototype.loadJson = function(data, success){
-  let keys = Object.keys(data);
-  keys.forEach((key, index, array) => {
-    values = Object.values(data[key]);
-    this.parent.assets.set(key, values);
+  let jsonKeys = Object.keys(data);
+  let assetMap = new Map();
+  jsonKeys.forEach((key) => {
+    for(const [id, value] of Object.entries(data[key])){
+      assetMap.set(id, value);
+    };
+    this.parent.assets.set(key, assetMap);
   });
 };
 

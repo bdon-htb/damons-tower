@@ -20,7 +20,7 @@ function Engine(htmlDOM){
   // of hundreds of pngs could get annoying without keys.
   this.assets = new Map();
   // Key in this.assets that contains the array of image urls.
-  this.imageKey = "images"
+  this.imageKey = "images";
 
   // AssetLoader variables.
   this.dataLocation = "data";
@@ -53,11 +53,11 @@ Engine.prototype.update = function(data){
 Engine.prototype.run = function(data){
   let state = this.stateMachine.currentState;
   if(state == "starting"){
-    this.stateMachine.changeState("loading assets"); // Start loading the assets.
+    this.stateMachine.changeState("loading images"); // Start loading the assets.
     this.loadAllAssets();
   }
   // Check if current state is "loading assets" and the engine assets has images loaded.
-  else if(state == "loading assets" && this.assets.has(this.imageKey) === true){
+  else if(state == "loading images" && this.assets.has(this.imageKey) === true){
     this.stateMachine.changeState("loading textures");
     // Set it so that when the textures finish loading, the state changes to "running."
     let callback = () => {this.stateMachine.changeState("running")};
@@ -78,7 +78,7 @@ Engine.prototype.loadAllAssets = function(){
   let imgLocation = this.imgLocation;
 
   // Load image locations.
-  this.assetLoader.getAsset(dataLocation + "/" + "image.json", true);
+  this.assetLoader.getAsset(dataLocation + "/" + "assets.json", true);
 };
 
 Engine.prototype.assetIsLoaded = function(id){
@@ -135,7 +135,7 @@ function StateMachine(parent){
     "starting",
     "running",
     "paused",
-    "loading assets",
+    "loading images",
     "loading textures",
     "error",
     "debug"
@@ -150,6 +150,6 @@ StateMachine.prototype.isValidState = function(string){
 StateMachine.prototype.changeState = function(newState){
   if(this.isValidState(newState) === true){
     this.currentState = newState;
-  };
+  } else console.error(`${newState} is not a valid state.`);
   // Perhaps add a case for catching errors here?
 };

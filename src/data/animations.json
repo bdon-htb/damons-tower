@@ -1,0 +1,11 @@
+{
+  "animationData": {
+    "jtp_walk_right": {
+      "spriteSheet": "jtp",
+      "frames": [[0,1], [1,1], [2,1]],
+      "loops": true,
+      "type": "walk",
+      "speed": 1
+    }
+  }
+}

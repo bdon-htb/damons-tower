@@ -117,7 +117,7 @@ Renderer.prototype.drawSprite = function(sprite, x=0, y=0){
 Renderer.prototype.test = function(){
   let parent = this.parent;
   // This is jo_the_pyro.png
-  let image = parent.getImage("jo_the_pyro");
+  let image = parent.getImage("jtp");
   let imageURL = parent.imgLocation + "/" + image
   let texture = this.getTexture(imageURL);
   let jo = new SpriteSheet(imageURL, texture, 192, 96, 32);
@@ -153,13 +153,56 @@ SpriteSheet.prototype.getSprite = function(index_X, index_Y){
   return new PIXI.Sprite(this.texture);
 };
 
-// TODO: Implement.
+/**
+ * Custom SINGLE sprite animation object.
+ * Animation assumes that every frame of the animation is within
+ * the spritesheet provided.
+*/
 function Animation(id, spriteSheet, animationData){
   this.id = id;
   this.spriteSheet = spriteSheet;
+  this.frames; // An array of indexes; each index corresponds to the frame's sprite index in the sheet.
   this.currentFrame;
-  this.frames;
+  this.frameIndex;
   this.loops;
-  // Frames it takes to reach the next animation frame.
-  this.speed;
+  this.speed; // Frames it takes to reach the next animation frame.
+  this.counter = 0 // A counter that keeps track of the frames while the animation is active.
+
+  this.parseData(animationData);
+};
+
+Animation.prototype.incrementCounter = function(){
+  this.counter += 1;
+  let complete = false; // Flag; whether the counter = speed; the number of frames to move on.
+
+  if(this.counter >= this.speed){
+    this.counter = 0;
+    complete = true;
+  };
+  return complete;
+};
+
+// I probably COULD just copy the json stuff directly since js treats them
+// as objects anyhow but this is more readable.
+Animation.prototype.parseData = function(id, data){
+  this.frames = data.frames;
+  this.setDefaultFrame();
+  this.loops = data.loops;
+  this.type = data.type;
+  this.speed = data.speed;
+};
+
+Animation.prototype.setDefaultFrame = function(){
+  this.frameIndex = 0; // Index of first frame in this.frames.
+  this.currentFrame = this.frames[this.frameIndex]; // Init. as first frame.
 }
+
+// Play this function every frame the animation is active.
+Animation.prototype.nextFrame = function(){
+  let goToNextFrame = this.incrementCounter(); // goToNextFrame is a flag.
+
+  if(goToNextFrame === true && this.frameIndex < this.frames.length){
+    this.frameIndex += 1;
+    this.currentFrame = this.frames[this.frameIndex];
+  } else this.setDefaultFrame();
+};

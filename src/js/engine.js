@@ -52,12 +52,13 @@ Engine.prototype.update = function(data){
 // This will obviously have to be more elaborate when the actual game is being made.
 Engine.prototype.run = function(data){
   let state = this.stateMachine.currentState;
+  console.log(state)
   if(state == "starting"){
-    this.stateMachine.changeState("loading images"); // Start loading the assets.
+    this.stateMachine.changeState("loading assets"); // Start loading the assets.
     this.loadAllAssets();
   }
   // Check if current state is "loading assets" and the engine assets has images loaded.
-  else if(state == "loading images" && this.assets.has(this.imageKey) === true){
+  else if(state == "loading assets" && this.assets.has(this.imageKey) === true){
     this.stateMachine.changeState("loading textures");
     // Set it so that when the textures finish loading, the state changes to "running."
     let callback = () => {this.stateMachine.changeState("running")};
@@ -78,7 +79,7 @@ Engine.prototype.loadAllAssets = function(){
   let imgLocation = this.imgLocation;
 
   // Load image locations.
-  this.assetLoader.getAsset(dataLocation + "/" + "assets.json", true);
+  this.assetLoader.getAsset(dataLocation + "/" + "image.json", true);
 };
 
 Engine.prototype.assetIsLoaded = function(id){
@@ -112,6 +113,11 @@ AssetLoader.prototype.getAsset = function(url, load=false){
     loadFunc = this.loadJson.bind(this);
   };
   let req = $.get(url);
+
+  // If the request fails...
+  req.fail((jqXHR, textStatus, errorThrown) => {
+    console.error(`Error while trying to get asset (${url}): ${errorThrown}`)});
+
   if (load === true){
     req.done(loadFunc);
   } else return req;
@@ -135,7 +141,7 @@ function StateMachine(parent){
     "starting",
     "running",
     "paused",
-    "loading images",
+    "loading assets",
     "loading textures",
     "error",
     "debug"

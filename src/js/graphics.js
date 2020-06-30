@@ -115,15 +115,20 @@ Renderer.prototype.drawSprite = function(sprite, x=0, y=0){
 
 // Placeholder functions
 Renderer.prototype.test = function(){
+  this.drawSprite(this.testAnim.getSprite(), 96, 96);
+  this.testAnim.nextFrame();
+};
+
+Renderer.prototype.testInit = function(){
   let parent = this.parent;
   // This is jo_the_pyro.png
   let image = parent.getImage("jtp");
   let imageURL = parent.imgLocation + "/" + image
   let texture = this.getTexture(imageURL);
   let jo = new SpriteSheet(imageURL, texture, 192, 96, 32);
-  this.drawSprite(jo.getSprite(0,0), 100, 100);
+  let anim = parent.assets.get(parent.animKey).get("jtp_walk_right");
+  this.testAnim = new Animation("jtp", jo, anim);
 };
-
 /**
  * Custom spritesheet object. This will make it easier to automatically pull
  * single sprites from a larger sheet.
@@ -165,7 +170,9 @@ function Animation(id, spriteSheet, animationData){
   this.currentFrame;
   this.frameIndex;
   this.loops;
+  this.defaultSpeed = 8; // Avoid changing this value as much as possible.
   this.speed; // Frames it takes to reach the next animation frame.
+  this.type;
   this.counter = 0 // A counter that keeps track of the frames while the animation is active.
 
   this.parseData(animationData);
@@ -184,12 +191,12 @@ Animation.prototype.incrementCounter = function(){
 
 // I probably COULD just copy the json stuff directly since js treats them
 // as objects anyhow but this is more readable.
-Animation.prototype.parseData = function(id, data){
+Animation.prototype.parseData = function(data){
   this.frames = data.frames;
   this.setDefaultFrame();
   this.loops = data.loops;
+  this.speed = (data.speed === "default") ? this.defaultSpeed : data.speed
   this.type = data.type;
-  this.speed = data.speed;
 };
 
 Animation.prototype.setDefaultFrame = function(){
@@ -201,8 +208,17 @@ Animation.prototype.setDefaultFrame = function(){
 Animation.prototype.nextFrame = function(){
   let goToNextFrame = this.incrementCounter(); // goToNextFrame is a flag.
 
-  if(goToNextFrame === true && this.frameIndex < this.frames.length){
-    this.frameIndex += 1;
-    this.currentFrame = this.frames[this.frameIndex];
-  } else this.setDefaultFrame();
+  // If animation completes the period for one frame...
+  if(goToNextFrame === true){
+    if(this.frameIndex + 1 < this.frames.length){
+      this.frameIndex += 1;
+      this.currentFrame = this.frames[this.frameIndex];
+    } else this.setDefaultFrame(); // Cycle back to start if done animation.
+  };
+};
+
+Animation.prototype.getSprite = function(){
+  let spriteSheet = this.spriteSheet;
+  let spriteIndex = this.currentFrame;
+  return spriteSheet.getSprite(spriteIndex[0], spriteIndex[1]);
 };

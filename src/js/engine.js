@@ -19,8 +19,10 @@ function Engine(htmlDOM){
   // TODO: Might need to change how assets are stored. Having a straight array
   // of hundreds of pngs could get annoying without keys.
   this.assets = new Map();
-  // Key in this.assets that contains the array of image urls.
+  // Key in this.assets that contains maps of image urls.
   this.imageKey = "images";
+  // Key in this.assets that contains maps of animation data.
+  this.animKey = "animationData";
 
   // AssetLoader variables.
   this.dataLocation = "data";
@@ -52,16 +54,19 @@ Engine.prototype.update = function(data){
 // This will obviously have to be more elaborate when the actual game is being made.
 Engine.prototype.run = function(data){
   let state = this.stateMachine.currentState;
-  console.log(state)
+  // console.log(state);
   if(state == "starting"){
     this.stateMachine.changeState("loading assets"); // Start loading the assets.
     this.loadAllAssets();
   }
   // Check if current state is "loading assets" and the engine assets has images loaded.
-  else if(state == "loading assets" && this.assets.has(this.imageKey) === true){
+  else if(state == "loading assets" && this.allAssetsLoaded() === true){
     this.stateMachine.changeState("loading textures");
     // Set it so that when the textures finish loading, the state changes to "running."
-    let callback = () => {this.stateMachine.changeState("running")};
+    let callback = () => {
+      this.stateMachine.changeState("running");
+      this.renderer.testInit();
+    };
     this.loadAllTextures(callback);
   }
   else if(state == "running"){
@@ -80,10 +85,24 @@ Engine.prototype.loadAllAssets = function(){
 
   // Load image locations.
   this.assetLoader.getAsset(dataLocation + "/" + "image.json", true);
+  // Load animation data.
+  this.assetLoader.getAsset(dataLocation + "/" + "animations.json", true);
 };
 
 Engine.prototype.assetIsLoaded = function(id){
   return this.assets.has(id);
+};
+
+Engine.prototype.allAssetsLoaded = function(){
+  let assetsKeys = [
+    this.imageKey,
+    this.animKey
+  ];
+
+  for(const key of assetsKeys){
+    if(this.assets.has(key) === false){return false};
+  };
+  return true;
 };
 
 // Renderer specific methods.

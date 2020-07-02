@@ -108,14 +108,28 @@ Engine.prototype.allAssetsLoaded = function(){
 // Renderer specific methods.
 
 Engine.prototype.loadAllTextures = function(callback){
-  let imageMap = this.assets.get(this.imageKey);
+  let imageMap = this.getLoadedAsset(this.imageKey);
   let imageArray = Array.from(imageMap.values());
   this.renderer.loadTextures(imageArray, callback);
 };
 
 // Get the image filename from its id in assets.
 Engine.prototype.getImage = function(id){
-  return this.assets.get(this.imageKey).get(id);
+  // Error handling.
+  if(this.assets.get(this.imageKey).has(id) === false){
+    console.error(`Error while trying to get image ${id}. ${id} does not exist.`);
+  };
+  return this.getLoadedAsset(this.imageKey).get(id);
+}
+
+// Get asset from this.assets; includes error check. called getLoadedAsset to
+// differentiate from assetLoader.getAsset()
+Engine.prototype.getLoadedAsset = function(key){
+  // Error handling.
+  if(this.assets.has(key) === false){
+    console.error(`Error while trying to get asset ${key}. ${key} does not exist in assets.`);
+  };
+  return this.assets.get(key);
 }
 /**
  * Custom loader. Is responsible for loading data file assets.

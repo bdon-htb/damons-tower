@@ -78,7 +78,12 @@ Renderer.prototype.getTexture = function(imageURL, makeNew=true){
     texture = new PIXI.Texture(resources[imageURL].texture.baseTexture);
   } else {
     texture = resources[imageURL].texture;
-  }
+  };
+
+  // Error handling.
+  if(texture === undefined){
+    console.error(`Error trying to get a texture from ${imageURL}. Returns undefined.`)
+  };
   return texture;
 };
 
@@ -119,6 +124,7 @@ Renderer.prototype.test = function(){
   this.testAnim.nextFrame();
 };
 
+// For testing purposes. Should only run once.
 Renderer.prototype.testInit = function(){
   let parent = this.parent;
   // This is jo_the_pyro.png
@@ -126,7 +132,7 @@ Renderer.prototype.testInit = function(){
   let imageURL = parent.imgLocation + "/" + image
   let texture = this.getTexture(imageURL);
   let jo = new SpriteSheet(imageURL, texture, 192, 96, 32);
-  let anim = parent.assets.get(parent.animKey).get("jtp_walk_right");
+  let anim = parent.getLoadedAsset(parent.animKey).get("jtp_walk_right");
   this.testAnim = new Animation("jtp", jo, anim);
 };
 

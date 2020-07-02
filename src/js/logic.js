@@ -1,6 +1,6 @@
 /**
  * logic.js is where all the functions and game-specific
- * data goes.
+ * data structures go.
 */
 
 function Scene(){};

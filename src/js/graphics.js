@@ -129,6 +129,7 @@ Renderer.prototype.testInit = function(){
   let anim = parent.assets.get(parent.animKey).get("jtp_walk_right");
   this.testAnim = new Animation("jtp", jo, anim);
 };
+
 /**
  * Custom spritesheet object. This will make it easier to automatically pull
  * single sprites from a larger sheet.
@@ -162,6 +163,7 @@ SpriteSheet.prototype.getSprite = function(index_X, index_Y){
  * Custom SINGLE sprite animation object.
  * Animation assumes that every frame of the animation is within
  * the spritesheet provided.
+ * TODO: Implement loop and non-loop functionality.
 */
 function Animation(id, spriteSheet, animationData){
   this.id = id;
@@ -222,3 +224,6 @@ Animation.prototype.getSprite = function(){
   let spriteIndex = this.currentFrame;
   return spriteSheet.getSprite(spriteIndex[0], spriteIndex[1]);
 };
+
+// TODO: Animation Manager; would be responsible for linking spriteSheets to animations.
+function AnimationManager(){};

@@ -189,5 +189,4 @@ StateMachine.prototype.changeState = function(newState){
   if(this.isValidState(newState) === true){
     this.currentState = newState;
   } else console.error(`${newState} is not a valid state.`);
-  // Perhaps add a case for catching errors here?
 };

@@ -76,6 +76,8 @@ Renderer.prototype.getTexture = function(imageURL, makeNew=true){
   let texture;
   if(makeNew === true){
     texture = new PIXI.Texture(resources[imageURL].texture.baseTexture);
+    // This makes the sprites resize a lot cleaner.
+    texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
   } else {
     texture = resources[imageURL].texture;
   };
@@ -90,13 +92,13 @@ Renderer.prototype.getTexture = function(imageURL, makeNew=true){
 // Drawing related methods.
 
 Renderer.prototype.draw = function(child){
-  this.app.stage.addChild(child)
+  this.app.stage.addChild(child);
 };
 
 // Clear the screen.
 Renderer.prototype.clear = function(){
-  this.app.stage.removeChildren()
-}
+  this.app.stage.removeChildren();
+};
 
 Renderer.prototype.drawText = function(msg, style=this.textStyles.debug, x=0, y=0){
   let message = new PIXI.Text(msg, style);
@@ -115,11 +117,24 @@ Renderer.prototype.drawRect = function(colour, x, y, width, height){
 // Draws sprite from spritesheet only!
 Renderer.prototype.drawSprite = function(sprite, x=0, y=0){
   sprite.position.set(x, y)
+  if(this.parent.scale > 1){
+    let scaleFunc = this.scaleSprite.bind(this);
+    sprite = scaleFunc(sprite);
+  };
   this.draw(sprite);
 };
 
+Renderer.prototype.scaleSprite = function(sprite){
+  let scale = this.parent.scale;
+  sprite.width *= scale;
+  sprite.height *= scale;
+  return sprite;
+};
+
 // Placeholder functions
-Renderer.prototype.test = function(){
+Renderer.prototype.test = function(data){
+  this.drawText(data.fps);
+  this.drawRect(0x66CCFF, 96, 96, 50, 50);
   this.drawSprite(this.testAnim.getSprite(), 96, 96);
   this.testAnim.nextFrame();
 };

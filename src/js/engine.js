@@ -13,6 +13,7 @@ function Engine(htmlDOM){
   this.context = htmlDOM
   this.windowWidth = 800;
   this.windowHeight = 600;
+  this.scale = 2; // Should be a multiple of two.
   this.backgroundColor = 0xB8D5EE;
 
   // the image array in assets only stores links to images.
@@ -38,9 +39,7 @@ function Engine(htmlDOM){
 
 Engine.prototype.draw = function(data){
   this.renderer.clear();
-  this.renderer.drawText(data.fps);
-  this.renderer.drawRect(0x66CCFF, 96, 96, 50, 50);
-  this.renderer.test();
+  this.renderer.test(data);
 };
 
 Engine.prototype.update = function(data){

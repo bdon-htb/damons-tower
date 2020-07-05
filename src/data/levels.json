@@ -1,5 +1,9 @@
 {
   "levelData": {
-    "name": "test"
+    "name": "test",
+    "spriteSheet": "testDungeon",
+    "data": ["000-FL", "000-FL", "000-FL",
+             "000-FL", "000-FL", "000-FL",
+             "000-FL", "000-FL", "000-FL"]
   }
 }

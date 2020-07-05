@@ -1,3 +1,8 @@
-- Animations.
+=== Animations.
+- Create an animation manager to connect image data to animation data.
+- Implement loop / don't loop functionality and animation chaining.
+===
+- Create a level system.
+- Implement a camera.
 - Event system.
 - A flexible Texture manager to optimize the game as much as possible.

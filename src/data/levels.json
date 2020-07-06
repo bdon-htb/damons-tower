@@ -2,8 +2,11 @@
   "levelData": {
     "name": "test",
     "spriteSheet": "testDungeon",
-    "data": ["000-FL", "000-FL", "000-FL",
-             "000-FL", "000-FL", "000-FL",
-             "000-FL", "000-FL", "000-FL"]
+    "width": 3,
+    "height": 3,
+    "tileData": [
+      "000-FL", "000-FL", "000-FL",
+      "000-FL", "000-FL", "000-FL",
+      "000-FL", "000-FL", "000-FL"]
   }
 }

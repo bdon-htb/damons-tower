@@ -1,5 +1,6 @@
 {
   "images": {
-    "jtp": "jo_the_pyro.png"
+    "jtp": "jo_the_pyro.png",
+    "testDungeon": "testDungeon.png"
   }
 }

@@ -131,6 +131,19 @@ Renderer.prototype.scaleSprite = function(sprite){
   return sprite;
 };
 
+// For tileMaps;
+Renderer.prototype.convertIndexToPos = function(index){
+
+};
+
+// TODO: Implement viewport support; for later.
+Renderer.prototype.drawTiles = function(tileMap) = function(){
+  let tiles = tileMap.tiles
+  for (let index = 0; i < tiles.length; index++){
+    position = this.convertIndexToPos(index)
+  };
+};
+
 // Placeholder functions
 Renderer.prototype.test = function(data){
   this.drawText(data.fps);
@@ -247,4 +260,7 @@ Animation.prototype.getSprite = function(){
 };
 
 // TODO: Animation Manager; would be responsible for linking spriteSheets to animations.
+// If I really want to follow the entity system. I should move all the animation methods
+// to here. There could be thousands of animations loaded at once and they don't all
+// need their own functions to save space.
 function AnimationManager(){};

@@ -138,9 +138,16 @@ Renderer.prototype.convertIndexToPos = function(index){
 
 // TODO: Implement viewport support; for later.
 Renderer.prototype.drawTiles = function(tileMap) = function(){
-  let tiles = tileMap.tiles
-  for (let index = 0; i < tiles.length; index++){
-    position = this.convertIndexToPos(index)
+  let tilesArray = tileMap.tiles;
+  let spriteSheet = tileMap.spriteSheet;
+  for (let index = 0; i < tilesArray.length; index++){
+    let coords = tileMap.convertPos(index); // Convert -> 2d;
+    let pos_X = coords[0] * spriteSheet.spriteSize;
+    let pos_Y = coords[1] * spriteSheet.spriteSize;
+
+    let spriteIndexArray = tileMap.getSpriteIndex(index);
+    let tileSprite = spriteSheet.getSprite(spriteIndexArray[0], spriteIndexArray[1]);
+    this.drawSprite(tileSprite, pos_X, pos_Y);
   };
 };
 

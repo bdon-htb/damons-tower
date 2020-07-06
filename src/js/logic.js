@@ -97,14 +97,14 @@ TileMap.prototype.convertPos = function(position){
 // Convert the index of a 1d array to the cartesian coordinate
 // equivalent of a similar 2d array.
 TileMap.prototype.convertIndexToCoords = function(index){
-  let index_X = index % this.width;
-  let index_Y = (index - index_X) / this.height;
+  let index_X = Math.floor(index / this.width);
+  let index_Y = index % this.width;
   return [index_X, index_Y];
 };
 
 // Convert the coords of a 2d array to the 1d index equivalent.
 TileMap.prototype.convertCoordsToIndex = function(index_X, index_Y){
-  return index_X + index_Y * this.height;
+  return index_X * this.width + index_Y;
 };
 
 // TODO: Implement.

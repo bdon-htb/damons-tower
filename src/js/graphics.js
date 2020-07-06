@@ -131,13 +131,8 @@ Renderer.prototype.scaleSprite = function(sprite){
   return sprite;
 };
 
-// For tileMaps;
-Renderer.prototype.convertIndexToPos = function(index){
-
-};
-
 // TODO: Implement viewport support; for later.
-Renderer.prototype.drawTiles = function(tileMap) = function(){
+Renderer.prototype.drawTiles = function(tileMap){
   let tilesArray = tileMap.tiles;
   let spriteSheet = tileMap.spriteSheet;
   for (let index = 0; i < tilesArray.length; index++){
@@ -149,26 +144,6 @@ Renderer.prototype.drawTiles = function(tileMap) = function(){
     let tileSprite = spriteSheet.getSprite(spriteIndexArray[0], spriteIndexArray[1]);
     this.drawSprite(tileSprite, pos_X, pos_Y);
   };
-};
-
-// Placeholder functions
-Renderer.prototype.test = function(data){
-  this.drawText(data.fps);
-  this.drawRect(0x66CCFF, 96, 96, 50, 50);
-  this.drawSprite(this.testAnim.getSprite(), 96, 96);
-  this.testAnim.nextFrame();
-};
-
-// For testing purposes. Should only run once.
-Renderer.prototype.testInit = function(){
-  let parent = this.parent;
-  // This is jo_the_pyro.png
-  let image = parent.getImage("jtp");
-  let imageURL = parent.imgLocation + "/" + image
-  let texture = this.getTexture(imageURL);
-  let jo = new SpriteSheet(imageURL, texture, 192, 96, 32);
-  let anim = parent.getLoadedAsset(parent.animKey).get("jtp_walk_right");
-  this.testAnim = new Animation("jtp", jo, anim);
 };
 
 /**

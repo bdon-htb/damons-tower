@@ -35,11 +35,14 @@ function Engine(htmlDOM){
   this.renderer = new Renderer(this);
   this.inputManager = new InputManager(this);
 
+  // Placeholder component - purely for testing purposes.
+  this.tester = new Tester(this);
+
 };
 
 Engine.prototype.draw = function(data){
   this.renderer.clear();
-  this.renderer.test(data);
+  this.tester.testDraw(data);
 };
 
 Engine.prototype.update = function(data){
@@ -64,7 +67,7 @@ Engine.prototype.run = function(data){
     // Set it so that when the textures finish loading, the state changes to "running."
     let callback = () => {
       this.stateMachine.changeState("running");
-      this.renderer.testInit();
+      this.tester.init();
     };
     this.loadAllTextures(callback);
   }
@@ -86,6 +89,9 @@ Engine.prototype.loadAllAssets = function(){
   this.assetLoader.getAsset(dataLocation + "/" + "image.json", true);
   // Load animation data.
   this.assetLoader.getAsset(dataLocation + "/" + "animations.json", true);
+
+  // Load TEST level data.
+  this.assetLoader.getAsset(dataLocation + "/" + "levels.json", true);
 };
 
 Engine.prototype.assetIsLoaded = function(id){

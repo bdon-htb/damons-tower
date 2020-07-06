@@ -1,6 +1,15 @@
 {
   "images": {
-    "jtp": "jo_the_pyro.png",
-    "testDungeon": "testDungeon.png"
+    "jtp": {
+      "name": "jo_the_pyro.png",
+      "width": 192,
+      "height": 96,
+      "spriteSize": 32},
+
+    "testDungeon": {
+      "name": "testDungeon.png",
+      "width": 32,
+      "height": 32,
+      "spriteSize": 32}
   }
 }

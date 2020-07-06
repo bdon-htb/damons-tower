@@ -51,19 +51,20 @@ Renderer.prototype.createTextStyles = function(){
 
 // Texture related methods.
 
-Renderer.prototype.loadTextures = function(imageArray, callback=function(){}){
-  let imgLocation = this.parent.imgLocation;
-  let imageURLArray = imageArray.map(x => imgLocation + "/" + x);
-  this._loadTextureArray(imageURLArray, callback);
+Renderer.prototype.loadTextures = function(imageMap, callback=function(){}){
+  let imageArray = Array.from(imageMap.keys());
+  this._loadTextureArray(imageArray, imageMap, callback);
 };
 
 // Recursion??? :O
 // Basically recursively loop through the array and load each image.
 // When all the loading is done. Fire off the callback.
-Renderer.prototype._loadTextureArray = function(imageURLArray, callback, i=0){
-  if(i < imageURLArray.length){
-    this.loader.add(imageURLArray[i]);
-    func = this._loadTextureArray(imageURLArray, callback, i + 1)
+Renderer.prototype._loadTextureArray = function(imageArray, imageMap, callback, i=0){
+  if(i < imageArray.length){
+    let id = imageArray[i];
+    let url = this.parent.imgLocation + "/" + imageMap.get(id).name
+    this.loader.add(url);
+    func = this._loadTextureArray(imageArray, imageMap, callback, i + 1)
     this.loader.onComplete.add(() => func);
   } else {
     this.loader.load();
@@ -88,6 +89,15 @@ Renderer.prototype.getTexture = function(imageURL, makeNew=true){
   };
   return texture;
 };
+
+// Generate a spritesheet from it's defined id in parent.assets.
+Renderer.prototype.getSheetFromId = function(id){
+  let parent = this.parent;
+  let image = parent.getImage(id);
+  let imageURL = parent.imgLocation + "/" + image.name;
+  let texture = this.getTexture(imageURL);
+  return new SpriteSheet(imageURL, texture, image.width, image.height, image.spriteSize);
+}
 
 // Drawing related methods.
 
@@ -132,13 +142,14 @@ Renderer.prototype.scaleSprite = function(sprite){
 };
 
 // TODO: Implement viewport support; for later.
-Renderer.prototype.drawTiles = function(tileMap){
+Renderer.prototype.drawTiles = function(scene){
+  let tileMap = scene.tileMap
   let tilesArray = tileMap.tiles;
-  let spriteSheet = tileMap.spriteSheet;
-  for (let index = 0; i < tilesArray.length; index++){
+  let spriteSheet = scene.spriteSheet;
+  for (let index = 0; index < tilesArray.length; index++){
     let coords = tileMap.convertPos(index); // Convert -> 2d;
-    let pos_X = coords[0] * spriteSheet.spriteSize;
-    let pos_Y = coords[1] * spriteSheet.spriteSize;
+    let pos_X = coords[0] * spriteSheet.spriteSize * this.parent.scale;
+    let pos_Y = coords[1] * spriteSheet.spriteSize * this.parent.scale;
 
     let spriteIndexArray = tileMap.getSpriteIndex(index);
     let tileSprite = spriteSheet.getSprite(spriteIndexArray[0], spriteIndexArray[1]);

@@ -6,17 +6,17 @@
 /**
  * Custom scene object. Will essentially represent a level in the game.
 */
-function Scene(sceneData){
+function Scene(parent, sceneData){
   this.name;
   this.spriteSheet; // spriteSheet of all the tiles in the scene.
   this.entities = [];
   this.tileMap;
-  this.parseData(sceneData);
+  this.parseData(parent, sceneData);
 };
 
-Scene.prototype.parseData = function(sceneData){
+Scene.prototype.parseData = function(parent, sceneData){
   this.name = sceneData.name;
-  this.spriteSheet = sceneData.spriteSheet;
+  this.spriteSheet = parent.renderer.getSheetFromId(sceneData.spriteSheet);
   this.tileMap = new TileMap(sceneData.width, sceneData.height, sceneData.tileData);
 };
 

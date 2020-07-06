@@ -13,7 +13,8 @@ function Engine(htmlDOM){
   this.context = htmlDOM
   this.windowWidth = 800;
   this.windowHeight = 600;
-  this.scale = 2; // Should be a multiple of two.
+  // Should be a multiple of two; determines sprite render size.
+  this.scale = 2;
   this.backgroundColor = 0xB8D5EE;
 
   // the image array in assets only stores links to images.
@@ -115,7 +116,7 @@ Engine.prototype.allAssetsLoaded = function(){
 Engine.prototype.loadAllTextures = function(callback){
   let imageMap = this.getLoadedAsset(this.imageKey);
   let imageArray = Array.from(imageMap.values());
-  this.renderer.loadTextures(imageArray, callback);
+  this.renderer.loadTextures(imageMap, callback);
 };
 
 // Get the image filename from its id in assets.

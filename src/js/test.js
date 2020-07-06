@@ -24,18 +24,17 @@ Tester.prototype.firstTestInit = function(){
   let parent = this.parent;
   let renderer = parent.renderer;
   // This is jo_the_pyro.png
-  let image = parent.getImage("jtp");
-  let imageURL = parent.imgLocation + "/" + image
-  let texture = renderer.getTexture(imageURL);
-  let jo = new SpriteSheet(imageURL, texture, 192, 96, 32);
+  let jo = renderer.getSheetFromId("jtp");
   let anim = parent.getLoadedAsset(parent.animKey).get("jtp_walk_right");
-  let tiles = parent.getLoadedAsset("levelData").get("testLevel");
+  let level = parent.getLoadedAsset("levelData").get("testLevel");
+  this.level = new Scene(parent, level);
   this.testAnim = new Animation("jtp", jo, anim);
 };
 
 Tester.prototype.firstTest = function(data){
   let parent = this.parent;
   let renderer = parent.renderer;
+  renderer.drawTiles(this.level);
   renderer.drawText(data.fps);
   renderer.drawRect(0x66CCFF, 96, 96, 64, 64);
   renderer.drawSprite(this.testAnim.getSprite(), 96, 96);

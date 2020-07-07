@@ -126,11 +126,11 @@ Renderer.prototype.drawRect = function(colour, x, y, width, height){
 
 // Draws sprite from spritesheet only!
 Renderer.prototype.drawSprite = function(sprite, x=0, y=0){
-  sprite.position.set(x, y)
   if(this.parent.scale > 1){
     let scaleFunc = this.scaleSprite.bind(this);
     sprite = scaleFunc(sprite);
   };
+  sprite.position.set(x, y);
   this.draw(sprite);
 };
 
@@ -176,6 +176,7 @@ SpriteSheet.prototype._getRectFromIndex = function(index_X, index_Y){
   size = this.spriteSize;
   let posX = index_X * size;
   let posY = index_Y * size;
+
   let rectangle = new PIXI.Rectangle(posX, posY, size, size);
   return rectangle;
 };

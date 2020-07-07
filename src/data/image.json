@@ -6,6 +6,12 @@
       "height": 96,
       "spriteSize": 32},
 
+    "player": {
+      "name": "swordbro.png",
+      "width": 256,
+      "height": 32,
+      "spriteSize": 32},
+
     "testDungeon": {
       "name": "testDungeon.png",
       "width": 32,

@@ -182,8 +182,9 @@ SpriteSheet.prototype._getRectFromIndex = function(index_X, index_Y){
 
 SpriteSheet.prototype.getSprite = function(index_X, index_Y){
   let rect = this._getRectFromIndex(index_X, index_Y);
-  this.texture.frame = rect;
-  return new PIXI.Sprite(this.texture);
+  let texture = new PIXI.Texture(this.texture);
+  texture.frame = rect;
+  return new PIXI.Sprite(texture);
 };
 
 /**

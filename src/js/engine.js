@@ -13,8 +13,8 @@ function Engine(htmlDOM){
   this.context = htmlDOM
   this.windowWidth = 800;
   this.windowHeight = 600;
-  // Should be a multiple of two; determines sprite render size.
-  this.scale = 2;
+  // Should be a whole number; determines sprite render size.
+  this.scale = 3;
   this.backgroundColor = 0xB8D5EE;
 
   // the image array in assets only stores links to images.

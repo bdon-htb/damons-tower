@@ -11,6 +11,7 @@ function Scene(parent, sceneData){
   this.spriteSheet; // spriteSheet of all the tiles in the scene.
   this.entities = [];
   this.tileMap;
+  this.camera = new Camera();
   this.parseData(parent, sceneData);
 };
 

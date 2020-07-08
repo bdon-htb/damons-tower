@@ -19,6 +19,7 @@ InputManager.prototype.addDevices = function(){
 };
 
 InputManager.prototype.captureInputs = function(clearFirst=true){
+  this.parent.context.focus();
   if (clearFirst === true) {
     this.clearEvents();
   };
@@ -61,6 +62,7 @@ Keyboard.prototype.captureInputs = function(){
   // Return a array of strings of only the keys pressed.
   return inputs;
 };
+
 Keyboard.prototype.addListeners = function(element){
   element.addEventListener("keydown", this.keyDownHandler.bind(this), false);
   element.addEventListener("keyup", this.keyUpHandler.bind(this), false);

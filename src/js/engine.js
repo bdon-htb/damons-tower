@@ -14,7 +14,7 @@ function Engine(htmlDOM){
   this.windowWidth = 800;
   this.windowHeight = 600;
   // Should be a whole number; determines sprite render size.
-  this.scale = 2;
+  this.scale = 3;
   this.backgroundColor = 0xB8D5EE;
 
   // the image array in assets only stores links to images.
@@ -49,6 +49,7 @@ Engine.prototype.draw = function(data){
 Engine.prototype.update = function(data){
   // console.log(this.inputManager.inputDevices)
   this.inputManager.captureInputs();
+  this.tester.testUpdate(data);
   //if(this.inputManager.events.size > 0){
     // console.log(this.inputManager.events.get("mouse"));
   // };

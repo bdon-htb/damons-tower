@@ -1,5 +1,5 @@
 /**
- * debug.js will be responsible for any and all testing.
+ * test.js will be responsible for any and all testing.
  * don't expect the cleanest code here.
 */
 
@@ -10,7 +10,8 @@ function Tester(parent){
 // This is where you set the tests for drawing to be ran.
 Tester.prototype.testDraw = function(data){
   // this.firstTest(data)
-  this.secondTest(data)
+  // this.secondTest(data)
+  this.thirdTest(data)
 };
 
 // This where you set the tests for updating to be ran.
@@ -22,9 +23,11 @@ Tester.prototype.testUpdate = function(data){
 // This is where you set the test inits to be ran.
 Tester.prototype.init = function(){
   // this.firstTestInit()
-  this.secondTestInit();
+  // this.secondTestInit();
+  this.thirdTestInit();
 };
 
+// First test focused on displaying a sprite.
 Tester.prototype.firstTestInit = function(){
   let parent = this.parent;
   let renderer = parent.renderer;
@@ -43,6 +46,8 @@ Tester.prototype.firstTest = function(data){
   this.testAnim.nextFrame();
 };
 
+// Second test focused on displaying tile/level information.
+// Player movement is now incompatible.
 Tester.prototype.secondTestInit = function(){
   let parent = this.parent;
   let renderer = parent.renderer;
@@ -69,6 +74,59 @@ Tester.prototype.secondTest = function(data){
   this.testAnim.nextFrame();
 };
 
+// Third test focuses on working with an entity like structure.
+Tester.prototype.thirdTestInit = function(){
+  let parent = this.parent;
+  let renderer = parent.renderer;
+  this.sceneManager = new SceneManager();
+  let level = parent.getLoadedAsset("levelData").get("testLevel");
+  level = new Scene(parent, level);
+  // Create player entity.
+  let spriteSheet = renderer.getSheetFromId("player");
+  let animation = parent.getLoadedAsset(parent.animKey).get("swordbro_idle");
+  animation = new Animation("player_idle", spriteSheet, animation);
+  let sprite = animation.getSprite();
+  let player = new Entity("player", sprite, "player", "idle", 96, 96);
+  level.addEntity(player);
+  level.setEntityAttribute("player", "animations", [animation]);
+  level.setEntityAttribute("player", "x", 96);
+  level.setEntityAttribute("player", "y", 96);
+  this.sceneManager.setScene(level);
+
+  this.leftPressed = false;
+  this.rightPressed = false;
+  this.upPressed = false;
+  this.downPressed = false;
+};
+
+Tester.prototype.thirdTest = function(data){
+  // Set aliases.
+  let parent = this.parent;
+  let renderer = parent.renderer;
+  let level = this.sceneManager.currentScene
+  let player = level.getEntity("player")
+  let sprite = level.getEntityAttribute("player", "sprite")
+  let posX = level.getEntityAttribute("player", "x")
+  let posY = level.getEntityAttribute("player", "y")
+
+  // Draw.
+  renderer.drawText(data.fps);
+  renderer.drawTiles(level);
+  renderer.drawSprite(sprite, posX, posY)
+
+  // Update.
+  let animationsArray = level.getEntityAttribute("player", "animations")
+  let animation = animationsArray[0];
+  animation.nextFrame()
+  sprite = animation.getSprite()
+  level.setEntityAttribute("player", "sprite", sprite)
+};
+
+Tester.prototype.createPlayer = function(){
+  let parent = this.parent
+  let renderer = parent.renderer
+}
+// Placeholder functions that track keypresses & player movement.
 Tester.prototype.checkPresses = function(){
   let parent = this.parent;
   if(parent.inputManager.events.has("keyboard") === true){
@@ -81,10 +139,14 @@ Tester.prototype.checkPresses = function(){
 };
 
 Tester.prototype.movePlayer = function(){
-  if(this.upPressed === true){this.playerY -= 5}
-  if(this.downPressed === true){this.playerY += 5}
-  if(this.rightPressed === true){this.playerX += 5}
-  if(this.leftPressed === true){this.playerX -= 5}
+  let level = this.sceneManager.currentScene
+  let player = level.getEntity("player")
+  let incrFunc = level.incrementEntityAttribute.bind(level)
+
+  if(this.upPressed === true){incrFunc("player", "y", -5)}
+  if(this.downPressed === true){incrFunc("player", "y", 5)}
+  if(this.rightPressed === true){incrFunc("player", "x", 5)}
+  if(this.leftPressed === true){incrFunc("player", "x", -5)}
   this.upPressed = false;
   this.downPressed = false;
   this.leftPressed = false;

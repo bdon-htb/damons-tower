@@ -4,7 +4,7 @@
       "name": "test",
       "spriteSheet": "testDungeon",
       "width": 12,
-      "height": 12,
+      "height": 7,
       "tileData": [
         "011-WA", "011-WA", "011-WA", "011-WA", "011-WA", "011-WA", "011-WA", "011-WA", "011-WA", "011-WA", "011-WA", "011-WA",
         "011-WA", "020-FL", "030-FL", "030-FL", "030-FL", "030-FL", "030-FL", "030-FL", "030-FL", "030-FL", "040-FL", "011-WA",

@@ -4,12 +4,28 @@
 */
 
 /**
+ * Custom entity object. for the purpose of this game this will be the base
+ * of the player, enemy, items, doors, switches, etc.
+*/
+function Entity(id, sprite, type, state, x, y){
+  this.id = id;
+  // Default attributes.
+  this.attributes = {
+    "sprite": sprite,
+    "type": type,
+    "state": state,
+    "x": x,
+    "y": y
+  };
+};
+
+/**
  * Custom scene object. Will essentially represent a level in the game.
 */
 function Scene(parent, sceneData){
   this.name;
   this.spriteSheet; // spriteSheet of all the tiles in the scene.
-  this.entities = [];
+  this.entities = new Map();
   this.tileMap;
   this.camera = new Camera();
   this.parseData(parent, sceneData);
@@ -21,7 +37,52 @@ Scene.prototype.parseData = function(parent, sceneData){
   this.tileMap = new TileMap(sceneData.width, sceneData.height, sceneData.tileData);
 };
 
-function SceneManager(){};
+Scene.prototype.addEntity = function(entity){
+  this.entities.set(entity.id, entity);
+};
+
+Scene.prototype.getEntity = function(id){
+  if(this.entities.has(id) === true){
+    return this.entities.get(id);
+  } else console.error(`Error trying to get entity: ${id} does not exist.`);
+};
+
+Scene.prototype.getEntityAttribute = function(id, key){
+  let entity = this.getEntity(id);
+  return entity.attributes[key];
+};
+// Function doesn't check if it does or does not already exists so keep that in mind.
+Scene.prototype.setEntityAttribute = function(id, key, value){
+  let entity = this.getEntity(id);
+  entity.attributes[key] = value;
+};
+
+// If the attribute is a value,
+Scene.prototype.incrementEntityAttribute = function(id, key, amount=1){
+  let entity = this.getEntity(id);
+  let value = entity.attributes[key];
+  if(typeof value === "number"){
+    value += amount;
+    this.setEntityAttribute(id, key, value)
+  } else console.log(`Error while increasing an entity's attribute:
+  was told to increment ${value}, but it's not a number. id: ${id}. key: ${key}`);
+};
+
+/**
+ * Custom scene manager object. Will be responsible for transition betweening
+ * through different scenes.
+*/
+function SceneManager(){
+  this.currentScene;
+  this.sceneHistory = [];
+};
+
+SceneManager.prototype.setScene = function(newScene){
+  if(this.currentScene !== undefined){
+    this.sceneHistory.push(newScene);
+  };
+  this.currentScene = newScene;
+};
 
 /**
  * Custom tilemap object. Contains a 1D array of tile information,
@@ -109,7 +170,12 @@ TileMap.prototype.convertCoordsToIndex = function(index_X, index_Y){
 };
 
 // TODO: Implement.
+/*
+ * Simple camera; will move based on what it's tracking.
+*/
 function Camera(){
-  this.viewHeight;
+  this.centerX;
+  this.centerY;
   this.viewWidth;
+  this.viewHeight;
 };

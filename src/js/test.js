@@ -166,7 +166,7 @@ Tester.prototype.fourthTest = function(data){
   let relPosArray = camera.getRelative(posX, posY)
   relPosX = relPosArray[0];
   relPosY = relPosArray[1];
-  camera.center(posX, posY, sprite.height);
+  camera.center(posX, posY, sprite.height * parent.scale);
 
   let camRelPosArray = camera.getRelative(camera.centerX, camera.centerY)
 
@@ -174,15 +174,17 @@ Tester.prototype.fourthTest = function(data){
   // renderer.drawTiles(level);
   renderer.drawInView(level)
   renderer.drawText(`${camera.centerX}, ${camera.centerY}`);
-  renderer.drawSprite(sprite, relPosX - (sprite.height / 2), relPosY - (sprite.height / 2))
+  renderer.drawSprite(sprite, relPosX, relPosY)
 
   // Draw Camera Lines
   // renderer.drawRect(0x66CCFF, 0, 0, 32, 32);
   // renderer.drawRect(0x66CCFF, camera.topLeft[0], camera.topLeft[1], 96, 96);
+  /*
   renderer.drawLine(0x66CCFF, camRelPosArray[0] - 96, camRelPosArray[1],
     camRelPosArray[0] + 96, camRelPosArray[1], 5);
   renderer.drawLine(0x66CCFF, camRelPosArray[0], camRelPosArray[1] - 96,
     camRelPosArray[0], camRelPosArray[1] + 96, 5);
+  */
 
   // Update.
   let animationsArray = level.getEntityAttribute("player", "animations")

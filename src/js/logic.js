@@ -205,6 +205,7 @@ Camera.prototype.setPos = function(newX, newY){
 };
 
 // Center the camera based on the location of a source sprite.
+// Centers on the CENTER of the source sprite..
 Camera.prototype.center = function(sourceX, sourceY, sourceSize){
   this.centerX = sourceX + (sourceSize / 2);
   this.centerY = sourceY + (sourceSize / 2);

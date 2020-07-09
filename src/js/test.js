@@ -11,7 +11,8 @@ function Tester(parent){
 Tester.prototype.testDraw = function(data){
   // this.firstTest(data)
   // this.secondTest(data)
-  this.thirdTest(data)
+  // this.thirdTest(data)
+  this.fourthTest(data)
 };
 
 // This where you set the tests for updating to be ran.
@@ -24,7 +25,8 @@ Tester.prototype.testUpdate = function(data){
 Tester.prototype.init = function(){
   // this.firstTestInit()
   // this.secondTestInit();
-  this.thirdTestInit();
+  // this.thirdTestInit();
+  this.fourthTestInit();
 };
 
 // First test focused on displaying a sprite.
@@ -122,6 +124,72 @@ Tester.prototype.thirdTest = function(data){
   level.setEntityAttribute("player", "sprite", sprite)
 };
 
+// Fourth test focuses on camera functionality.
+Tester.prototype.fourthTestInit = function(){
+  let parent = this.parent;
+  let scale = parent.scale
+  let spawnpoint = [0, 0]
+  let renderer = parent.renderer;
+  this.sceneManager = new SceneManager();
+  let level = parent.getLoadedAsset("levelData").get("testLevel");
+  level = new Scene(parent, level);
+  level.camera.setup(spawnpoint[0], spawnpoint[1],
+    parent.windowWidth, parent.windowHeight);
+  // Create player entity.
+  let spriteSheet = renderer.getSheetFromId("player");
+  let animation = parent.getLoadedAsset(parent.animKey).get("swordbro_idle");
+  animation = new Animation("player_idle", spriteSheet, animation);
+  let sprite = animation.getSprite();
+  let player = new Entity("player", sprite, "player", "idle", spawnpoint[0], spawnpoint[1]);
+  level.addEntity(player);
+  level.setEntityAttribute("player", "animations", [animation]);
+  level.setEntityAttribute("player", "x", spawnpoint[0]);
+  level.setEntityAttribute("player", "y", spawnpoint[1]);
+  this.sceneManager.setScene(level);
+
+  this.leftPressed = false;
+  this.rightPressed = false;
+  this.upPressed = false;
+  this.downPressed = false;
+};
+
+Tester.prototype.fourthTest = function(data){
+  // Set aliases.
+  let parent = this.parent;
+  let renderer = parent.renderer;
+  let level = this.sceneManager.currentScene
+  let camera = level.camera
+  let player = level.getEntity("player")
+  let sprite = level.getEntityAttribute("player", "sprite")
+  let posX = level.getEntityAttribute("player", "x")
+  let posY = level.getEntityAttribute("player", "y")
+  let relPosArray = camera.getRelative(posX, posY)
+  relPosX = relPosArray[0];
+  relPosY = relPosArray[1];
+  camera.center(posX, posY, sprite.height);
+
+  // Draw.
+  // renderer.drawTiles(level);
+  renderer.drawInView(level)
+  renderer.drawText(`${camera.centerX - (96 / 2)}, ${camera.centerY - (96 / 2)}`);
+  renderer.drawSprite(sprite, camera.centerX - (96 / 2), camera.centerY - (96 / 2))
+
+  // Draw Camera Lines
+  renderer.drawRect(0x66CCFF, camera.topLeft[0], camera.topLeft[1], 800, 600);
+  renderer.drawRect(0x66CCFF, camera.topLeft[0], camera.topLeft[1], 96, 96);
+  renderer.drawLine(0x66CCFF, camera.centerX - 96, camera.centerY,
+    camera.centerX + 96, camera.centerY, 5);
+  renderer.drawLine(0x66CCFF, camera.centerX, camera.centerY - 96,
+    camera.centerX, camera.centerY + 96, 5);
+
+  // Update.
+  let animationsArray = level.getEntityAttribute("player", "animations")
+  let animation = animationsArray[0];
+  animation.nextFrame()
+  sprite = animation.getSprite()
+  level.setEntityAttribute("player", "sprite", sprite)
+};
+
 Tester.prototype.createPlayer = function(){
   let parent = this.parent
   let renderer = parent.renderer
@@ -142,11 +210,12 @@ Tester.prototype.movePlayer = function(){
   let level = this.sceneManager.currentScene
   let player = level.getEntity("player")
   let incrFunc = level.incrementEntityAttribute.bind(level)
+  let velocity = 5
 
-  if(this.upPressed === true){incrFunc("player", "y", -5)}
-  if(this.downPressed === true){incrFunc("player", "y", 5)}
-  if(this.rightPressed === true){incrFunc("player", "x", 5)}
-  if(this.leftPressed === true){incrFunc("player", "x", -5)}
+  if(this.upPressed === true){incrFunc("player", "y", -velocity)}
+  if(this.downPressed === true){incrFunc("player", "y", velocity)}
+  if(this.rightPressed === true){incrFunc("player", "x", velocity)}
+  if(this.leftPressed === true){incrFunc("player", "x", -velocity)}
   this.upPressed = false;
   this.downPressed = false;
   this.leftPressed = false;

@@ -28,6 +28,7 @@ function Scene(parent, sceneData){
   this.entities = new Map();
   this.tileMap;
   this.camera = new Camera();
+  this.coords; // represents the "world" or true coordinates of everything.
   this.parseData(parent, sceneData);
 };
 
@@ -57,7 +58,7 @@ Scene.prototype.setEntityAttribute = function(id, key, value){
   entity.attributes[key] = value;
 };
 
-// If the attribute is a value,
+// If the attribute is a number, increase/decrease the value by the amount.
 Scene.prototype.incrementEntityAttribute = function(id, key, amount=1){
   let entity = this.getEntity(id);
   let value = entity.attributes[key];
@@ -93,7 +94,6 @@ SceneManager.prototype.setScene = function(newScene){
    "000-FL", "000-FL", "000-FL",
    "000-FL", "000-FL", "000-FL",
    "000-FL", "000-FL", "000-FL"]
- * Note: tile data arrays must be square based!
 */
 function TileMap(width, height, tiledata){
   this.width = width,
@@ -172,10 +172,56 @@ TileMap.prototype.convertCoordsToIndex = function(index_X, index_Y){
 // TODO: Implement.
 /*
  * Simple camera; will move based on what it's tracking.
+ * NOTE: ALL coordinates will be relative to the SCENE.
 */
 function Camera(){
+  this.topLeft; // An ARRAY representing the x and y position of the camera viww's topelft.
   this.centerX;
   this.centerY;
   this.viewWidth;
   this.viewHeight;
+};
+
+// For initializing the camera.
+Camera.prototype.setup = function(centerX, centerY, viewWidth, viewHeight){
+  this.centerX = centerX;
+  this.centerY = centerY;
+  this.viewWidth = viewWidth;
+  this.viewHeight = viewHeight;
+  this.calculateTopLeft();
+};
+
+Camera.prototype.calculateTopLeft = function(){
+  let x = this.centerX - (this.viewWidth / 2);
+  let y = this.centerY - (this.viewHeight / 2);
+  this.topLeft = [x, y];
+};
+
+// Change the position of the camera's CENTER.
+Camera.prototype.setPos = function(newX, newY){
+  this.centerX = newX;
+  this.centerY = newY;
+  this.calculateTopLeft();
+};
+
+// Center the camera based on the location of a source sprite.
+Camera.prototype.center = function(sourceX, sourceY, sourceSize){
+  this.centerX = sourceX + (sourceSize / 2);
+  this.centerY = sourceY + (sourceSize / 2);
+  this.calculateTopLeft();
+};
+
+Camera.prototype._isInBetween = function(value, lower, upper){
+  return value >= lower  && value <= upper;
+};
+
+// Check if position is in view of camera.
+Camera.prototype.inView = function(x, y){
+  return (this._isInBetween(x, this.topLeft[0], this.topLeft[0] + this.viewWidth)
+  && this._isInBetween(y, this.topLeft[1], this.topLeft[1] + this.viewHeight));
+};
+
+// Get the relative position based on given coordinates.
+Camera.prototype.getRelative = function(trueX, trueY){
+  return [trueX - this.centerX, trueY - this.centerY];
 };

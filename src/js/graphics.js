@@ -118,11 +118,19 @@ Renderer.prototype.drawText = function(msg, style=this.textStyles.debug, x=0, y=
 
 Renderer.prototype.drawRect = function(colour, x, y, width, height){
   let rectangle = new PIXI.Graphics();
-  rectangle.beginFill(0x66CCFF);
+  rectangle.beginFill(colour);
   rectangle.drawRect(x, y, width, height);
   rectangle.endFill();
   this.draw(rectangle);
 };
+
+Renderer.prototype.drawLine = function(colour, startX, startY, endX, endY, thickness=1){
+  let line = new PIXI.Graphics();
+  line.lineStyle(thickness, colour, 1);
+  line.moveTo(startX, startY);
+  line.lineTo(endX, endY);
+  this.draw(line);
+}
 
 // Draws sprite from spritesheet only!
 Renderer.prototype.drawSprite = function(sprite, x=0, y=0){
@@ -154,6 +162,27 @@ Renderer.prototype.drawTiles = function(scene){
     let spriteIndexArray = tileMap.getSpriteIndex(index);
     let tileSprite = spriteSheet.getSprite(spriteIndexArray[0], spriteIndexArray[1]);
     this.drawSprite(tileSprite, pos_X, pos_Y);
+  };
+};
+
+Renderer.prototype.drawInView = function(scene){
+  let tileMap = scene.tileMap;
+  let tilesArray = tileMap.tiles;
+  let spriteSheet = scene.spriteSheet;
+  let camera = scene.camera;
+  for (let index = 0; index < tilesArray.length; index++){
+    let coords = tileMap.convertPos(index); // Convert -> 2d;
+    let pos_X = coords[0] * spriteSheet.spriteSize * this.parent.scale;
+    let pos_Y = coords[1] * spriteSheet.spriteSize * this.parent.scale;
+
+    if(camera.inView(pos_X, pos_Y) === true){
+      let spriteIndexArray = tileMap.getSpriteIndex(index);
+      let tileSprite = spriteSheet.getSprite(spriteIndexArray[0], spriteIndexArray[1]);
+      let newPosArray = camera.getRelative(pos_X, pos_Y);
+      pos_X = newPosArray[0];
+      pos_Y = newPosArray[1];
+      this.drawSprite(tileSprite, pos_X, pos_Y);
+    };
   };
 };
 

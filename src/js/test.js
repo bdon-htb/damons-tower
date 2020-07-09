@@ -168,19 +168,21 @@ Tester.prototype.fourthTest = function(data){
   relPosY = relPosArray[1];
   camera.center(posX, posY, sprite.height);
 
+  let camRelPosArray = camera.getRelative(camera.centerX, camera.centerY)
+
   // Draw.
   // renderer.drawTiles(level);
   renderer.drawInView(level)
-  renderer.drawText(`${camera.centerX - (96 / 2)}, ${camera.centerY - (96 / 2)}`);
-  renderer.drawSprite(sprite, camera.centerX - (96 / 2), camera.centerY - (96 / 2))
+  renderer.drawText(`${camera.centerX}, ${camera.centerY}`);
+  renderer.drawSprite(sprite, relPosX - (sprite.height / 2), relPosY - (sprite.height / 2))
 
   // Draw Camera Lines
-  renderer.drawRect(0x66CCFF, camera.topLeft[0], camera.topLeft[1], 800, 600);
-  renderer.drawRect(0x66CCFF, camera.topLeft[0], camera.topLeft[1], 96, 96);
-  renderer.drawLine(0x66CCFF, camera.centerX - 96, camera.centerY,
-    camera.centerX + 96, camera.centerY, 5);
-  renderer.drawLine(0x66CCFF, camera.centerX, camera.centerY - 96,
-    camera.centerX, camera.centerY + 96, 5);
+  // renderer.drawRect(0x66CCFF, 0, 0, 32, 32);
+  // renderer.drawRect(0x66CCFF, camera.topLeft[0], camera.topLeft[1], 96, 96);
+  renderer.drawLine(0x66CCFF, camRelPosArray[0] - 96, camRelPosArray[1],
+    camRelPosArray[0] + 96, camRelPosArray[1], 5);
+  renderer.drawLine(0x66CCFF, camRelPosArray[0], camRelPosArray[1] - 96,
+    camRelPosArray[0], camRelPosArray[1] + 96, 5);
 
   // Update.
   let animationsArray = level.getEntityAttribute("player", "animations")

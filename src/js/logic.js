@@ -212,7 +212,7 @@ Camera.prototype.center = function(sourceX, sourceY, sourceSize){
 };
 
 Camera.prototype._isInBetween = function(value, lower, upper){
-  return value >= lower  && value <= upper;
+  return lower <= value <= upper;
 };
 
 // Check if position is in view of camera.
@@ -223,5 +223,5 @@ Camera.prototype.inView = function(x, y){
 
 // Get the relative position based on given coordinates.
 Camera.prototype.getRelative = function(trueX, trueY){
-  return [trueX - this.centerX, trueY - this.centerY];
+  return [trueX - this.topLeft[0], trueY - this.topLeft[1]];
 };

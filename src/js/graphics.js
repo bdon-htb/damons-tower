@@ -150,6 +150,7 @@ Renderer.prototype.scaleSprite = function(sprite){
 };
 
 // TODO: Implement viewport support; for later.
+/* Currently obsolete.
 Renderer.prototype.drawTiles = function(scene){
   let tileMap = scene.tileMap
   let tilesArray = tileMap.tiles;
@@ -164,6 +165,7 @@ Renderer.prototype.drawTiles = function(scene){
     this.drawSprite(tileSprite, pos_X, pos_Y);
   };
 };
+*/
 
 Renderer.prototype.drawInView = function(scene){
   let tileMap = scene.tileMap;

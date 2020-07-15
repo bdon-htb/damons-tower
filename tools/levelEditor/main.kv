@@ -1,3 +1,6 @@
+# Generic custom widgets
+<CustomSpinner>:
+
 # Level Editor specific widgets
 <MainWindow>:
   orientation: 'vertical'
@@ -12,26 +15,19 @@
 
 <FileMenu>:
   orientation: 'horizontal'
-  Button:
+  button_size: (50, 50)
+  CustomSpinner:
+    size_hint: 0.1, 1
     text: 'File'
-    on_release: root.filedropdown.open(self)
-  Button:
+    values: 'New', 'Open', 'Save', 'Save as'
+    methods: {'New': root.new_file}
+  CustomSpinner:
+    size_hint: 0.1, 1
     text: 'Edit'
-  Button:
-    text: 'View'
-
-<FileDropDown>:
-  Button:
-    text: 'My first Item'
-    size_hint_y: None
-    height: 44
-    on_release: root.select('item1')
+    values: 'Undo', 'Redo', 'Resize Map'
+  Spinner:
+    size_hint: 0.1, 1
+    text_autoupdate: True
+    values: 'Array View', 'Tileset View'
   Label:
-    text: 'Unselectable item'
-    size_hint_y: None
-    height: 44
-  Button:
-    text: 'My second Item'
-    size_hint_y: None
-    height: 44
-    on_release: root.select('item2')
+    size_hint: 0.7, 1

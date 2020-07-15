@@ -1,3 +1,9 @@
+#:import utils kivy.utils
+# Primitives
+<Spinner>:
+  size_hint: None, None
+  background_color: utils.get_color_from_hex('#0097A7')
+
 # Generic custom widgets
 <CustomSpinner>:
 
@@ -15,19 +21,19 @@
 
 <FileMenu>:
   orientation: 'horizontal'
-  button_size: (50, 50)
+  size_hint: None, None
+  size: root.size[0], 75
+  button_size: 100, self.size[1]
   CustomSpinner:
-    size_hint: 0.1, 1
+    size: root.button_size
     text: 'File'
     values: 'New', 'Open', 'Save', 'Save as'
     methods: {'New': root.new_file}
   CustomSpinner:
-    size_hint: 0.1, 1
+    size: root.button_size
     text: 'Edit'
     values: 'Undo', 'Redo', 'Resize Map'
   Spinner:
-    size_hint: 0.1, 1
+    size: root.button_size
     text_autoupdate: True
     values: 'Array View', 'Tileset View'
-  Label:
-    size_hint: 0.7, 1

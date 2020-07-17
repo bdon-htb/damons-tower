@@ -16,8 +16,8 @@ Menu.prototype.addEntity(entity){
   if(typeof entity === "array"){
     entity.forEach(e => this.entities.push(e));
   } else if(entity === undefined){
-    console.error(`Tried adding an undefined object to the menu! Menu name: ${this.name}`)
-  } else this.entities.push(entity)
+    console.error(`Tried adding an undefined object to the menu! Menu name: ${this.name}`);
+  } else this.entities.push(entity);
 };
 
 function GridLayout(rows, columns){

@@ -156,6 +156,10 @@ Mouse.prototype.removeListeners = function(element){
   element.addEventListener("contextmenu", this.disableDefault.bind(this), false);
 };
 
+Mouse.prototype.getCoords = function(){
+  return [this.x, this.y]
+}
+
 Mouse.prototype._updateCoords = function(x, y){
   this.x = x;
   this.y = y;

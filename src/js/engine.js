@@ -94,6 +94,9 @@ Engine.prototype.loadAllAssets = function(){
 
   // Load TEST level data.
   this.assetLoader.getAsset(dataLocation + "/" + "levels.json", true);
+
+  // Load mm.xml
+  this.assetLoader.getAsset(dataLocation + "/" + "menus/mm.xml", true);
 };
 
 Engine.prototype.assetIsLoaded = function(id){
@@ -148,10 +151,14 @@ function AssetLoader(parent){
 // Method has the option to immediately load the asset into the game.
 AssetLoader.prototype.getAsset = function(url, load=false){
   let loadFunc;
-  if (url.endsWith('.json')){
-    // Have to do bind for this keyword to be preserved.
-    loadFunc = this.loadJson.bind(this);
+  let loadMethods = {
+    '.json': this.loadJson.bind(this), // Have to do bind for this keyword to be preserved.
+    '.xml': this.loadXML.bind(this)};
+
+  for(const [fileExt, method] of Object.entries(loadMethods)){
+    if(url.endsWith(fileExt)){loadFunc = method};
   };
+
   let req = $.get(url);
 
   // If the request fails...
@@ -173,6 +180,13 @@ AssetLoader.prototype.loadJson = function(data, success){
     this.parent.assets.set(key, assetMap);
   });
 };
+
+// TODO: Implement
+AssetLoader.prototype.loadXML = function(data, success){
+  console.log(data.children[0].nodeName)
+}
+
+AssetLoader.prototype.loadMenu = function(data, success){}
 
 function StateMachine(parent){
   this.parent = parent;

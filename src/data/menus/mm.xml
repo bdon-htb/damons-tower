@@ -8,14 +8,14 @@
     <cols>3</cols>
   </header>
   <menu>
-    <label row="1", col="1">
+    <label row="1" col="1">
       <text>js-roguelite</text>
     </label>
-    <button row="1", col="1">
+    <button row="1" col="1">
       <text>Play</text>
       <callback>startGame</callback>
     </button>
-    <label row="2", col="2">
+    <label row="2" col="2">
       <text>by Brandon Phillips.</text>
     </label>
   </menu>

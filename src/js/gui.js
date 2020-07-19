@@ -20,9 +20,11 @@ Menu.prototype.addEntity(entity){
   } else this.entities.push(entity);
 };
 
-function GridLayout(rows, columns){
-  this.rows = rows;
-  this.columns = columns;
+function GridLayout(parent, rows, columns){
+  this.parent = parent; // parent menu.
+  this.rows = rows; // number of rows.
+  this.columns = columns; // number of columns
+  this.cells = new Map(); // grid cell data.
 };
 
 function Label(text, style=undefined){
@@ -30,6 +32,7 @@ function Label(text, style=undefined){
   this.textStyle = style;
   thix.x;
   this.y;
+  this.attributes = new Map();
 };
 
 function Button(text, callback, style=undefined){
@@ -38,6 +41,7 @@ function Button(text, callback, style=undefined){
   this.textStyle = style;
   thix.x;
   this.y;
+  this.attributes = new Map();
   this.bgColour;
   this.borderColour;
 };

@@ -235,7 +235,7 @@ function Animation(id, spriteSheet, animationData){
   this.defaultSpeed = 8; // Avoid changing this value as much as possible.
   this.speed; // Frames it takes to reach the next animation frame.
   this.type;
-  this.counter = 0 // A counter that keeps track of the frames while the animation is active.
+  this.counter = 0; // A counter that keeps track of the frames while the animation is active.
 
   this.parseData(animationData);
 };

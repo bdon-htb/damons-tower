@@ -5,14 +5,22 @@
 /**
  * A menu class.
 */
-function Menu(name, layout, entities=[]){
-  this.name = name;
-  this.layout = layout;
-  this.entities = [];
+function Menu(data){
+  this.name;
+  this.layout;
+  this.entities = new Map();
+
+  this.parseData(data);
+};
+
+// Takes in an xml file and changes the menu object accordingly.
+Menu.prototype.parseData = function(data){
+  fileTag = data.children[0];
+  headerTag = fileTag.children[0];
 };
 
 // Add an object to this.entities; accepts a list of objects or a single object.
-Menu.prototype.addEntity(entity){
+Menu.prototype.addEntity = function(entity){
   if(typeof entity === "array"){
     entity.forEach(e => this.entities.push(e));
   } else if(entity === undefined){

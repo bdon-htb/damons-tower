@@ -23,8 +23,10 @@ function Engine(htmlDOM){
   this.assets = new Map();
   // Key in this.assets that contains maps of image urls.
   this.imageKey = "images";
-  // Key in this.assets that contains maps of animation data.
+  // contains maps of animation data.
   this.animKey = "animationData";
+  // contains urls to menu data.
+  this.levelKey = "levelData";
 
   // AssetLoader variables.
   this.dataLocation = "data";
@@ -106,7 +108,8 @@ Engine.prototype.assetIsLoaded = function(id){
 Engine.prototype.allAssetsLoaded = function(){
   let assetsKeys = [
     this.imageKey,
-    this.animKey
+    this.animKey,
+    this.levelKey
   ];
 
   for(const key of assetsKeys){
@@ -183,10 +186,53 @@ AssetLoader.prototype.loadJson = function(data, success){
 
 // TODO: Implement
 AssetLoader.prototype.loadXML = function(data, success){
-  console.log(data.children[0].nodeName)
-}
+  if(this._verifyXML(data) === true){
+    switch(this._getXMLType(data)){
+      case "menu":
+        this.loadMenu(data);
+    };
+  };
+};
 
-AssetLoader.prototype.loadMenu = function(data, success){}
+// Note: All accepted xmls for the engine must have a <header> within the <file>
+AssetLoader.prototype._verifyXML = function(data){
+  let fileTag = data.children[0];
+  let headerTag = fileTag.children[0];
+
+  if(fileTag.localName === "file" && headerTag.localName === "header"){
+    return true;
+  } else {
+    console.error(`Error verifying XML file.` +
+      ` Detected fileTag: ${data.children[0].localName}.` +
+      ` Detected headerTag: ${data.children[0].children[0].localName}`);
+    return false;
+  };
+};
+
+// Assumes the data is already verified.
+AssetLoader.prototype._getXMLType = function(data){
+  let headerTag = data.children[0].children[0];
+  let headerChildren = this._getXMLChildren(headerTag);
+  if(headerChildren.has("type")){
+    return headerChildren.get("type").innerHTML; // If it's anything other than raw text it might cause problems.
+  } else console.error(`XML file's header has no type declared. Header: ${headerTag}`);
+};
+
+// Puts all the xml children one level under into a map.
+AssetLoader.prototype._getXMLChildren = function(tag){
+  let children = new Map();
+  for(const child of tag.children){
+    children.set(child.localName, child);
+  };
+  return children;
+};
+
+AssetLoader.prototype.loadMenu = function(data, success){
+  // TODO: Fix; the keyword this is being carried over from the bind I think.
+  // But in order for the constructor to work this needs to refer to the Menu and
+  // not the window.
+  let m = Menu(data);
+}
 
 function StateMachine(parent){
   this.parent = parent;

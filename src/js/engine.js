@@ -179,8 +179,10 @@ Engine.prototype.getXMLChildren = function(tag){
   };
   return children;
 };
+
 /**
- * Custom loader. Is responsible for loading data file assets.
+ * Custom asset loader. Is responsible for loading data file assets
+ * into the game.
 */
 function AssetLoader(parent){
   this.parent = parent;
@@ -224,17 +226,25 @@ AssetLoader.prototype.loadXML = function(data, success){
   let verifyXML = this.parent.verifyXML;
   let getXMLType = this.parent.getXMLType.bind(this.parent);
   if(verifyXML(data) === true){
-    switch(getXMLType(data)){
+    let type = getXMLType(data);
+    switch(type){
       case "menu":
         this.loadMenu(data);
+        break;
+      default:
+        console.error(`Error loading an XML file. Not a valid type! Detected type: ${type}. File: ${data}`);
     };
   };
 };
 
 AssetLoader.prototype.loadMenu = function(data, success){
-  let m = new Menu(data);
-}
+  let m = new Menu(this.parent, data);
+};
 
+/**
+ * Custom state machine class. Is responsible for chaning and keeping track
+ * of ENGINE state.
+*/
 function StateMachine(parent){
   this.parent = parent;
   // A lot of the states are currently placeholder. Will be adapted as needed.

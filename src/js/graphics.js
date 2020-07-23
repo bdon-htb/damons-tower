@@ -193,6 +193,8 @@ Renderer.prototype.drawInView = function(scene){
  * single sprites from a larger sheet.
  * This class will assume that an individual sprite's height = width.
  */
+ // TODO: Constantly creating a texture is likely responsible for the game using a lot of memory.
+ // Find a way for proper texture reuse and/or destruction to save memory.
 function SpriteSheet(imageURL, texture, sheetWidth, sheetHeight, spriteSize){
   this.id = imageURL;
   this.texture = texture

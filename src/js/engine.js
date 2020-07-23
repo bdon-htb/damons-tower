@@ -144,6 +144,41 @@ Engine.prototype.getLoadedAsset = function(key){
   };
   return this.assets.get(key);
 }
+
+// File related methods.
+
+// Note: All accepted xmls for the engine must have a <header> within the <file>
+Engine.prototype.verifyXML = function(data){
+  let fileTag = data.children[0];
+  let headerTag = fileTag.children[0];
+
+  if(fileTag.localName === "file" && headerTag.localName === "header"){
+    return true;
+  } else {
+    console.error(`Error verifying XML file.` +
+      ` Detected fileTag: ${data.children[0].localName}.` +
+      ` Detected headerTag: ${data.children[0].children[0].localName}`);
+    return false;
+  };
+};
+
+// Assumes the data is already verified.
+Engine.prototype.getXMLType = function(data){
+  let headerTag = data.children[0].children[0];
+  let headerChildren = this.getXMLChildren(headerTag);
+  if(headerChildren.has("type")){
+    return headerChildren.get("type").innerHTML; // If it's anything other than raw text it might cause problems.
+  } else console.error(`XML file's header has no type declared. Header: ${headerTag}`);
+};
+
+// Puts all the xml children one level under into a map.
+Engine.prototype.getXMLChildren = function(tag){
+  let children = new Map();
+  for(const child of tag.children){
+    children.set(child.localName, child);
+  };
+  return children;
+};
 /**
  * Custom loader. Is responsible for loading data file assets.
 */
@@ -186,52 +221,18 @@ AssetLoader.prototype.loadJson = function(data, success){
 
 // TODO: Implement
 AssetLoader.prototype.loadXML = function(data, success){
-  if(this._verifyXML(data) === true){
-    switch(this._getXMLType(data)){
+  let verifyXML = this.parent.verifyXML;
+  let getXMLType = this.parent.getXMLType.bind(this.parent);
+  if(verifyXML(data) === true){
+    switch(getXMLType(data)){
       case "menu":
         this.loadMenu(data);
     };
   };
 };
 
-// Note: All accepted xmls for the engine must have a <header> within the <file>
-AssetLoader.prototype._verifyXML = function(data){
-  let fileTag = data.children[0];
-  let headerTag = fileTag.children[0];
-
-  if(fileTag.localName === "file" && headerTag.localName === "header"){
-    return true;
-  } else {
-    console.error(`Error verifying XML file.` +
-      ` Detected fileTag: ${data.children[0].localName}.` +
-      ` Detected headerTag: ${data.children[0].children[0].localName}`);
-    return false;
-  };
-};
-
-// Assumes the data is already verified.
-AssetLoader.prototype._getXMLType = function(data){
-  let headerTag = data.children[0].children[0];
-  let headerChildren = this._getXMLChildren(headerTag);
-  if(headerChildren.has("type")){
-    return headerChildren.get("type").innerHTML; // If it's anything other than raw text it might cause problems.
-  } else console.error(`XML file's header has no type declared. Header: ${headerTag}`);
-};
-
-// Puts all the xml children one level under into a map.
-AssetLoader.prototype._getXMLChildren = function(tag){
-  let children = new Map();
-  for(const child of tag.children){
-    children.set(child.localName, child);
-  };
-  return children;
-};
-
 AssetLoader.prototype.loadMenu = function(data, success){
-  // TODO: Fix; the keyword this is being carried over from the bind I think.
-  // But in order for the constructor to work this needs to refer to the Menu and
-  // not the window.
-  let m = Menu(data);
+  let m = new Menu(data);
 }
 
 function StateMachine(parent){

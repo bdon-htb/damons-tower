@@ -17,6 +17,7 @@ function Menu(data){
 Menu.prototype.parseData = function(data){
   fileTag = data.children[0];
   headerTag = fileTag.children[0];
+  console.log(headerTag)
 };
 
 // Add an object to this.entities; accepts a list of objects or a single object.

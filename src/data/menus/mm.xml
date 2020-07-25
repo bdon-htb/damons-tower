@@ -3,7 +3,7 @@
   <header>
     <type>menu</type>
     <name>mainMenu</name>
-    <layout>gridlayout</layout>
+    <layout>gridLayout</layout>
     <rows>3</rows>
     <cols>3</cols>
   </header>

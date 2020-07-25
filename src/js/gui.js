@@ -8,9 +8,14 @@
  * xml methods during parsing.
 */
 function Menu(parent, data){
+  this.parent
   this.name;
   this.layout;
   this.entities = new Map();
+
+  // Borrow some methods from the Engine.
+  this.getXMLChildren = parent.getXMLChildren;
+  this.getXMLAttributes = parent.getXMLAttributes;
 
   // A map of all accept menu entities/object type and their equivalent setter function.
   this.validEntities = new Map();
@@ -21,7 +26,7 @@ function Menu(parent, data){
 
 // Takes in an xml file and changes the menu object accordingly.
 Menu.prototype.parseData = function(parent, data){
-  let getXMLChildren = parent.getXMLChildren;
+  let getXMLChildren = this.getXMLChildren;
 
   let fileTag = data.children[0];
   let fileChildren = getXMLChildren(fileTag);
@@ -46,8 +51,9 @@ Menu.prototype.addEntity = function(entity){
 
 Menu.prototype.setLayout = function(layout, settings){
   switch(layout){
-    case "gridlayout":
+    case "gridLayout":
       let gridInfo = this.getGridSettings(settings);
+      // TODO: Fix. this keyword in GridLayout constructor is the window for some reason.
       this.layout = GridLayout(this, gridInfo["rows"], gridInfo["cols"]);
       break;
     default:
@@ -91,7 +97,21 @@ Menu.prototype.setEntities = function(menuTag){
 
 // TODO: Implement these.
 Menu.prototype.setLabel = function(id, label){
-  console.log("I, THE LABEL SETTER WORK :D")
+  let getXMLChildren = this.getXMLChildren;
+  let getXMLAttributes = this.getXMLAttributes;
+
+  let labelSettings = getXMLChildren(label);
+  let labelAttributes = getXMLAttributes(label);
+  let labelText;
+  let labelPos = {};
+
+  if(labelSettings.has("text")){
+    labelText = labelSettings.get("text");
+  } else console.error(`Label is missing required text tag! Label id: ${id}`);
+
+  // TODO: Basically implement a way to get this label's row and col data into
+  // the grid layout's cells.
+  // this.setupPosition();
 };
 
 Menu.prototype.setButton = function(id, label){
@@ -99,15 +119,32 @@ Menu.prototype.setButton = function(id, label){
 };
 
 Menu.prototype._setValidEntities = function(){
-  this.validEntities.set("label", this.setLabel);
-  this.validEntities.set("button", this.setButton);
+  this.validEntities.set("label", this.setLabel.bind(this));
+  this.validEntities.set("button", this.setButton.bind(this));
 };
 
+function Cell(){
+  this.entities = [];
+}
+
 function GridLayout(parent, rows, columns){
+  this.type = "gridLayout"
   this.parent = parent; // parent menu.
   this.rows = rows; // number of rows.
   this.columns = columns; // number of columns
   this.cells = new Map(); // grid cell data.
+  this._fillOutCells();
+};
+
+GridLayout.prototype.getCell = function(row, col){
+  let cellID = row * this.rows + col;
+  return this.cells(cellID);
+};
+
+GridLayout.prototype._fillOutCells = function(){
+  for(let step = 0; step < this.rows * this.columns; step++){
+    this.cells.set(step, Cell());
+  };
 };
 
 function Label(id, text, style=undefined){

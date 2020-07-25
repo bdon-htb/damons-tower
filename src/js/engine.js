@@ -173,13 +173,23 @@ Engine.prototype.getXMLType = function(data){
 
 // Puts all the xml children one level under into a map.
 // Note: This function only works properly if all children tags are unique.
-// Otherwise it'll be overwritten due to the nature of Map's set method.
+// Otherwise it'll overwrite tags with the same name due to the nature of Map's set method.
 Engine.prototype.getXMLChildren = function(tag, overwrite=false){
   let children = new Map();
   for(const child of tag.children){
     children.set(child.tagName, child);
   };
   return children;
+};
+
+// Creates a map of attributes belonging to a single xml tag.
+Engine.prototype.getXMLAttributes = function(tag){
+  let attributes = Object.values(label.attributes);
+  let map = new Map();
+  for(const a of attributes){
+    map.set(a.name, a.value);
+  };
+  return map;
 };
 
 /**

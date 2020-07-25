@@ -152,12 +152,12 @@ Engine.prototype.verifyXML = function(data){
   let fileTag = data.children[0];
   let headerTag = fileTag.children[0];
 
-  if(fileTag.localName === "file" && headerTag.localName === "header"){
+  if(fileTag.tagName === "file" && headerTag.tagName === "header"){
     return true;
   } else {
     console.error(`Error verifying XML file.` +
-      ` Detected fileTag: ${data.children[0].localName}.` +
-      ` Detected headerTag: ${data.children[0].children[0].localName}`);
+      ` Detected fileTag: ${data.children[0].tagName}.` +
+      ` Detected headerTag: ${data.children[0].children[0].tagName}`);
     return false;
   };
 };
@@ -172,10 +172,12 @@ Engine.prototype.getXMLType = function(data){
 };
 
 // Puts all the xml children one level under into a map.
-Engine.prototype.getXMLChildren = function(tag){
+// Note: This function only works properly if all children tags are unique.
+// Otherwise it'll be overwritten due to the nature of Map's set method.
+Engine.prototype.getXMLChildren = function(tag, overwrite=false){
   let children = new Map();
   for(const child of tag.children){
-    children.set(child.localName, child);
+    children.set(child.tagName, child);
   };
   return children;
 };

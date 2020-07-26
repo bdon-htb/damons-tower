@@ -43,17 +43,16 @@ Menu.prototype.parseData = function(parent, data){
 // Add an object to this.entities; accepts a list of objects or a single object.
 Menu.prototype.addEntity = function(entity){
   if(typeof entity === "array"){
-    entity.forEach(e => this.entities.push(e));
+    entity.forEach(e => this.entities.set(entity.id, entity));
   } else if(entity === undefined){
     console.error(`Tried adding an undefined object to the menu! Menu name: ${this.name}`);
-  } else this.entities.push(entity);
+  } else this.entities.set(entity.id, entity);
 };
 
 Menu.prototype.setLayout = function(layoutName, settings){
   switch(layoutName){
     case "gridLayout":
       let gridInfo = this.getGridSettings(settings);
-      // TODO: Fix. this keyword in GridLayout constructor is the window for some reason.
       this.layout = new GridLayout(this, gridInfo["rows"], gridInfo["cols"]);
       break;
     default:
@@ -61,6 +60,8 @@ Menu.prototype.setLayout = function(layoutName, settings){
   };
 };
 
+// Get the number of rows and columns in the menu's header.
+// Precondition: Menu.layout.type === "gridLayout"
 Menu.prototype.getGridSettings = function(headerSettings){
   let rows = headerSettings.get("rows").innerHTML;
   let cols = headerSettings.get("cols").innerHTML;
@@ -103,19 +104,36 @@ Menu.prototype.setLabel = function(id, label){
   let labelSettings = getXMLChildren(label);
   let labelAttributes = getXMLAttributes(label);
   let labelText;
-  let labelPos = {};
+  let labelStyle;
 
   if(labelSettings.has("text")){
     labelText = labelSettings.get("text");
-  } else console.error(`Label is missing required text tag! Label id: ${id}`);
+  } else console.error(`Label is missing required text tag! Label id: ${id}. Label: ${label}.`);
 
-  // TODO: Basically implement a way to get this label's row and col data into
-  // the grid layout's cells.
-  // this.setupPosition();
+  labelStyle = (labelAttributes.has("style") === true) ? labelAttributes.get("style") : "default";
+
+  // Create label.
+  let labelObject = new Label(id, labelText, labelStyle);
+
+  // Add to menu.
+  this.addEntity(labelObject);
+  this.addToLayout(labelObject, labelAttributes);
+
 };
 
 Menu.prototype.setButton = function(id, label){
   console.log("I, THE BUTTON SETTER WORK :D")
+};
+
+Menu.prototype.addToLayout = function(entity, attributes){
+  let addToLayoutFunc;
+  switch(this.layout.type){
+    case "gridLayout":
+      addToLayoutFunc = this._addToGridLayout.bind(this);
+      break;
+  };
+
+  addToLayoutFunc(entity, attributes);
 };
 
 Menu.prototype._setValidEntities = function(){
@@ -123,45 +141,67 @@ Menu.prototype._setValidEntities = function(){
   this.validEntities.set("button", this.setButton.bind(this));
 };
 
+Menu.prototype._addToGridLayout = function(entity, attributes){
+  let row = attributes.get("row");
+  let col = attributes.get("col");
+
+  // Error handling.
+  if(row === undefined || col === undefined){
+    console.error(`Row and column data for label is invalid! Label id: ${id}. Label: ${label}.`)
+  };
+
+  this.layout.addToCell(row, col, entity);
+};
+
 function Cell(){
   this.entities = [];
-}
+};
+
+Cell.prototype.addEntity = function(entity){
+  this.entities.push(entity);
+};
+
 
 function GridLayout(parent, rows, columns){
   this.type = "gridLayout"
   this.parent = parent; // parent menu.
   this.rows = rows; // number of rows.
   this.columns = columns; // number of columns
-  this.cells = new Map(); // grid cell data.
+  this.cells = []; // grid cell data.
   this._fillOutCells();
 };
 
 GridLayout.prototype.getCell = function(row, col){
-  let cellID = row * this.rows + col;
-  return this.cells(cellID);
+  let cellID = Number(row) * this.rows + Number(col);
+  return this.cells[cellID];
 };
 
 GridLayout.prototype._fillOutCells = function(){
   for(let step = 0; step < this.rows * this.columns; step++){
-    this.cells.set(step, Cell());
+    this.cells.push(new Cell());
   };
 };
 
-function Label(id, text, style=undefined){
+GridLayout.prototype.addToCell = function(row, col, entity){
+  let cell = this.getCell(row, col);
+  cell.addEntity(entity);
+}
+
+function Label(id, text, style="default"){
   this.id = id;
   this.text = text;
   this.textStyle = style;
-  thix.x;
+  this.x;
   this.y;
   this.attributes = new Map();
 };
 
-function Button(id, text, callback, style=undefined){
+function Button(id, text, callback, style="default"){
   this.id = id;
   this.text = text;
   this.callback = callback;
   this.textStyle = style;
-  thix.x;
+  this.x;
   this.y;
   this.attributes = new Map();
   this.bgColour;

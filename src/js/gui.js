@@ -38,6 +38,7 @@ Menu.prototype.parseData = function(parent, data){
 
   let menuTag = fileChildren.get("menu");
   this.setEntities(menuTag);
+  console.log(this.layout.cells)
 };
 
 // Add an object to this.entities; accepts a list of objects or a single object.
@@ -103,14 +104,12 @@ Menu.prototype.setLabel = function(id, label){
 
   let labelSettings = getXMLChildren(label);
   let labelAttributes = getXMLAttributes(label);
+
   let labelText;
   let labelStyle;
 
-  if(labelSettings.has("text")){
-    labelText = labelSettings.get("text");
-  } else console.error(`Label is missing required text tag! Label id: ${id}. Label: ${label}.`);
-
-  labelStyle = (labelAttributes.has("style") === true) ? labelAttributes.get("style") : "default";
+  labelText = this._getChildTag(labelSettings, "text", id);
+  labelStyle = this._getAttribute(labelAttributes, "style", objectName=id);
 
   // Create label.
   let labelObject = new Label(id, labelText, labelStyle);
@@ -121,8 +120,25 @@ Menu.prototype.setLabel = function(id, label){
 
 };
 
-Menu.prototype.setButton = function(id, label){
-  console.log("I, THE BUTTON SETTER WORK :D")
+Menu.prototype.setButton = function(id, button){
+  let getXMLChildren = this.getXMLChildren;
+  let getXMLAttributes = this.getXMLAttributes;
+
+  let buttonSettings = getXMLChildren(button);
+  let buttonAttributes = getXMLAttributes(button);
+
+  let buttonText;
+  let buttonStyle;
+  let buttonCallBack;
+
+  buttonText = this._getChildTag(buttonSettings, "text", id);
+  buttonStyle = this._getAttribute(buttonAttributes, "style", objectName=id);
+  buttonCallBack = this._getChildTag(buttonSettings, "callback").innerHTML;
+
+  // Create button.
+  let buttonObject = new Button(id, buttonText, buttonCallBack, buttonStyle);
+  this.addEntity(buttonObject);
+  this.addToLayout(buttonObject, buttonAttributes);
 };
 
 Menu.prototype.addToLayout = function(entity, attributes){
@@ -153,6 +169,25 @@ Menu.prototype._addToGridLayout = function(entity, attributes){
   this.layout.addToCell(row, col, entity);
 };
 
+// Shorthand function that includes error handling.
+// Get the specified child tag from a map of child tags.
+// objectName is just an optional parameter for the error message.
+Menu.prototype._getChildTag = function(children, name, objectName="Object"){
+  if(children.has(name)){
+    return children.get(name);
+  } else console.error(`${objectName} is missing required ${name} tag!`);
+};
+
+// attributes is a map of xml attributes.
+Menu.prototype._getAttribute = function(attributes, name, defaultAttribute="default", objectName="Object", required=false){
+  if(attributes.has(name)){
+    return attributes.get(name);
+  } else {
+    if(required === true){
+      console.error(`${objectName} is missing required ${name} attribute!`)
+    } else return defaultAttribute;
+  };
+};
 function Cell(){
   this.entities = [];
 };
@@ -196,6 +231,9 @@ function Label(id, text, style="default"){
   this.attributes = new Map();
 };
 
+// TODO: Make a callback system for buttons in engine.js
+// basically have keys that associate with methods.
+// the button callback will refer to one of these keys.
 function Button(id, text, callback, style="default"){
   this.id = id;
   this.text = text;

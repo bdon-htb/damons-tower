@@ -149,7 +149,6 @@ Renderer.prototype.scaleSprite = function(sprite){
   return sprite;
 };
 
-// TODO: Implement viewport support; for later.
 /* Currently obsolete.
 Renderer.prototype.drawTiles = function(scene){
   let tileMap = scene.tileMap

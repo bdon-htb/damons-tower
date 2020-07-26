@@ -184,7 +184,7 @@ Engine.prototype.getXMLChildren = function(tag, overwrite=false){
 
 // Creates a map of attributes belonging to a single xml tag.
 Engine.prototype.getXMLAttributes = function(tag){
-  let attributes = Object.values(label.attributes);
+  let attributes = Object.values(tag.attributes);
   let map = new Map();
   for(const a of attributes){
     map.set(a.name, a.value);

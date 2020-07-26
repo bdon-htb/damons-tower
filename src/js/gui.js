@@ -49,12 +49,12 @@ Menu.prototype.addEntity = function(entity){
   } else this.entities.push(entity);
 };
 
-Menu.prototype.setLayout = function(layout, settings){
-  switch(layout){
+Menu.prototype.setLayout = function(layoutName, settings){
+  switch(layoutName){
     case "gridLayout":
       let gridInfo = this.getGridSettings(settings);
       // TODO: Fix. this keyword in GridLayout constructor is the window for some reason.
-      this.layout = GridLayout(this, gridInfo["rows"], gridInfo["cols"]);
+      this.layout = new GridLayout(this, gridInfo["rows"], gridInfo["cols"]);
       break;
     default:
       console.error(`The menu layout is invalid! Layout value: ${layout}. Detected settings: ${settings}`);

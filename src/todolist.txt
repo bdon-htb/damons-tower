@@ -1,7 +1,17 @@
+[Tasks are in no particular order]
+
 === Animations.
 - Create an animation manager to connect image data to animation data.
 - Implement loop / don't loop functionality and animation chaining.
 ===
-- Create a level system.
+=== Menu / GUI.
+- Implement a grid layout.
+- Get widgets to display.
+- Implement button click support.
+===
+=== Level System.
+- Implement a level editor.
+- Implement procedural generation for levels.
+===
 - Event system.
 - A flexible Texture manager to optimize the game as much as possible.

@@ -8,7 +8,7 @@
  * xml methods during parsing.
 */
 function Menu(parent, data){
-  this.parent
+  this.parent;
   this.name;
   this.layout;
   this.entities = new Map();
@@ -188,23 +188,52 @@ Menu.prototype._getAttribute = function(attributes, name, defaultAttribute="defa
     } else return defaultAttribute;
   };
 };
-function Cell(){
-  this.entities = [];
+function Cell(row, col, entities=[]){
+  this.row = row;
+  this.col = col;
+  this.entities = entities;
 };
 
 Cell.prototype.addEntity = function(entity){
   this.entities.push(entity);
 };
 
-
+// TODO: Write up an algorithm to set the precise coordinates of the objects.
 function GridLayout(parent, rows, columns){
   this.type = "gridLayout"
-  this.parent = parent; // parent menu.
+  this.menu = parent; // parent menu.
   this.rows = rows; // number of rows.
-  this.columns = columns; // number of columns
+  this.cols = columns; // number of columns
   this.cells = []; // grid cell data.
   this._fillOutCells();
 };
+
+// Sets/updates the position of all entities in the menu.
+GridLayout.prototype.setAllPositions = function(){
+  this.cells.forEach(e => this.setPositions(cell));
+};
+
+// Untested.
+// Sets/updates the position of all entities in a specified cell.
+GridLayout.prototype.setPositions = function(cell){
+  let windowWidth = this.menu.parent.windowWidth;
+  let windowHeight = this.menu.parent.windowHeight;
+  let predSize = {width: 0, height: 0}; // Size of the entity preceding the current entity.
+
+  for(let index = 0; index < cell.entities.length; index++){
+    let entity = cell.entities[index];
+    if(index > 0){
+      let e = cell.entities[index - 1];
+      predSize["width"] = e.width;
+      predSize["height"] = e.height;
+    };
+    entity.x = (windowWidth / this.rows) * cell.row + predSize["width"];
+    entity.y = (windowHeight / this.cols) * cell.col + predSize["height"];
+  };
+};
+
+// TODO: Calculate the size of a gui object based on its properties.
+GridLayout.prototype.calculateSize = function(){};
 
 GridLayout.prototype.getCell = function(row, col){
   let cellID = Number(row) * this.rows + Number(col);
@@ -212,7 +241,7 @@ GridLayout.prototype.getCell = function(row, col){
 };
 
 GridLayout.prototype._fillOutCells = function(){
-  for(let step = 0; step < this.rows * this.columns; step++){
+  for(let step = 0; step < this.rows * this.cols; step++){
     this.cells.push(new Cell());
   };
 };
@@ -222,26 +251,27 @@ GridLayout.prototype.addToCell = function(row, col, entity){
   cell.addEntity(entity);
 }
 
-function Label(id, text, style="default"){
+function GUIObject(id){
   this.id = id;
+  this.x;
+  this.y
+  this.width;
+  this.height;
+  this.attributes = new Map();
+};
+
+function Label(id, text, style="default"){
+  GUIObject.call(id);
   this.text = text;
   this.textStyle = style;
-  this.x;
-  this.y;
-  this.attributes = new Map();
 };
 
 // TODO: Make a callback system for buttons in engine.js
 // basically have keys that associate with methods.
 // the button callback will refer to one of these keys.
-function Button(id, text, callback, style="default"){
-  this.id = id;
-  this.text = text;
+function Button(id, text, callback, textStyle="default"){
+  Label.call(id, text, textStyle)
   this.callback = callback;
-  this.textStyle = style;
-  this.x;
-  this.y;
-  this.attributes = new Map();
   this.bgColour;
   this.borderColour;
 };

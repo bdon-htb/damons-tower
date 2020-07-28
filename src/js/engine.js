@@ -192,6 +192,20 @@ Engine.prototype.getXMLAttributes = function(tag){
   return map;
 };
 
+// Gemeral common math calculations.
+// Convert the index of a 1d array to the cartesian coordinate
+// equivalent of a similar 2d array.
+Engine.prototype.convertIndexToCoords = function(index, arrayWidth){
+  let index_Y = Math.floor(index / arrayWidth);
+  let index_X = index % arrayWidth;
+  return [index_X, index_Y];
+};
+
+// Convert the coords of a 2d array to the 1d index equivalent.
+Engine.prototype.convertCoordsToIndex = function(index_X, index_Y, arrayWidth){
+  return index_X * arrayWidth + index_Y;
+};
+
 /**
  * Custom asset loader. Is responsible for loading data file assets
  * into the game.

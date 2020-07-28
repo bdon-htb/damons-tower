@@ -156,17 +156,14 @@ TileMap.prototype.convertPos = function(position){
   };
 };
 
-// Convert the index of a 1d array to the cartesian coordinate
-// equivalent of a similar 2d array.
+// Moved the following over to Engine because it's a pretty widespread calculation.
+// Aliases.
 TileMap.prototype.convertIndexToCoords = function(index){
-  let index_Y = Math.floor(index / this.width);
-  let index_X = index % this.width;
-  return [index_X, index_Y];
+  return Engine.prototype.convertIndexToCoords(index, this.width);
 };
 
-// Convert the coords of a 2d array to the 1d index equivalent.
 TileMap.prototype.convertCoordsToIndex = function(index_X, index_Y){
-  return index_X * this.width + index_Y;
+  return Engine.prototype.convertCoordsToIndex(index_X, index_Y, this.width);
 };
 
 // TODO: Implement.

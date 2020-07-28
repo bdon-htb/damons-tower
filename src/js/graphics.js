@@ -85,7 +85,7 @@ Renderer.prototype.getTexture = function(imageURL, makeNew=true){
 
   // Error handling.
   if(texture === undefined){
-    console.error(`Error trying to get a texture from ${imageURL}. Returns undefined.`)
+    console.error(`Error trying to get a texture from ${imageURL}. Returns undefined.`);
   };
   return texture;
 };
@@ -111,7 +111,12 @@ Renderer.prototype.clear = function(){
 };
 
 Renderer.prototype.drawText = function(msg, style=this.textStyles.debug, x=0, y=0){
-  let message = new PIXI.Text(msg, style);
+  let message;
+  if(msg instanceof PIXI.Text){
+    message = msg;
+  } else { // Assume message is a string.
+    message = new PIXI.Text(msg, style);
+  };
   message.position.set(x, y);
   this.draw(message);
 };
@@ -187,6 +192,43 @@ Renderer.prototype.drawInView = function(scene){
   };
 };
 
+// Menu related methods.
+Renderer.prototype.drawMenu = function(menu){
+  menu.entities.forEach(e => this.drawGUIObject(e));
+};
+
+// Shorthand method.
+Renderer.prototype.drawGUIObject = function(entity){
+  switch(entity.constructor){
+    case Label:
+      this.drawLabel(entity);
+      break;
+    case Button:
+      this.drawButton(entity);
+      break;
+    default:
+      console.error(`Error when trying to draw GUIObject: ${entity} is an invalid GUIObject.`);
+  };
+};
+
+Renderer.prototype.drawLabel = function(label){
+  let drawText = this.drawText.bind(this);
+  drawText(label.text, label.textStyle, label.x, label.y);
+};
+
+Renderer.prototype.drawButton = function(button){
+  let text = new PIXI.Text(button.text, button.textStyle);
+  let drawRect = this.drawRect.bind(this);
+  let drawText = this.drawText.bind(this);
+  drawRect(0x66CCFF, button.x, button.y, button.width, button.height);
+  drawText(button.text, button.textStyle, button.x, button.y);
+};
+
+// Caluclates the size of
+Renderer.prototype.calculateTextSize = function(s, textStyle){
+  let text = new PIXI.Text(s, textStyle);
+  return [text.width, text.height];
+};
 /**
  * Custom spritesheet object. This will make it easier to automatically pull
  * single sprites from a larger sheet.

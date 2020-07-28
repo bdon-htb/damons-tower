@@ -25,6 +25,8 @@ function Engine(htmlDOM){
   this.animKey = "animationData";
   // contains urls to menu data.
   this.levelKey = "levelData";
+  // contains menu objects of the game's menus.
+  this.menuKey = "menus";
 
   // AssetLoader variables.
   this.dataLocation = "data";
@@ -107,7 +109,8 @@ Engine.prototype.allAssetsLoaded = function(){
   let assetsKeys = [
     this.imageKey,
     this.animKey,
-    this.levelKey
+    this.levelKey,
+    this.menuKey,
   ];
 
   for(const key of assetsKeys){
@@ -248,11 +251,13 @@ AssetLoader.prototype.loadJson = function(data, success){
 AssetLoader.prototype.loadXML = function(data, success){
   let verifyXML = this.parent.verifyXML;
   let getXMLType = this.parent.getXMLType.bind(this.parent);
+  let loadFunc;
   if(verifyXML(data) === true){
     let type = getXMLType(data);
     switch(type){
       case "menu":
-        this.loadMenu(data);
+        loadFunc = this.loadMenu.bind(this);
+        loadFunc(data);
         break;
       default:
         console.error(`Error loading an XML file. Not a valid type! Detected type: ${type}. File: ${data}`);
@@ -261,7 +266,13 @@ AssetLoader.prototype.loadXML = function(data, success){
 };
 
 AssetLoader.prototype.loadMenu = function(data, success){
-  let m = new Menu(this.parent, data);
+  let menu = new Menu(this.parent, data);
+  let menuKey = this.parent.menuKey;
+  if(this.parent.assets.has(menuKey) === false){
+    this.parent.assets.set(menuKey, new Map()); // If first time loading menu, create the map.
+  };
+  this.parent.assets.get(menuKey).set(menu.name, menu);
+  console.log(this.parent.assets);
 };
 
 /**

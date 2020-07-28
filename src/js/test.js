@@ -12,13 +12,13 @@ Tester.prototype.testDraw = function(data){
   // this.firstTest(data)
   // this.secondTest(data)
   // this.thirdTest(data)
-  this.fourthTest(data)
+  // this.fourthTest(data)
+  this.fifthTest(data);
 };
 
 // This where you set the tests for updating to be ran.
 Tester.prototype.testUpdate = function(data){
-  this.checkPresses();
-  this.movePlayer();
+  // this.firstTestUpdate();
 };
 
 // This is where you set the test inits to be ran.
@@ -26,7 +26,8 @@ Tester.prototype.init = function(){
   // this.firstTestInit()
   // this.secondTestInit();
   // this.thirdTestInit();
-  this.fourthTestInit();
+  // this.fourthTestInit();
+  this.fifthTestInit();
 };
 
 // First test focused on displaying a sprite.
@@ -127,7 +128,6 @@ Tester.prototype.thirdTest = function(data){
 // Fourth test focuses on camera functionality.
 Tester.prototype.fourthTestInit = function(){
   let parent = this.parent;
-  let scale = parent.scale
   let spawnpoint = [0, 0]
   let renderer = parent.renderer;
   this.sceneManager = new SceneManager();
@@ -194,10 +194,26 @@ Tester.prototype.fourthTest = function(data){
   level.setEntityAttribute("player", "sprite", sprite)
 };
 
-Tester.prototype.createPlayer = function(){
-  let parent = this.parent
-  let renderer = parent.renderer
-}
+Tester.prototype.firstTestUpdate = function(){
+  this.checkPresses();
+  this.movePlayer();
+};
+
+// The fifth test focuses on menu.
+Tester.prototype.fifthTestInit = function(){
+  let parent = this.parent;
+  let renderer = parent.renderer;
+  this.menu = parent.getLoadedAsset("menus").get("mainMenu");
+};
+
+Tester.prototype.fifthTest = function(data){
+  // Set aliases.
+  let parent = this.parent;
+  let renderer = parent.renderer;
+  this.menu.layout.setAllPositions();
+  renderer.drawMenu(this.menu);
+};
+
 // Placeholder functions that track keypresses & player movement.
 Tester.prototype.checkPresses = function(){
   let parent = this.parent;

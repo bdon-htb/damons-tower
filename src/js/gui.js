@@ -8,7 +8,7 @@
  * xml methods during parsing.
 */
 function Menu(parent, data){
-  this.parent;
+  this.parent = parent;
   this.name;
   this.layout;
   this.entities = new Map();
@@ -35,6 +35,7 @@ Menu.prototype.parseData = function(parent, data){
   let fileSettings = getXMLChildren(headerTag);
   let layout = fileSettings.get("layout").innerHTML;
   this.setLayout(layout, fileSettings);
+  this.name = fileSettings.get("name").innerHTML;
 
   let menuTag = fileChildren.get("menu");
   this.setEntities(menuTag);
@@ -108,8 +109,8 @@ Menu.prototype.setLabel = function(id, label){
   let labelText;
   let labelStyle;
 
-  labelText = this._getChildTag(labelSettings, "text", id);
-  labelStyle = this._getAttribute(labelAttributes, "style", objectName=id);
+  labelText = this._getChildTag(labelSettings, "text", id).innerHTML;
+  labelStyle = this._getAttribute(labelAttributes, "style", objectName=id).innerHTML;
 
   // Create label.
   let labelObject = new Label(id, labelText, labelStyle);
@@ -131,8 +132,8 @@ Menu.prototype.setButton = function(id, button){
   let buttonStyle;
   let buttonCallBack;
 
-  buttonText = this._getChildTag(buttonSettings, "text", id);
-  buttonStyle = this._getAttribute(buttonAttributes, "style", objectName=id);
+  buttonText = this._getChildTag(buttonSettings, "text", id).innerHTML;
+  buttonStyle = this._getAttribute(buttonAttributes, "style", objectName=id).innerHTML;
   buttonCallBack = this._getChildTag(buttonSettings, "callback").innerHTML;
 
   // Create button.
@@ -150,6 +151,24 @@ Menu.prototype.addToLayout = function(entity, attributes){
   };
 
   addToLayoutFunc(entity, attributes);
+};
+
+// Calculate the size of a gui object based on its properties.
+Menu.prototype.calculateSize = function(entity){
+  let renderer = this.parent.renderer;
+  switch(entity.constructor){
+    case Label:
+    case Button:
+      return renderer.calculateTextSize(entity.text, entity.textStyle);
+    default:
+      console.error(`Could not calculate the size of ${entity}.`)
+  }
+};
+
+Menu.prototype.setSize = function(entity){
+  let size = this.calculateSize(entity);
+  entity.width = size[0];
+  entity.height = size[1];
 };
 
 Menu.prototype._setValidEntities = function(){
@@ -198,7 +217,6 @@ Cell.prototype.addEntity = function(entity){
   this.entities.push(entity);
 };
 
-// TODO: Write up an algorithm to set the precise coordinates of the objects.
 function GridLayout(parent, rows, columns){
   this.type = "gridLayout"
   this.menu = parent; // parent menu.
@@ -210,7 +228,7 @@ function GridLayout(parent, rows, columns){
 
 // Sets/updates the position of all entities in the menu.
 GridLayout.prototype.setAllPositions = function(){
-  this.cells.forEach(e => this.setPositions(cell));
+  this.cells.forEach(cell => this.setPositions(cell));
 };
 
 // Untested.
@@ -218,6 +236,7 @@ GridLayout.prototype.setAllPositions = function(){
 GridLayout.prototype.setPositions = function(cell){
   let windowWidth = this.menu.parent.windowWidth;
   let windowHeight = this.menu.parent.windowHeight;
+  let setSize = this.menu.setSize.bind(this.menu);
   let predSize = {width: 0, height: 0}; // Size of the entity preceding the current entity.
 
   for(let index = 0; index < cell.entities.length; index++){
@@ -227,13 +246,13 @@ GridLayout.prototype.setPositions = function(cell){
       predSize["width"] = e.width;
       predSize["height"] = e.height;
     };
-    entity.x = (windowWidth / this.rows) * cell.row + predSize["width"];
+    entity.x = (windowWidth / this.rows) * cell.row;
     entity.y = (windowHeight / this.cols) * cell.col + predSize["height"];
+    setSize(entity);
   };
 };
 
-// TODO: Calculate the size of a gui object based on its properties.
-GridLayout.prototype.calculateSize = function(){};
+
 
 GridLayout.prototype.getCell = function(row, col){
   let cellID = Number(row) * this.rows + Number(col);
@@ -263,7 +282,7 @@ function GUIObject(id){
 };
 
 function Label(id, text, style="default"){
-  GUIObject.call(id);
+  GUIObject.call(this, id);
   this.text = text;
   this.textStyle = style;
 };
@@ -272,7 +291,7 @@ function Label(id, text, style="default"){
 // basically have keys that associate with methods.
 // the button callback will refer to one of these keys.
 function Button(id, text, callback, textStyle="default"){
-  Label.call(id, text, textStyle)
+  Label.call(this, id, text, textStyle)
   this.callback = callback;
   this.bgColour;
   this.borderColour;

@@ -31,6 +31,7 @@ function Engine(htmlDOM){
   // AssetLoader variables.
   this.dataLocation = "data";
   this.imgLocation = "img";
+  this.menuLocation = this.dataLocation + "menus";
 
   // Create components.
   this.stateMachine = new StateMachine(this);
@@ -96,6 +97,8 @@ Engine.prototype.loadAllAssets = function(){
 
   // Load TEST level data.
   this.assetLoader.getAsset(dataLocation + "/" + "levels.json", true);
+
+  // this.assetLoader.getAsset(dataLocation + "/" + "menus.json", true);
 
   // Load mm.xml
   this.assetLoader.getAsset(dataLocation + "/" + "menus/mm.xml", true);

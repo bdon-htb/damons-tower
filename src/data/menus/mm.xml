@@ -9,7 +9,7 @@
   </header>
   <menu>
     <label row="1" col="1">
-      <text>js-roguelite</text>
+      <text>Dman of Legend</text>
     </label>
     <button row="1" col="1">
       <text>Play</text>

@@ -211,6 +211,7 @@ Renderer.prototype.drawGUIObject = function(entity){
   };
 };
 
+// TODO: Implement basic styling to make it look cleaner.
 Renderer.prototype.drawLabel = function(label){
   let drawText = this.drawText.bind(this);
   drawText(label.text, label.textStyle, label.x, label.y);
@@ -220,8 +221,9 @@ Renderer.prototype.drawButton = function(button){
   let text = new PIXI.Text(button.text, button.textStyle);
   let drawRect = this.drawRect.bind(this);
   let drawText = this.drawText.bind(this);
-  drawRect(0x66CCFF, button.x, button.y, button.width, button.height);
-  drawText(button.text, button.textStyle, button.x, button.y);
+  let center = [button.x + button.width / 4, button.y + button.height / 4];
+  drawRect(0x66CCFF, button.x, button.y, button.width * 1.5, button.height * 1.5);
+  drawText(button.text, button.textStyle, center[0], center[1]);
 };
 
 // Caluclates the size of

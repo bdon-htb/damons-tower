@@ -17,9 +17,7 @@ function Engine(htmlDOM){
   this.scale = 3;
   this.backgroundColor = 0xB8D5EE;
 
-  // the image array in assets only stores links to images.
-  // TODO: Might need to change how assets are stored. Having a straight array
-  // of hundreds of pngs could get annoying without keys.
+  // the image key in assets only stores links to images.
   this.assets = new Map();
   // Key in this.assets that contains maps of image urls.
   this.imageKey = "images";
@@ -247,7 +245,6 @@ AssetLoader.prototype.loadJson = function(data, success){
   });
 };
 
-// TODO: Implement
 AssetLoader.prototype.loadXML = function(data, success){
   let verifyXML = this.parent.verifyXML;
   let getXMLType = this.parent.getXMLType.bind(this.parent);

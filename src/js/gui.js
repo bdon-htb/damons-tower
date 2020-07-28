@@ -241,8 +241,10 @@ GridLayout.prototype.getCell = function(row, col){
 };
 
 GridLayout.prototype._fillOutCells = function(){
+  let convertIndexToCoords = this.menu.parent.convertIndexToCoords;
   for(let step = 0; step < this.rows * this.cols; step++){
-    this.cells.push(new Cell());
+    let posArray = convertIndexToCoords(step, this.rows);
+    this.cells.push(new Cell(posArray[0], posArray[1]));
   };
 };
 

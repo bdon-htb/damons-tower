@@ -10,6 +10,9 @@
 function Entity(id, sprite, type, state, x, y){
   this.id = id;
   // Default attributes.
+  // TODO: Figure out how to organize the data so the current sprite is a persistant
+  // object. Instead of creating a new texture each frame, just change the texture.rect
+  // of the current sprite.
   this.attributes = {
     "sprite": sprite,
     "type": type,
@@ -209,14 +212,21 @@ Camera.prototype.center = function(sourceX, sourceY, sourceSize){
   this.calculateTopLeft();
 };
 
-Camera.prototype._isInBetween = function(value, lower, upper){
-  return lower <= value <= upper;
+Camera.prototype._inBetween = function(value, lower, upper, inclusive=false){
+  let result;
+  if(inclusive === false){
+    result = (lower < value && value < upper);
+  } else result = (lower <= value && value <= upper);
+  return result;
 };
 
 // Check if position is in view of camera.
 Camera.prototype.inView = function(x, y){
-  return (this._isInBetween(x, this.topLeft[0], this.topLeft[0] + this.viewWidth)
-  && this._isInBetween(y, this.topLeft[1], this.topLeft[1] + this.viewHeight));
+  let topLeftX = this.topLeft[0];
+  let topLeftY = this.topLeft[1];
+  let width = this.viewWidth;
+  let height = this.viewHeight;
+  return this._inBetween(x, 0, width) === true && this._inBetween(y, 0, height) === true;
 };
 
 // Get the relative position based on given coordinates.

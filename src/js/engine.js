@@ -11,8 +11,8 @@
 */
 function Engine(htmlDOM){
   this.context = htmlDOM
-  this.windowWidth = 800;
-  this.windowHeight = 600;
+  this.windowWidth = 960;
+  this.windowHeight = 640;
   // Should be a whole number; determines sprite render size.
   this.scale = 3;
   this.backgroundColor = 0xB8D5EE;
@@ -130,7 +130,7 @@ Engine.prototype.loadAllTextures = function(callback){
   this.renderer.loadTextures(imageMap, callback);
 };
 
-// Get the image filename from its id in assets.
+// Get the image information from its id in assets.
 Engine.prototype.getImage = function(id){
   // Error handling.
   if(this.assets.get(this.imageKey).has(id) === false){

@@ -13,6 +13,7 @@ function Renderer(parent){
   this.createTextStyles();
   this.verifyAPI();
   this.createApp();
+  this.textureManager = new TextureManager(this);
 };
 
 Renderer.prototype.verifyAPI = function(){
@@ -24,6 +25,9 @@ Renderer.prototype.verifyAPI = function(){
 };
 
 Renderer.prototype.createApp = function(){
+  // This makes the sprites resize a lot cleaner.
+  PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+
   this.app = new PIXI.Application({
     view: this.parent.context,
     antialias: false,
@@ -52,52 +56,18 @@ Renderer.prototype.createTextStyles = function(){
 // Texture related methods.
 
 Renderer.prototype.loadTextures = function(imageMap, callback=function(){}){
-  let imageArray = Array.from(imageMap.keys());
-  this._loadTextureArray(imageArray, imageMap, callback);
-};
-
-// Recursion??? :O
-// Basically recursively loop through the array and load each image.
-// When all the loading is done. Fire off the callback.
-Renderer.prototype._loadTextureArray = function(imageArray, imageMap, callback, i=0){
-  if(i < imageArray.length){
-    let id = imageArray[i];
-    let url = this.parent.imgLocation + "/" + imageMap.get(id).name
-    this.loader.add(url);
-    func = this._loadTextureArray(imageArray, imageMap, callback, i + 1)
-    this.loader.onComplete.add(() => func);
-  } else {
-    this.loader.load();
-    this.loader.onComplete.add(() => {callback()});
-  };
+  this.textureManager.loadTextures(imageMap, callback);
 };
 
 Renderer.prototype.getTexture = function(imageURL, makeNew=true){
-  let resources = this.loader.resources;
-  let texture;
-  if(makeNew === true){
-    texture = new PIXI.Texture(resources[imageURL].texture.baseTexture);
-    // This makes the sprites resize a lot cleaner.
-    texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
-  } else {
-    texture = resources[imageURL].texture;
-  };
-
-  // Error handling.
-  if(texture === undefined){
-    console.error(`Error trying to get a texture from ${imageURL}. Returns undefined.`);
-  };
-  return texture;
+  this.textureManager.getTexture(imageURL, makeNew);
 };
 
 // Generate a spritesheet from it's defined id in parent.assets.
 Renderer.prototype.getSheetFromId = function(id){
-  let parent = this.parent;
-  let image = parent.getImage(id);
-  let imageURL = parent.imgLocation + "/" + image.name;
-  let texture = this.getTexture(imageURL);
-  return new SpriteSheet(imageURL, texture, image.width, image.height, image.spriteSize);
-}
+  let spriteSheet = this.textureManager.getSheetFromId(id);
+  return spriteSheet;
+};
 
 // Drawing related methods.
 
@@ -107,6 +77,9 @@ Renderer.prototype.draw = function(child){
 
 // Clear the screen.
 Renderer.prototype.clear = function(){
+  if(this.textureManager.pool.size > 0){
+    this.textureManager.clearPool();
+  };
   this.app.stage.removeChildren();
 };
 
@@ -149,8 +122,8 @@ Renderer.prototype.drawSprite = function(sprite, x=0, y=0){
 
 Renderer.prototype.scaleSprite = function(sprite){
   let scale = this.parent.scale;
-  sprite.width *= scale;
-  sprite.height *= scale;
+  sprite.width = sprite.texture.width * scale;
+  sprite.height = sprite.texture.width * scale;
   return sprite;
 };
 
@@ -176,17 +149,28 @@ Renderer.prototype.drawInView = function(scene){
   let tilesArray = tileMap.tiles;
   let spriteSheet = scene.spriteSheet;
   let camera = scene.camera;
+  let textureManager = this.textureManager;
+
+  let coords;
+  let pos_X;
+  let pos_Y;
+  let spriteIndexArray;
+  let frame;
+  let tileSprite;
+  let newPosArray;
   for (let index = 0; index < tilesArray.length; index++){
-    let coords = tileMap.convertPos(index); // Convert -> 2d;
-    let pos_X = coords[0] * spriteSheet.spriteSize * this.parent.scale;
-    let pos_Y = coords[1] * spriteSheet.spriteSize * this.parent.scale;
+    coords = tileMap.convertPos(index); // Convert -> 2d;
+    pos_X = coords[0] * spriteSheet.spriteSize * this.parent.scale;
+    pos_Y = coords[1] * spriteSheet.spriteSize * this.parent.scale;
+    newPosArray = camera.getRelative(pos_X, pos_Y);
+    pos_X = newPosArray[0];
+    pos_Y = newPosArray[1];
 
     if(camera.inView(pos_X, pos_Y) === true){
-      let spriteIndexArray = tileMap.getSpriteIndex(index);
-      let tileSprite = spriteSheet.getSprite(spriteIndexArray[0], spriteIndexArray[1]);
-      let newPosArray = camera.getRelative(pos_X, pos_Y);
-      pos_X = newPosArray[0];
-      pos_Y = newPosArray[1];
+      spriteIndexArray = tileMap.getSpriteIndex(index);
+      frame = spriteSheet.getFrame(spriteIndexArray[0], spriteIndexArray[1]);
+      tileSprite = textureManager.copySprite(spriteSheet.sprite);
+      tileSprite.texture.frame = frame;
       this.drawSprite(tileSprite, pos_X, pos_Y);
     };
   };
@@ -229,18 +213,131 @@ Renderer.prototype.drawButton = function(button){
 // Caluclates the size of
 Renderer.prototype.calculateTextSize = function(s, textStyle){
   let text = new PIXI.Text(s, textStyle);
+  this.addToPool(text);
   return [text.width, text.height];
 };
+
+/**
+ * Custom texture manager. Will be responsible for the loading, creation and destruction of
+ * all textures.
+*/
+// TODO: Constantly creating a texture is likely responsible for the game using a lot of memory.
+// Find a way for proper texture reuse and/or destruction to save memory.
+function TextureManager(parent){
+  this.parent = parent; // Reference to the renderer.
+  this.loader = new PIXI.Loader();
+  this.pool = new Set(); // An array of extra Pixi.js graphics objects. Allows for them to be destroyed properly..
+};
+
+// Add the Pixi.js object to the pool.
+TextureManager.prototype.addToPool = function(object){
+  this.pool.add(object);
+};
+
+// Destroys all objects in pool and empties it.
+// Assumes all objects in this.pool are Pixi.js objects that has .destroy().
+TextureManager.prototype.clearPool = function(){
+  this.pool.forEach(e => e.destroy());
+  // console.log(this.pool);
+  this.pool.clear();
+};
+
+TextureManager.prototype.loadTextures = function(imageMap, callback=function(){}){
+  let imageArray = Array.from(imageMap.keys());
+  this._loadTextureArray(imageArray, imageMap, callback);
+};
+
+// Basically recursively loop through the array and load each image.
+// When all the loading is done. Fire off the callback.
+TextureManager.prototype._loadTextureArray = function(imageArray, imageMap, callback, i=0){
+  let engine = this.parent.parent;
+
+  if(i < imageArray.length){
+    let id = imageArray[i];
+    let url = engine.imgLocation + "/" + imageMap.get(id).name
+    this.loader.add(url);
+    func = this._loadTextureArray(imageArray, imageMap, callback, i + 1)
+    this.loader.onComplete.add(() => func);
+  } else {
+    this.loader.load();
+    this.loader.onComplete.add(() => {callback()});
+  };
+};
+
+// Get the specified texture from loader.resources. By default
+// it returns a copy of the texture.
+TextureManager.prototype.getTexture = function(imageURL, makeNew=true){
+  let resources = this.loader.resources;
+  let texture;
+  if(makeNew === true){
+    texture = new PIXI.Texture(resources[imageURL].texture.baseTexture);
+  } else {
+    texture = resources[imageURL].texture;
+  };
+
+  // Error handling.
+  if(texture === undefined){
+    console.error(`Error trying to get a texture from ${imageURL}. Returns undefined.`);
+  };
+
+  return texture;
+};
+
+// Return a copy of the given texture.
+// If the pool parameter is seto true then the texture will automatically be added to the pool.
+TextureManager.prototype.copyTexture = function(texture, pool=true){
+  // Error handling.
+  if(texture.constructor !== PIXI.Texture){
+    console.error(`Error trying to copy texture. Detected texture: ${texture}. Texture constructor: ${texture.constructor}`);
+  } else {
+    let newTexture = new PIXI.Texture(texture);
+    if(pool === true){this.addToPool(newTexture)};
+    return newTexture;
+  };
+};
+
+// Make a sprite from a given texture
+TextureManager.prototype.getSprite = function(texture){
+  // Error handling.
+  if(texture.constructor !== PIXI.Texture){
+    console.error(`Error trying to create a new sprite. Detected texture: ${texture}. Texture constructor: ${texture.constructor}`);
+  } else {
+    let sprite = new PIXI.Sprite(texture);
+    return sprite;
+  };
+};
+
+// Return a copy of the given sprite. By default the sprite will be added to the pool.
+TextureManager.prototype.copySprite = function(sprite, pool=true){
+  // Error handler.
+  if(sprite.constructor !== PIXI.Sprite){
+    console.error(`Error trying to copy texture. Detected texture: ${texture}. Texture constructor: ${texture.constructor}`);
+  } else {
+    let newTexture = this.copyTexture(sprite.texture);
+    let newSprite = new PIXI.Sprite(newTexture);
+    if(pool === true){this.addToPool(newSprite)};
+    return newSprite;
+  };
+};
+
+TextureManager.prototype.getSheetFromId = function(id){
+  let engine = this.parent.parent;
+  let image = engine.getImage(id);
+  let imageURL = engine.imgLocation + "/" + image.name;
+  let texture = this.getTexture(imageURL);
+  let sprite = this.getSprite(texture);
+  return new SpriteSheet(imageURL, texture, sprite, image.width, image.height, image.spriteSize);
+};
+
 /**
  * Custom spritesheet object. This will make it easier to automatically pull
  * single sprites from a larger sheet.
  * This class will assume that an individual sprite's height = width.
  */
- // TODO: Constantly creating a texture is likely responsible for the game using a lot of memory.
- // Find a way for proper texture reuse and/or destruction to save memory.
-function SpriteSheet(imageURL, texture, sheetWidth, sheetHeight, spriteSize){
+function SpriteSheet(imageURL, texture, sprite, sheetWidth, sheetHeight, spriteSize){
   this.id = imageURL;
-  this.texture = texture
+  this.sprite = sprite;
+  this.texture = texture;
   this.width = sheetWidth;
   this.height = sheetHeight;
   this.spriteSize = spriteSize;
@@ -248,7 +345,8 @@ function SpriteSheet(imageURL, texture, sheetWidth, sheetHeight, spriteSize){
   this.numberOfSprites = Math.floor((this.width * this.height) / (this.spriteSize ** 2))
 };
 
-SpriteSheet.prototype._getRectFromIndex = function(index_X, index_Y){
+// Calculate and return the texture frame of the specified sprite.
+SpriteSheet.prototype.getFrame = function(index_X, index_Y){
   size = this.spriteSize;
   let posX = index_X * size;
   let posY = index_Y * size;
@@ -257,11 +355,10 @@ SpriteSheet.prototype._getRectFromIndex = function(index_X, index_Y){
   return rectangle;
 };
 
-SpriteSheet.prototype.getSprite = function(index_X, index_Y){
-  let rect = this._getRectFromIndex(index_X, index_Y);
-  let texture = new PIXI.Texture(this.texture);
-  texture.frame = rect;
-  return new PIXI.Sprite(texture);
+SpriteSheet.prototype.getSprite = function(index_X, index_Y, makeNew){
+  let rect = this.getFrame(index_X, index_Y);
+  this.sprite.texture.frame = rect;
+  return this.sprite;
 };
 
 /**

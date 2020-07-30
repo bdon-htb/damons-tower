@@ -210,6 +210,46 @@ Engine.prototype.convertCoordsToIndex = function(index_X, index_Y, arrayWidth){
   return index_X * arrayWidth + index_Y;
 };
 
+Engine.prototype.inBetween = function(value, lower, upper, inclusive=false){
+  let result;
+  if(inclusive === false){
+    result = (lower < value && value < upper);
+  } else result = (lower <= value && value <= upper);
+  return result;
+};
+
+// Return true if the point exists inside the rectangle.
+// rect = Rect not PIXI.Rectangle.
+Engine.prototype.pointInRect = function(x, y, rect){
+  let inBetween = this.inBetween.bind(this);
+  let topLeftX = rect.topLeft[0];
+  let topLeftY = rect.topLeft[1];
+  let width = rect.width;
+  let height = rect.height;
+  let result = (
+    inBetween(x, topLeftX, topLeftX + width, true) === true &&
+    inBetween(y, topLeftY, topLeftY + height, true) === true
+  );
+  return result;
+};
+
+Engine.prototype.rectIntersects = function(rectA, rectB){
+  let pointInRect = this.pointInRect.bind(this);
+  let x1 = rectA.topLeft[0];
+  let y1 = rectA.topLeft[1];
+
+  let x2 = rectB.topLeft[0];
+  let y2 = rectB.topLeft[1];
+
+  let intersectX = Math.max(x1, x2);
+  let intersectY = Math.max(y1, y2);
+  let result = (
+    pointInRect(intersectX, intersectY, rectA) == true &&
+    pointInRect(intersectX, intersectY, rectB) == true
+  );
+  return result;
+};
+
 /**
  * Custom asset loader. Is responsible for loading data file assets
  * into the game.

@@ -212,24 +212,30 @@ Camera.prototype.center = function(sourceX, sourceY, sourceSize){
   this.calculateTopLeft();
 };
 
-Camera.prototype._inBetween = function(value, lower, upper, inclusive=false){
-  let result;
-  if(inclusive === false){
-    result = (lower < value && value < upper);
-  } else result = (lower <= value && value <= upper);
-  return result;
-};
-
 // Check if position is in view of camera.
-Camera.prototype.inView = function(x, y){
-  let topLeftX = this.topLeft[0];
-  let topLeftY = this.topLeft[1];
-  let width = this.viewWidth;
-  let height = this.viewHeight;
-  return this._inBetween(x, 0, width) === true && this._inBetween(y, 0, height) === true;
+Camera.prototype.rectInView = function(rect){
+  let engine = Engine.prototype;
+  let intersectFunc = engine.rectIntersects.bind(engine);
+  let cameraRect = new Rect([0, 0], this.viewWidth, this.viewHeight);
+  return intersectFunc(rect, cameraRect);
 };
 
 // Get the relative position based on given coordinates.
 Camera.prototype.getRelative = function(trueX, trueY){
   return [trueX - this.topLeft[0], trueY - this.topLeft[1]];
 };
+
+/**
+ * Custom rect class. Useful for getting information for rectangle calculations.
+ * Note: use only for calculations. Use PIXI.Rectangle for drawing,
+*/
+function Rect(topLeft, width, height=undefined){
+  if(height === undefined){height = width};
+  this.width = width;
+  this.height = height;
+  this.topLeft = topLeft;
+
+  this.topRight = [this.topLeft[0] + this.width, this.topLeft[1]];
+  this.bottomLeft = [this.topLeft[0], this.topLeft[1] + this.height];
+  this.bottomRight = [this.topLeft[0] + this.width, this.topLeft[1] + this.height];
+}

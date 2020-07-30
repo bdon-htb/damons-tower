@@ -165,8 +165,9 @@ Renderer.prototype.drawInView = function(scene){
     newPosArray = camera.getRelative(pos_X, pos_Y);
     pos_X = newPosArray[0];
     pos_Y = newPosArray[1];
+    let tileRect = new Rect([pos_X, pos_Y], spriteSheet.spriteSize * this.parent.scale);
 
-    if(camera.inView(pos_X, pos_Y) === true){
+    if(camera.rectInView(tileRect) === true){
       spriteIndexArray = tileMap.getSpriteIndex(index);
       frame = spriteSheet.getFrame(spriteIndexArray[0], spriteIndexArray[1]);
       tileSprite = textureManager.copySprite(spriteSheet.sprite);

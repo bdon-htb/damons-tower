@@ -93,7 +93,6 @@ Menu.prototype.setEntities = function(menuTag){
     } else {
       console.error(`Error while setting Menu entities: ${entityType} is an invalid Menu object.`);
     };
-    console.log(id)
     entityCount++;
   };
 };

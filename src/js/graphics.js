@@ -295,17 +295,32 @@ TextureManager.prototype.copyTexture = function(texture, pool=true){
   };
 };
 
-TextureManager.prototype.removeFromTextureCache = function(id){
-  let cache = PIXI.utils.TextureCache;
+TextureManager.prototype.removeFromTextureCache = function(id, cache=undefined){
+  if(cache === undefined){cache = PIXI.utils.TextureCache};
+
   if(cache[id]){
-    console.log("deleted")
     delete cache[id];
   } else console.error(`Error while trying to delete from TextureCache: ${id} does not exist as a property.`);
 };
 
+// Remove all textures from TextureCache.
+// clearAll affects whether non-generic textures should be removed too.
 TextureManager.prototype.clearTextureCache = function(clearAll=false){
-  PIXI.utils.clearTextureCache();
-}
+  let generic = "pixiid";
+  if(clearAll === true){
+    PIXI.utils.clearTextureCache();
+  } else {
+    let cache = PIXI.utils.TextureCache;
+    Object.keys(cache).forEach(key => {
+      if(key.startsWith(generic) === true){this.removeFromTextureCache(key)};
+    });
+
+    cache = PIXI.utils.BaseTextureCache;
+    Object.keys(cache).forEach(key => {
+      if(key.startsWith(generic) === true){this.removeFromTextureCache(key, cache)};
+    });
+  };
+};
 
 // Make a sprite from a given texture
 TextureManager.prototype.getSprite = function(texture){

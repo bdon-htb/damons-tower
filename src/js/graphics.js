@@ -33,7 +33,7 @@ Renderer.prototype.createApp = function(){
     antialias: false,
     width: this.parent.windowWidth,
     height: this.parent.windowHeight,
-    backgroundColor: this.parent.backgroundColor
+    backgroundColor: this.parent.backgroundColor,
   });
 };
 
@@ -84,11 +84,13 @@ Renderer.prototype.clear = function(){
 };
 
 Renderer.prototype.drawText = function(msg, style=this.textStyles.debug, x=0, y=0){
+  let canvas = this.parent.context;
   let message;
-  if(msg instanceof PIXI.Text){
+  if(msg.constructor === PIXI.Text){
     message = msg;
   } else { // Assume message is a string.
     message = new PIXI.Text(msg, style);
+    this.textureManager.addToPool(message);
   };
   message.position.set(x, y);
   this.draw(message);
@@ -99,6 +101,7 @@ Renderer.prototype.drawRect = function(colour, x, y, width, height){
   rectangle.beginFill(colour);
   rectangle.drawRect(x, y, width, height);
   rectangle.endFill();
+  this.textureManager.addToPool(rectangle);
   this.draw(rectangle);
 };
 
@@ -107,6 +110,7 @@ Renderer.prototype.drawLine = function(colour, startX, startY, endX, endY, thick
   line.lineStyle(thickness, colour, 1);
   line.moveTo(startX, startY);
   line.lineTo(endX, endY);
+  this.textureManager.addToPool(line);
   this.draw(line);
 }
 
@@ -127,24 +131,9 @@ Renderer.prototype.scaleSprite = function(sprite){
   return sprite;
 };
 
-/* Currently obsolete.
+// Draws all tiles in view of the camera.
+// TODO: FIrst of all, give this a better name.
 Renderer.prototype.drawTiles = function(scene){
-  let tileMap = scene.tileMap
-  let tilesArray = tileMap.tiles;
-  let spriteSheet = scene.spriteSheet;
-  for (let index = 0; index < tilesArray.length; index++){
-    let coords = tileMap.convertPos(index); // Convert -> 2d;
-    let pos_X = coords[0] * spriteSheet.spriteSize * this.parent.scale;
-    let pos_Y = coords[1] * spriteSheet.spriteSize * this.parent.scale;
-
-    let spriteIndexArray = tileMap.getSpriteIndex(index);
-    let tileSprite = spriteSheet.getSprite(spriteIndexArray[0], spriteIndexArray[1]);
-    this.drawSprite(tileSprite, pos_X, pos_Y);
-  };
-};
-*/
-
-Renderer.prototype.drawInView = function(scene){
   let tileMap = scene.tileMap;
   let tilesArray = tileMap.tiles;
   let spriteSheet = scene.spriteSheet;
@@ -214,7 +203,7 @@ Renderer.prototype.drawButton = function(button){
 // Caluclates the size of
 Renderer.prototype.calculateTextSize = function(s, textStyle){
   let text = new PIXI.Text(s, textStyle);
-  this.addToPool(text);
+  this.textureManager.addToPool(text);
   return [text.width, text.height];
 };
 
@@ -222,8 +211,6 @@ Renderer.prototype.calculateTextSize = function(s, textStyle){
  * Custom texture manager. Will be responsible for the loading, creation and destruction of
  * all textures.
 */
-// TODO: Constantly creating a texture is likely responsible for the game using a lot of memory.
-// Find a way for proper texture reuse and/or destruction to save memory.
 function TextureManager(parent){
   this.parent = parent; // Reference to the renderer.
   this.loader = new PIXI.Loader();
@@ -235,12 +222,23 @@ TextureManager.prototype.addToPool = function(object){
   this.pool.add(object);
 };
 
+// Destroy Pixi.js graphics object.
+TextureManager.prototype.destroyObject = function(object){
+  switch(object.constructor){
+    case PIXI.Text:
+    case PIXI.Graphics:
+      object.destroy(true);
+      break;
+    default:
+      object.destroy();
+  };
+};
 // Destroys all objects in pool and empties it.
 // Assumes all objects in this.pool are Pixi.js objects that has .destroy().
 TextureManager.prototype.clearPool = function(){
-  this.pool.forEach(e => e.destroy());
-  // console.log(this.pool);
+  this.pool.forEach(e => this.destroyObject(e));
   this.pool.clear();
+  this.clearTextureCache();
 };
 
 TextureManager.prototype.loadTextures = function(imageMap, callback=function(){}){
@@ -296,6 +294,18 @@ TextureManager.prototype.copyTexture = function(texture, pool=true){
     return newTexture;
   };
 };
+
+TextureManager.prototype.removeFromTextureCache = function(id){
+  let cache = PIXI.utils.TextureCache;
+  if(cache[id]){
+    console.log("deleted")
+    delete cache[id];
+  } else console.error(`Error while trying to delete from TextureCache: ${id} does not exist as a property.`);
+};
+
+TextureManager.prototype.clearTextureCache = function(clearAll=false){
+  PIXI.utils.clearTextureCache();
+}
 
 // Make a sprite from a given texture
 TextureManager.prototype.getSprite = function(texture){

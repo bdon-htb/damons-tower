@@ -1,5 +1,5 @@
 /**
- * logic.js is where all the functions and game-specific
+ * logic.js is where all the game-specific functions and 
  * data structures go.
 */
 

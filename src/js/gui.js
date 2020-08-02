@@ -12,6 +12,7 @@ function Menu(parent, data){
   this.name;
   this.layout;
   this.entities = new Map();
+  this._hasButtons = false;
 
   // Borrow some methods from the Engine.
   this.getXMLChildren = parent.getXMLChildren;
@@ -39,7 +40,7 @@ Menu.prototype.parseData = function(parent, data){
 
   let menuTag = fileChildren.get("menu");
   this.setEntities(menuTag);
-  console.log(this.layout.cells)
+  this._hasButtons = this.hasObject(Button);
 };
 
 // Add an object to this.entities; accepts a list of objects or a single object.
@@ -148,7 +149,6 @@ Menu.prototype.addToLayout = function(entity, attributes){
       addToLayoutFunc = this._addToGridLayout.bind(this);
       break;
   };
-
   addToLayoutFunc(entity, attributes);
 };
 
@@ -160,14 +160,48 @@ Menu.prototype.calculateSize = function(entity){
     case Button:
       return renderer.calculateTextSize(entity.text, entity.textStyle);
     default:
-      console.error(`Could not calculate the size of ${entity}.`)
-  }
+      console.error(`Could not calculate the size of ${entity}.`);
+  };
 };
 
 Menu.prototype.setSize = function(entity){
   let size = this.calculateSize(entity);
   entity.width = size[0];
   entity.height = size[1];
+};
+
+// TODO: Get button press to work.
+// TODO: Make brackets look cleaner somehow. It's annoying me.
+Menu.prototype.checkClicks = function(){
+  let engine = this.parent;
+  let inputs = engine.getInputEvents();
+  let pointInRect = engine.pointInRect;
+  let mouse = engine.getInputDevice("mouse");
+
+  if(inputs.size > 0 && this._hasButtons === true){
+    for(const [id, entity] of this.entities.entries()){
+      if(entity.constructor === Button && this._mouseInButton(mouse, entity) === true){
+        console.log(`CLICKED ${entity.id}`);
+        break; // Assumes that only one button can be clicked at a time.
+      };
+    };
+  };
+};
+
+// Returns a bool.
+Menu.prototype._mouseInButton = function(mouse, button){
+  let engine = this.parent;
+    // TODO: Make this more elaborate. Do the same for Renderer.prototype.drawButton.
+  let rect = new Rect([button.x, button.y], button.width * 1.5, button.height * 1.5);
+  return engine.pointInRect(mouse.x, mouse.y, rect);
+};
+
+// Check if the Menu has at least one occurrence of the specified type.
+Menu.prototype.hasObject = function(constructor){
+  for(const [id, entity] of this.entities.entries()){
+    if(entity.constructor === constructor){return true};
+  };
+  return false;
 };
 
 Menu.prototype._setValidEntities = function(){
@@ -178,12 +212,10 @@ Menu.prototype._setValidEntities = function(){
 Menu.prototype._addToGridLayout = function(entity, attributes){
   let row = attributes.get("row");
   let col = attributes.get("col");
-
   // Error handling.
   if(row === undefined || col === undefined){
-    console.error(`Row and column data for label is invalid! Label id: ${id}. Label: ${label}.`)
+    console.error(`Row and column data for label is invalid! Label id: ${id}. Label: ${label}.`);
   };
-
   this.layout.addToCell(row, col, entity);
 };
 
@@ -202,10 +234,14 @@ Menu.prototype._getAttribute = function(attributes, name, defaultAttribute="defa
     return attributes.get(name);
   } else {
     if(required === true){
-      console.error(`${objectName} is missing required ${name} attribute!`)
+      console.error(`${objectName} is missing required ${name} attribute!`);
     } else return defaultAttribute;
   };
 };
+
+/**
+ * Custom grid layout cell class.
+*/
 function Cell(row, col, entities=[]){
   this.row = row;
   this.col = col;
@@ -216,6 +252,10 @@ Cell.prototype.addEntity = function(entity){
   this.entities.push(entity);
 };
 
+/**
+ * Custom grid layout class. Responsible for positioning and organizing entities
+ * into cells.
+*/
 function GridLayout(parent, rows, columns){
   this.type = "gridLayout"
   this.menu = parent; // parent menu.
@@ -271,6 +311,9 @@ GridLayout.prototype.addToCell = function(row, col, entity){
   cell.addEntity(entity);
 }
 
+/**
+ * Parent class for all gui objects.
+*/
 function GUIObject(id){
   this.id = id;
   this.x;
@@ -280,12 +323,18 @@ function GUIObject(id){
   this.attributes = new Map();
 };
 
+/**
+ * Label gui object.
+*/
 function Label(id, text, style="default"){
   GUIObject.call(this, id);
   this.text = text;
   this.textStyle = style;
 };
 
+/**
+ * Button gui object.
+*/
 // TODO: Make a callback system for buttons in engine.js
 // basically have keys that associate with methods.
 // the button callback will refer to one of these keys.

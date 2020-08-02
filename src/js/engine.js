@@ -82,7 +82,9 @@ Engine.prototype.run = function(data){
   };
 };
 
-// Loader specific methods.
+// ==============================
+// Loader/Asset specific methods.
+// ==============================
 
 // loadAllAssets should be called before the game starts.
 Engine.prototype.loadAllAssets = function(){
@@ -123,7 +125,9 @@ Engine.prototype.allAssetsLoaded = function(){
   return true;
 };
 
+// ==========================
 // Renderer specific methods.
+// ==========================
 
 Engine.prototype.loadAllTextures = function(callback){
   let imageMap = this.getLoadedAsset(this.imageKey);
@@ -150,7 +154,9 @@ Engine.prototype.getLoadedAsset = function(key){
   return this.assets.get(key);
 }
 
+// =====================
 // File related methods.
+// =====================
 
 // Note: All accepted xmls for the engine must have a <header> within the <file>
 Engine.prototype.verifyXML = function(data){
@@ -197,7 +203,10 @@ Engine.prototype.getXMLAttributes = function(tag){
   return map;
 };
 
+// =================================
 // Gemeral common math calculations.
+// =================================
+
 // Convert the index of a 1d array to the cartesian coordinate
 // equivalent of a similar 2d array.
 Engine.prototype.convertIndexToCoords = function(index, arrayWidth){
@@ -249,6 +258,22 @@ Engine.prototype.rectIntersects = function(rectA, rectB){
     pointInRect(intersectX, intersectY, rectB) == true
   );
   return result;
+};
+
+// ======================
+// Input related methods.
+// ======================
+
+// Shorthand access for active input events.
+Engine.prototype.getInputEvents = function(){
+  return this.inputManager.events;
+};
+
+Engine.prototype.getInputDevice = function(deviceName){
+  let devices = this.inputManager.inputDevices;
+  if(devices.has(deviceName)){
+    return devices.get(deviceName);
+  } else console.error(`Error getting input device! ${deviceName} does not exist.`);
 };
 
 /**
@@ -316,7 +341,6 @@ AssetLoader.prototype.loadMenu = function(data, success){
     this.parent.assets.set(menuKey, new Map()); // If first time loading menu, create the map.
   };
   this.parent.assets.get(menuKey).set(menu.name, menu);
-  console.log(this.parent.assets);
 };
 
 /**

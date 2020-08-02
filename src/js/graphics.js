@@ -191,6 +191,7 @@ Renderer.prototype.drawLabel = function(label){
   drawText(label.text, label.textStyle, label.x, label.y);
 };
 
+// TODO: Make this more elaborate. Do the same for Menu.prototype.calculateSize;.
 Renderer.prototype.drawButton = function(button){
   let text = new PIXI.Text(button.text, button.textStyle);
   let drawRect = this.drawRect.bind(this);

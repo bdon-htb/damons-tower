@@ -211,6 +211,10 @@ Tester.prototype.fifthTest = function(data){
   // Set aliases.
   let parent = this.parent;
   let renderer = parent.renderer;
+  let inputs = parent.getInputEvents();
+  if(parent.getInputEvents().size > 0){
+    this.menu.checkClicks();
+  };
   renderer.drawMenu(this.menu);
 };
 

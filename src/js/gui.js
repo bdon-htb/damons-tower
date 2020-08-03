@@ -170,7 +170,6 @@ Menu.prototype.setSize = function(entity){
   entity.height = size[1];
 };
 
-// TODO: Get button press to work.
 // TODO: Make brackets look cleaner somehow. It's annoying me.
 Menu.prototype.checkClicks = function(){
   let engine = this.parent;
@@ -196,7 +195,7 @@ Menu.prototype._mouseInButton = function(mouse, button){
   return engine.pointInRect(mouse.x, mouse.y, rect);
 };
 
-// Check if the Menu has at least one occurrence of the specified type.
+// Check if the Menu has at least one occurrence of the specified gui type.
 Menu.prototype.hasObject = function(constructor){
   for(const [id, entity] of this.entities.entries()){
     if(entity.constructor === constructor){return true};
@@ -270,7 +269,7 @@ GridLayout.prototype.setAllPositions = function(){
   this.cells.forEach(cell => this.setPositions(cell));
 };
 
-// Untested.
+// Does not account for overflowing objects.
 // Sets/updates the position of all entities in a specified cell.
 GridLayout.prototype.setPositions = function(cell){
   let windowWidth = this.menu.parent.windowWidth;

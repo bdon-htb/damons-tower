@@ -25,6 +25,8 @@ function Engine(htmlDOM){
   this.animKey = "animationData";
   // contains urls to menu data.
   this.levelKey = "levelData";
+  // contains the urls to all the game's menus.
+  this.menuDataKey = "menuData";
   // contains menu objects of the game's menus.
   this.menuKey = "menus";
 
@@ -61,24 +63,31 @@ Engine.prototype.update = function(data){
 // This will obviously have to be more elaborate when the actual game is being made.
 Engine.prototype.run = function(data){
   let state = this.stateMachine.currentState;
-  // console.log(state);
-  if(state == "starting"){
+  if(state === "running"){
+    this.update(data);
+    this.draw(data);
+  } else this._runLoadingStates(data) // If the engine is not running, then it must be loading something.
+};
+
+Engine.prototype._runLoadingStates = function(data){
+  let state = this.stateMachine.currentState;
+  if(state === "starting"){
     this.stateMachine.changeState("loading assets"); // Start loading the assets.
     this.loadAllAssets();
   }
-  // Check if current state is "loading assets" and the engine assets has images loaded.
-  else if(state == "loading assets" && this.allAssetsLoaded() === true){
-    this.stateMachine.changeState("loading textures");
+  // Check if all assets loaded but the current state hasn't changed to reflect that.
+  else if(state === "loading assets" && this.allAssetsLoaded() === true){
+    this.stateMachine.changeState("loading menus");
+    this.loadAllMenus();
+  }
+  else if(state === "loading menus" && this.allMenusLoaded() === true){
     // Set it so that when the textures finish loading, the state changes to "running."
+    this.stateMachine.changeState("loading textures");
     let callback = () => {
       this.stateMachine.changeState("running");
       this.tester.init();
     };
     this.loadAllTextures(callback);
-  }
-  else if(state == "running"){
-    this.update(data);
-    this.draw(data);
   };
 };
 
@@ -100,11 +109,7 @@ Engine.prototype.loadAllAssets = function(){
   // Load TEST level data.
   this.assetLoader.getAsset(dataLocation + "/" + "levels.json", true);
 
-  // this.assetLoader.getAsset(dataLocation + "/" + "menus.json", true);
-
-  // Load mm.xml
-  // TODO: Streamline into menus.json somehow.
-  this.assetLoader.getAsset(this.menuLocation + "/" + "mm.xml", true);
+  this.assetLoader.getAsset(dataLocation + "/" + "menus.json", true);
 };
 
 Engine.prototype.assetIsLoaded = function(id){
@@ -116,13 +121,31 @@ Engine.prototype.allAssetsLoaded = function(){
     this.imageKey,
     this.animKey,
     this.levelKey,
-    this.menuKey,
+    this.menuDataKey,
   ];
 
   for(const key of assetsKeys){
     if(this.assets.has(key) === false){return false};
   };
   return true;
+};
+
+Engine.prototype.loadAllMenus = function(){
+  if(this.assets.has(this.menuDataKey)){
+    let menuURLS = this.assets.get(this.menuDataKey);
+    for(let [id, url] of menuURLS){
+      url = this.menuLocation + "/" + url;
+      this.assetLoader.getAsset(url, true);
+    };
+  } else console.error(`Cannot load menus. ${this.menuDataKey} does not exist in assets.`);
+};
+
+Engine.prototype.allMenusLoaded = function(){
+  let menuURLS = this.assets.get(this.menuDataKey);
+  let menus = this.assets.get(this.menuKey);
+  if(menus === undefined || menuURLS === undefined){
+    return false;
+  } else return menus.size === menuURLS.size;
 };
 
 // ==========================
@@ -355,6 +378,7 @@ function StateMachine(parent){
     "running",
     "paused",
     "loading assets",
+    "loading menus",
     "loading textures",
     "error",
     "debug"

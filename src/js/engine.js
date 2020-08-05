@@ -44,6 +44,10 @@ function Engine(htmlDOM){
   // Placeholder component - purely for testing purposes.
   this.tester = new Tester(this);
 
+  // TODO:
+  this.callbacks;
+  this._setupCallbacks();
+
 };
 
 Engine.prototype.draw = function(data){
@@ -52,12 +56,8 @@ Engine.prototype.draw = function(data){
 };
 
 Engine.prototype.update = function(data){
-  // console.log(this.inputManager.inputDevices)
   this.inputManager.captureInputs();
   this.tester.testUpdate(data);
-  //if(this.inputManager.events.size > 0){
-    // console.log(this.inputManager.events.get("mouse"));
-  // };
 };
 
 // This will obviously have to be more elaborate when the actual game is being made.
@@ -91,13 +91,18 @@ Engine.prototype._runLoadingStates = function(data){
   };
 };
 
+// Create 
+Engine.prototype._setupCallbacks = function(){
+  this.callbacks = {
+    "startGame": () => console.log("Game started!")
+  };
+};
 // ==============================
 // Loader/Asset specific methods.
 // ==============================
 
 // loadAllAssets should be called before the game starts.
 Engine.prototype.loadAllAssets = function(){
-  // Set aliases.
   let dataLocation = this.dataLocation;
   let imgLocation = this.imgLocation;
 

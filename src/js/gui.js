@@ -180,11 +180,19 @@ Menu.prototype.checkClicks = function(){
   if(inputs.size > 0 && this._hasButtons === true){
     for(const [id, entity] of this.entities.entries()){
       if(entity.constructor === Button && this._mouseInButton(mouse, entity) === true){
-        console.log(`CLICKED ${entity.id}`);
+        this.executeCallback(entity);
         break; // Assumes that only one button can be clicked at a time.
       };
     };
   };
+};
+
+Menu.prototype.executeCallback = function(entity){
+  let callName = entity.callback;
+  let callback = this.parent.callbacks[callName];
+  if(callback !== undefined){
+    callback();
+  } else console.error(`Error executing callback: ${callName} is not a valid callback.`);
 };
 
 // Returns a bool.
@@ -289,8 +297,6 @@ GridLayout.prototype.setPositions = function(cell){
     setSize(entity);
   };
 };
-
-
 
 GridLayout.prototype.getCell = function(row, col){
   let cellID = Number(row) * this.rows + Number(col);

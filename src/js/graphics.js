@@ -53,7 +53,9 @@ Renderer.prototype.createTextStyles = function(){
   });
 };
 
+// ========================
 // Texture related methods.
+// ========================
 
 Renderer.prototype.loadTextures = function(imageMap, callback=function(){}){
   this.textureManager.loadTextures(imageMap, callback);
@@ -69,7 +71,9 @@ Renderer.prototype.getSheetFromId = function(id){
   return spriteSheet;
 };
 
+// ========================
 // Drawing related methods.
+// ========================
 
 Renderer.prototype.draw = function(child){
   this.app.stage.addChild(child);
@@ -132,7 +136,6 @@ Renderer.prototype.scaleSprite = function(sprite){
 };
 
 // Draws all tiles in view of the camera.
-// TODO: FIrst of all, give this a better name.
 Renderer.prototype.drawTiles = function(scene){
   let tileMap = scene.tileMap;
   let tilesArray = tileMap.tiles;
@@ -166,7 +169,10 @@ Renderer.prototype.drawTiles = function(scene){
   };
 };
 
+// =====================
 // Menu related methods.
+// =====================
+
 Renderer.prototype.drawMenu = function(menu){
   menu.entities.forEach(e => this.drawGUIObject(e));
 };
@@ -201,7 +207,7 @@ Renderer.prototype.drawButton = function(button){
   drawText(button.text, button.textStyle, center[0], center[1]);
 };
 
-// Caluclates the size of
+// Caluclates the size of the string in pixels based on PIXI text styling.
 Renderer.prototype.calculateTextSize = function(s, textStyle){
   let text = new PIXI.Text(s, textStyle);
   this.textureManager.addToPool(text);
@@ -234,7 +240,8 @@ TextureManager.prototype.destroyObject = function(object){
       object.destroy();
   };
 };
-// Destroys all objects in pool and empties it.
+
+// Destroys all objects in pool and empty it.
 // Assumes all objects in this.pool are Pixi.js objects that has .destroy().
 TextureManager.prototype.clearPool = function(){
   this.pool.forEach(e => this.destroyObject(e));
@@ -323,7 +330,7 @@ TextureManager.prototype.clearTextureCache = function(clearAll=false){
   };
 };
 
-// Make a sprite from a given texture
+// Make a sprite from a given texture.
 TextureManager.prototype.getSprite = function(texture){
   // Error handling.
   if(texture.constructor !== PIXI.Texture){

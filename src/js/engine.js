@@ -91,12 +91,14 @@ Engine.prototype._runLoadingStates = function(data){
   };
 };
 
-// Create 
+// Create the valid game callbacks.
+// TODO: Might make some sense to add this to game.js at some point.
 Engine.prototype._setupCallbacks = function(){
   this.callbacks = {
     "startGame": () => console.log("Game started!")
   };
 };
+
 // ==============================
 // Loader/Asset specific methods.
 // ==============================

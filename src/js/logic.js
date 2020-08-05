@@ -1,5 +1,5 @@
 /**
- * logic.js is where all the game-specific functions and 
+ * logic.js is where all the game-specific functions and
  * data structures go.
 */
 
@@ -10,9 +10,6 @@
 function Entity(id, sprite, type, state, x, y){
   this.id = id;
   // Default attributes.
-  // TODO: Figure out how to organize the data so the current sprite is a persistant
-  // object. Instead of creating a new texture each frame, just change the texture.rect
-  // of the current sprite.
   this.attributes = {
     "sprite": sprite,
     "type": type,
@@ -169,7 +166,6 @@ TileMap.prototype.convertCoordsToIndex = function(index_X, index_Y){
   return Engine.prototype.convertCoordsToIndex(index_X, index_Y, this.width);
 };
 
-// TODO: Implement.
 /*
  * Simple camera; will move based on what it's tracking.
  * NOTE: ALL coordinates will be relative to the SCENE.

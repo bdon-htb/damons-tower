@@ -15,8 +15,16 @@
       <text>Play</text>
       <callback>startGame</callback>
     </button>
+    <button row="1" col="1">
+      <text>Options</text>
+      <callback>openOptions</callback>
+    </button>
+    <button row="1" col="1">
+      <text>Credits</text>
+      <callback>openCredits</callback>
+    </button>
     <label row="2" col="2">
-      <text>by Brandon Phillips.</text>
+      <text>ver undefined :(</text>
     </label>
   </menu>
 </file>

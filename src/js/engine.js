@@ -95,7 +95,9 @@ Engine.prototype._runLoadingStates = function(data){
 // TODO: Might make some sense to add this to game.js at some point.
 Engine.prototype._setupCallbacks = function(){
   this.callbacks = {
-    "startGame": () => console.log("Game started!")
+    "startGame": () => console.log("Game started!"),
+    "openOptions": () => console.log("Options opened!"),
+    "openCredits": () => console.log("Credits opened!")
   };
 };
 

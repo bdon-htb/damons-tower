@@ -157,8 +157,10 @@ Menu.prototype.calculateSize = function(entity){
   let renderer = this.parent.renderer;
   switch(entity.constructor){
     case Label:
-    case Button:
       return renderer.calculateTextSize(entity.text, entity.textStyle);
+    case Button:
+      let dimensions = renderer.calculateTextSize(entity.text, entity.textStyle);
+      return [dimensions[0] * 2, dimensions[1] * 2]
     default:
       console.error(`Could not calculate the size of ${entity}.`);
   };
@@ -199,7 +201,7 @@ Menu.prototype.executeCallback = function(entity){
 Menu.prototype._mouseInButton = function(mouse, button){
   let engine = this.parent;
     // TODO: Make this more elaborate. Do the same for Renderer.prototype.drawButton.
-  let rect = new Rect([button.x, button.y], button.width * 1.5, button.height * 1.5);
+  let rect = new Rect([button.x, button.y], button.width, button.height);
   return engine.pointInRect(mouse.x, mouse.y, rect);
 };
 
@@ -283,18 +285,17 @@ GridLayout.prototype.setPositions = function(cell){
   let windowWidth = this.menu.parent.windowWidth;
   let windowHeight = this.menu.parent.windowHeight;
   let setSize = this.menu.setSize.bind(this.menu);
-  let predSize = {width: 0, height: 0}; // Size of the entity preceding the current entity.
+  let predY = 0; // previous entity's y-coordinate.
 
   for(let index = 0; index < cell.entities.length; index++){
     let entity = cell.entities[index];
-    if(index > 0){
-      let e = cell.entities[index - 1];
-      predSize["width"] = e.width;
-      predSize["height"] = e.height;
-    };
-    entity.x = (windowWidth / this.rows) * cell.row;
-    entity.y = (windowHeight / this.cols) * cell.col + predSize["height"];
+    entity.x = Math.floor((windowWidth / this.rows) * cell.row);
+    entity.y = Math.floor((windowHeight / this.cols) * cell.col + predY);
     setSize(entity);
+    console.log(predY);
+    predY += entity.height;
+    console.log(predY);
+    console.log(entity);
   };
 };
 
@@ -314,7 +315,7 @@ GridLayout.prototype._fillOutCells = function(){
 GridLayout.prototype.addToCell = function(row, col, entity){
   let cell = this.getCell(row, col);
   cell.addEntity(entity);
-}
+};
 
 /**
  * Parent class for all gui objects.
@@ -322,7 +323,7 @@ GridLayout.prototype.addToCell = function(row, col, entity){
 function GUIObject(id){
   this.id = id;
   this.x;
-  this.y
+  this.y;
   this.width;
   this.height;
   this.attributes = new Map();
@@ -340,9 +341,6 @@ function Label(id, text, style="default"){
 /**
  * Button gui object.
 */
-// TODO: Make a callback system for buttons in engine.js
-// basically have keys that associate with methods.
-// the button callback will refer to one of these keys.
 function Button(id, text, callback, textStyle="default"){
   Label.call(this, id, text, textStyle)
   this.callback = callback;

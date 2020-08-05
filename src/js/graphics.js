@@ -203,7 +203,7 @@ Renderer.prototype.drawButton = function(button){
   let drawRect = this.drawRect.bind(this);
   let drawText = this.drawText.bind(this);
   let center = [button.x + button.width / 4, button.y + button.height / 4];
-  drawRect(0x66CCFF, button.x, button.y, button.width * 1.5, button.height * 1.5);
+  drawRect(0x66CCFF, button.x, button.y, button.width, button.height);
   drawText(button.text, button.textStyle, center[0], center[1]);
 };
 

@@ -12,11 +12,15 @@ function Menu(parent, data){
   this.name;
   this.layout;
   this.entities = new Map();
+  this.attributes = new Map();
   this._hasButtons = false;
 
   // Borrow some methods from the Engine.
   this.getXMLChildren = parent.getXMLChildren;
   this.getXMLAttributes = parent.getXMLAttributes;
+  // Moved these over to Engine cause they seemed pretty general.
+  this._getChildTag = parent.getXMLChildTag;
+  this._getAttribute = parent.getXMLAttribute;
 
   // A map of all accept menu entities/object type and their equivalent setter function.
   this.validEntities = new Map();
@@ -40,6 +44,7 @@ Menu.prototype.parseData = function(parent, data){
 
   let menuTag = fileChildren.get("menu");
   this.setEntities(menuTag);
+  this.attributes = this.getXMLAttributes(menuTag);
   this._hasButtons = this.hasObject(Button);
 };
 
@@ -228,26 +233,6 @@ Menu.prototype._addToGridLayout = function(entity, attributes){
   this.layout.addToCell(row, col, entity);
 };
 
-// Shorthand function that includes error handling.
-// Get the specified child tag from a map of child tags.
-// objectName is just an optional parameter for the error message.
-Menu.prototype._getChildTag = function(children, name, objectName="Object"){
-  if(children.has(name)){
-    return children.get(name);
-  } else console.error(`${objectName} is missing required ${name} tag!`);
-};
-
-// attributes is a map of xml attributes.
-Menu.prototype._getAttribute = function(attributes, name, defaultAttribute="default", objectName="Object", required=false){
-  if(attributes.has(name)){
-    return attributes.get(name);
-  } else {
-    if(required === true){
-      console.error(`${objectName} is missing required ${name} attribute!`);
-    } else return defaultAttribute;
-  };
-};
-
 /**
  * Custom grid layout cell class.
 */
@@ -261,11 +246,15 @@ Cell.prototype.addEntity = function(entity){
   this.entities.push(entity);
 };
 
+Cell.prototype.isEmpty = function(){
+  return entities.length === 0;
+};
+
 /**
  * Custom grid layout class. Responsible for positioning and organizing entities
  * into cells.
 */
-function GridLayout(parent, rows, columns){
+function GridLayout(parent, rows, columns, attributes=[]){
   this.type = "gridLayout"
   this.menu = parent; // parent menu.
   this.rows = rows; // number of rows.
@@ -285,17 +274,15 @@ GridLayout.prototype.setPositions = function(cell){
   let windowWidth = this.menu.parent.windowWidth;
   let windowHeight = this.menu.parent.windowHeight;
   let setSize = this.menu.setSize.bind(this.menu);
-  let predY = 0; // previous entity's y-coordinate.
+  let prevEntity = {height: 0}; // previous entity's y-coordinate.
+  console.log(`${windowWidth / this.rows}x${windowHeight / this.cols}`)
 
   for(let index = 0; index < cell.entities.length; index++){
     let entity = cell.entities[index];
     entity.x = Math.floor((windowWidth / this.rows) * cell.row);
-    entity.y = Math.floor((windowHeight / this.cols) * cell.col + predY);
+    entity.y = Math.floor((windowHeight / this.cols) * cell.col + prevEntity.height);
     setSize(entity);
-    console.log(predY);
-    predY += entity.height;
-    console.log(predY);
-    console.log(entity);
+    prevEntity.height += entity.height;
   };
 };
 
@@ -305,7 +292,8 @@ GridLayout.prototype.getCell = function(row, col){
 };
 
 GridLayout.prototype._fillOutCells = function(){
-  let convertIndexToCoords = Engine.prototype.convertIndexToCoords;
+  let engine = this.menu.parent;
+  let convertIndexToCoords = engine.convertIndexToCoords;
   for(let step = 0; step < this.rows * this.cols; step++){
     let posArray = convertIndexToCoords(step, this.rows);
     this.cells.push(new Cell(posArray[0], posArray[1]));

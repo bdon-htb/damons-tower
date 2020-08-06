@@ -235,6 +235,26 @@ Engine.prototype.getXMLAttributes = function(tag){
   return map;
 };
 
+// Shorthand function that includes error handling.
+// Get the specified child tag from a map of child tags.
+// objectName is just an optional parameter for the error message.
+Engine.prototype.getXMLChildTag = function(children, name, objectName="Object"){
+  if(children.has(name)){
+    return children.get(name);
+  } else console.error(`${objectName} is missing required ${name} tag!`);
+};
+
+// attributes is a map of xml attributes.
+Engine.prototype.getXMLAttribute = function(attributes, name, defaultAttribute="default", objectName="Object", required=false){
+  if(attributes.has(name)){
+    return attributes.get(name);
+  } else {
+    if(required === true){
+      console.error(`${objectName} is missing required ${name} attribute!`);
+    } else return defaultAttribute;
+  };
+};
+
 // =================================
 // Gemeral common math calculations.
 // =================================

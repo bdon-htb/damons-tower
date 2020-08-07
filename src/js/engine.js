@@ -280,6 +280,21 @@ Engine.prototype.inBetween = function(value, lower, upper, inclusive=false){
   return result;
 };
 
+// Get the row of a an array. Returns array of items in row.
+Engine.prototype.getRow = function(array, row, totalCols){
+  // Slice list from first item in row to the last item in row.
+  return array.slice(row * totalCols, (row * totalCols) + totalCols);
+};
+
+// Get the column of an array. Returns array of items in column.
+Engine.prototype.getColumn = function(array, col, totalCols){
+  let colArray = [];
+  for(let row = 0; row < totalCols; row++){
+    colArray.push(array[row * totalCols + col]);
+  };
+  return colArray;
+};
+
 // Return true if the point exists inside the rectangle.
 // rect = Rect not PIXI.Rectangle.
 Engine.prototype.pointInRect = function(x, y, rect){

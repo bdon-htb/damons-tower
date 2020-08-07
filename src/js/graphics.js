@@ -177,6 +177,10 @@ Renderer.prototype.drawMenu = function(menu){
   menu.entities.forEach(e => this.drawGUIObject(e));
 };
 
+// TODO:
+Renderer.prototype.drawCell = function(cell){
+  this.drawRect(0x7a7a7a, cell)
+};
 // Shorthand method.
 Renderer.prototype.drawGUIObject = function(entity){
   switch(entity.constructor){

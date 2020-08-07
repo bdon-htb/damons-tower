@@ -204,7 +204,7 @@ Tester.prototype.fifthTestInit = function(){
   let parent = this.parent;
   let renderer = parent.renderer;
   this.menu = parent.getLoadedAsset("menus").get("mainMenu");
-  this.menu.layout.setAllPositions();
+  this.menu.layout.organize();
 };
 
 Tester.prototype.fifthTest = function(data){

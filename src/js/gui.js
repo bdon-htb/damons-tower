@@ -158,21 +158,21 @@ Menu.prototype.addToLayout = function(entity, attributes){
 };
 
 // Calculate the size of a gui object based on its properties.
-Menu.prototype.calculateSize = function(entity){
+Menu.prototype.calculateEntitySize = function(entity){
   let renderer = this.parent.renderer;
   switch(entity.constructor){
     case Label:
       return renderer.calculateTextSize(entity.text, entity.textStyle);
     case Button:
       let dimensions = renderer.calculateTextSize(entity.text, entity.textStyle);
-      return [dimensions[0] * 2, dimensions[1] * 2]
+      return [dimensions[0] * 2, dimensions[1] * 2];
     default:
       console.error(`Could not calculate the size of ${entity}.`);
   };
 };
 
 Menu.prototype.setSize = function(entity){
-  let size = this.calculateSize(entity);
+  let size = this.calculateEntitySize(entity);
   entity.width = size[0];
   entity.height = size[1];
 };
@@ -234,25 +234,25 @@ Menu.prototype._addToGridLayout = function(entity, attributes){
 };
 
 /**
- * Custom grid layout cell class.
+ * Custom grid layout cell object. Contains no methods itself.
 */
 function Cell(row, col, entities=[]){
   this.row = row;
   this.col = col;
   this.entities = entities;
-};
-
-Cell.prototype.addEntity = function(entity){
-  this.entities.push(entity);
-};
-
-Cell.prototype.isEmpty = function(){
-  return entities.length === 0;
+  this.width = 0;
+  this.height = 0;
+  // These are topleft values.
+  this.x = 0;
+  this.y = 0;
 };
 
 /**
  * Custom grid layout class. Responsible for positioning and organizing entities
  * into cells.
+ * The grid layout is split into smaller rectangles called cells.
+ * Within the cells are references to gui entities. Currently GridLayout only
+ * has a vertical stack behaviour within the cells.
 */
 function GridLayout(parent, rows, columns, attributes=[]){
   this.type = "gridLayout"
@@ -260,29 +260,171 @@ function GridLayout(parent, rows, columns, attributes=[]){
   this.rows = rows; // number of rows.
   this.cols = columns; // number of columns
   this.cells = []; // grid cell data.
-  this._fillOutCells();
+  this._createCells();
 };
 
-// Sets/updates the position of all entities in the menu.
-GridLayout.prototype.setAllPositions = function(){
-  this.cells.forEach(cell => this.setPositions(cell));
+// Shorthand for sizing the cells, entities and setting their positions in one.
+GridLayout.prototype.organize = function(){
+  let entities = this.menu.entities;
+  let setEntitySize = this.menu.setSize.bind(this.menu);
+  entities.forEach(e => setEntitySize(e));
+  this.sizeCells();
+  this.setCellPositions();
+  console.log(this.cells)
 };
 
-// Does not account for overflowing objects.
-// Sets/updates the position of all entities in a specified cell.
-GridLayout.prototype.setPositions = function(cell){
+// Sets the sizes and position of all the cells.
+GridLayout.prototype.sizeCells = function(){
+  let convertIndexToCoords = this.menu.parent.convertIndexToCoords;
+  let autofill = this.menu.attributes.has("autofill") ? Boolean(this.menu.attributes.get("autofill")) : false;
+
+  // Initialize.
+  let currRow = 0;
+  let currCol = 0;
+  let size;
+  let posArray;
+  let cell;
+
+  // First calculate the size of every cell.
+  this.cells.forEach(cell => {
+    let size = this.calculateCellSize(cell);
+    this.setCellSize(size, cell);
+  });
+
+  if(autofill === true){
+    // Needs to be <= to account for last row.
+    // TODO: Last row not working.
+    for(let index = 0; index <= this.cells.length; index++){
+      posArray = convertIndexToCoords(index, this.rows);
+
+      // If autofill is on and moving onto next row...
+      if(posArray[0] > currRow){
+        this.autoFill("row", currRow);
+      };
+
+      // If on last row.
+      if(posArray[0] === this.rows - 1){
+        this.autoFill("col", posArray[1]);
+      };
+
+      // Update position trackers.
+      currRow = posArray[0];
+      currCol = posArray[1];
+    };
+  };
+};
+
+// Set the x and y coordinates of all the cells.
+GridLayout.prototype.setCellPositions = function(){
+  let convertIndexToCoords = this.menu.parent.convertIndexToCoords;
+  let convertCoordsToIndex = this.menu.parent.convertCoordsToIndex;
   let windowWidth = this.menu.parent.windowWidth;
-  let windowHeight = this.menu.parent.windowHeight;
-  let setSize = this.menu.setSize.bind(this.menu);
-  let prevEntity = {height: 0}; // previous entity's y-coordinate.
-  console.log(`${windowWidth / this.rows}x${windowHeight / this.cols}`)
 
-  for(let index = 0; index < cell.entities.length; index++){
-    let entity = cell.entities[index];
-    entity.x = Math.floor((windowWidth / this.rows) * cell.row);
-    entity.y = Math.floor((windowHeight / this.cols) * cell.col + prevEntity.height);
-    setSize(entity);
-    prevEntity.height += entity.height;
+  let x;
+  let y;
+  let currRow = 0;
+  let currCol = 0;
+  let cell;
+  let row;
+  let col;
+
+  let cellAbove; // Cell above the current cell.
+  let cellAboveIndex;
+
+  let cellLeftOf; // Cell to the right of current cell.
+  let cellLeftOfIndex;
+
+  for(let index = 0; index < this.cells.length; index++){
+    cell = this.cells[index]; // Current cell.
+    posArray = convertIndexToCoords(index, this.rows); // Grid position of the current cell.
+    row = posArray[0];
+    col = posArray[1];
+
+    if(row > 0){
+      cellAboveIndex = convertCoordsToIndex(row - 1, col, this.rows);
+      cellAbove = this.cells[cellAboveIndex];
+      y = cellAbove.y + cellAbove.height;
+    } else y = 0;
+
+    if(col > 0){
+      cellLeftOfIndex = convertCoordsToIndex(row, col - 1, this.rows);
+      cellLeftOf = this.cells[cellLeftOfIndex];
+      x = cellLeftOf.x + cellLeftOf.width;
+    } else x = 0;
+
+    cell.x = x;
+    cell.y = y;
+  };
+};
+
+GridLayout.prototype._fillCell = function(cell, fillAmount, property){
+  if(property === "width" || property === "height"){
+    cell[property] += fillAmount;
+  } else console.error(`Cannot fill cell: ${cell}. ${property} is not the width or height.`);
+};
+
+
+GridLayout.prototype._getLineSum = function(lineOfCells, property){
+  sum = 0;
+  for(cell of lineOfCells){
+    sum += cell[property];
+  };
+  return sum;
+};
+
+// Autofill the cells in a row / column.
+// Precondition: lineType === "row" || lineType === "col".
+// lineNum is just the row number / column number.
+GridLayout.prototype.autoFill = function(lineType, lineNum){
+  // Error handling.
+  if(lineType !== "row" && lineType !== "col"){
+    console.error(`Cannot fill cells in line ${lineNum}! ${lineType} is an invalid line type!`);
+    return;
+  };
+
+  let engine = this.menu.parent;
+  let fillCell = this._fillCell;
+  let sum = 0; // Sum of width / height.
+  let cellsInLine;
+  let windowDimension;
+  let cellDimension;
+  let fillAmount;
+  let totalUnits; // total columns or total rows.
+
+  if(lineType === "row"){
+    cellsInLine = engine.getRow(this.cells, lineNum, this.cols);
+    cellDimension = "width";
+    windowDimension = "windowWidth";
+    totalUnits = this.cols
+  } else { // Assume lineType === "col".
+    cellsInLine = engine.getColumn(this.cells, lineNum, this.cols)
+    cellDimension = "height";
+    windowDimension = "windowHeight";
+    totalUnits = this.rows
+  };
+
+  // Iterate through cells first to collect the total width / height.
+  sum = this._getLineSum(cellsInLine, cellDimension);
+
+  // Calculate fill width / height using any leftover free space.
+  // Flooring typically means the cells will undershoot the window. So we must account for that later.
+  fillAmount = Math.floor((engine[windowDimension] - sum) / cellsInLine.length);
+
+
+  // If fillWidth is negative then there's going to be an overflow so don't bother filling :)
+  if(fillAmount < 0){
+    return;
+  };
+
+  // Iterate through cells again, but this time fill them.
+  for(let cell of cellsInLine){
+    // If last cell in the line being filled. compensate for undershoot.
+    if(cell[lineType] === totalUnits - 1){
+      // If fillWidth splits evenly then fillWidth should just end up being the same anyways.
+      // Add any remaining space to last cell in row.
+      fillAmount = (engine[windowDimension] - sum) + fillAmount;
+    };
+    fillCell(cell, fillAmount, cellDimension); // Fill the cell.
   };
 };
 
@@ -291,18 +433,45 @@ GridLayout.prototype.getCell = function(row, col){
   return this.cells[cellID];
 };
 
-GridLayout.prototype._fillOutCells = function(){
+GridLayout.prototype._createCells = function(){
   let engine = this.menu.parent;
   let convertIndexToCoords = engine.convertIndexToCoords;
   for(let step = 0; step < this.rows * this.cols; step++){
     let posArray = convertIndexToCoords(step, this.rows);
-    this.cells.push(new Cell(posArray[0], posArray[1]));
+    this.cells.push(new Cell(posArray[1], posArray[0]));
   };
 };
 
 GridLayout.prototype.addToCell = function(row, col, entity){
   let cell = this.getCell(row, col);
-  cell.addEntity(entity);
+  cell.entities.push(entity);
+};
+
+GridLayout.prototype.cellIsEmpty = function(cell){
+  return cell.length === 0;
+};
+
+GridLayout.prototype.getCellSize = function(cell){
+  return [cell.width, cell.height];
+};
+
+// Calculate the size of a cell. The size of the cell is determined
+// by calculating the rect of all containing objects stacked on top of each
+// other.
+GridLayout.prototype.calculateCellSize = function(cell){
+  let maxWidth = 0;
+  let totalHeight = 0;
+
+  for(const entity of cell.entities){
+    maxWidth = Math.max(maxWidth, entity.width);
+    totalHeight += entity.height;
+  };
+  return [maxWidth, totalHeight];
+};
+
+GridLayout.prototype.setCellSize = function(sizeArray, cell){
+  cell.width = sizeArray[0];
+  cell.height = sizeArray[1];
 };
 
 /**
@@ -310,10 +479,10 @@ GridLayout.prototype.addToCell = function(row, col, entity){
 */
 function GUIObject(id){
   this.id = id;
-  this.x;
-  this.y;
-  this.width;
-  this.height;
+  this.x = 0;
+  this.y = 0;
+  this.width = 0;
+  this.height = 0;
   this.attributes = new Map();
 };
 

@@ -279,8 +279,7 @@ GridLayout.prototype.sizeCells = function(){
   let autofill = this.menu.attributes.has("autofill") ? Boolean(this.menu.attributes.get("autofill")) : false;
 
   // Initialize.
-  let currRow = 0;
-  let currCol = 0;
+  let lastRow = -1; // Looks bad I know, but I need to start at negative 1 for the loop to work.
   let size;
   let posArray;
   let cell;
@@ -294,22 +293,22 @@ GridLayout.prototype.sizeCells = function(){
   if(autofill === true){
     // Needs to be <= to account for last row.
     // TODO: Last row not working.
-    for(let index = 0; index <= this.cells.length; index++){
+    for(let index = 0; index < this.cells.length; index++){
       posArray = convertIndexToCoords(index, this.rows);
 
-      // If autofill is on and moving onto next row...
-      if(posArray[0] > currRow){
-        this.autoFill("row", currRow);
+      // If moving onto next row...
+      if(posArray[1] > lastRow){
+        this.autoFill("row", posArray[1]);
       };
 
       // If on last row.
-      if(posArray[0] === this.rows - 1){
-        this.autoFill("col", posArray[1]);
+      if(posArray[1] === this.rows - 1){
+        this.autoFill("col", posArray[0]);
       };
 
       // Update position trackers.
-      currRow = posArray[0];
-      currCol = posArray[1];
+      // If tracked Row changed and it exist within this.rows
+      lastRow = (lastRow < this.rows && posArray[1] > lastRow) ? posArray[1] : lastRow;
     };
   };
 };
@@ -390,16 +389,19 @@ GridLayout.prototype.autoFill = function(lineType, lineNum){
   let cellDimension;
   let fillAmount;
   let totalUnits; // total columns or total rows.
+  let oppLineType;
 
   if(lineType === "row"){
     cellsInLine = engine.getRow(this.cells, lineNum, this.cols);
     cellDimension = "width";
     windowDimension = "windowWidth";
+    oppLineType = "col";
     totalUnits = this.cols
   } else { // Assume lineType === "col".
     cellsInLine = engine.getColumn(this.cells, lineNum, this.cols)
     cellDimension = "height";
     windowDimension = "windowHeight";
+    oppLineType = "row";
     totalUnits = this.rows
   };
 
@@ -419,10 +421,10 @@ GridLayout.prototype.autoFill = function(lineType, lineNum){
   // Iterate through cells again, but this time fill them.
   for(let cell of cellsInLine){
     // If last cell in the line being filled. compensate for undershoot.
-    if(cell[lineType] === totalUnits - 1){
+    if(cell[oppLineType] === totalUnits - 1){
       // If fillWidth splits evenly then fillWidth should just end up being the same anyways.
       // Add any remaining space to last cell in row.
-      fillAmount = (engine[windowDimension] - sum) + fillAmount;
+      fillAmount = (engine[windowDimension] - (sum + (fillAmount * totalUnits))) + fillAmount;
     };
     fillCell(cell, fillAmount, cellDimension); // Fill the cell.
   };

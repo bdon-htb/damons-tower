@@ -7,7 +7,7 @@
     <rows>3</rows>
     <cols>3</cols>
   </header>
-  <menu autofill="true">
+  <menu>
     <label row="1" col="1">
       <text>Damon's Tower</text>
     </label>

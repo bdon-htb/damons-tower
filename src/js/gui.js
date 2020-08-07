@@ -267,16 +267,24 @@ function GridLayout(parent, rows, columns, attributes=[]){
 GridLayout.prototype.organize = function(){
   let entities = this.menu.entities;
   let setEntitySize = this.menu.setSize.bind(this.menu);
+  let setEntityPositions = this.setEntityPositions.bind(this);
+
   entities.forEach(e => setEntitySize(e));
   this.sizeCells();
   this.setCellPositions();
+  this.setEntityPositions();
   console.log(this.cells)
 };
 
 // Sets the sizes and position of all the cells.
 GridLayout.prototype.sizeCells = function(){
   let convertIndexToCoords = this.menu.parent.convertIndexToCoords;
-  let autofill = this.menu.attributes.has("autofill") ? Boolean(this.menu.attributes.get("autofill")) : false;
+  let autofill;
+  
+  // Basically check if autofill is set to true. If autofill is not specified at all, set it to true by default.
+  if(this.menu.attributes.get("autofill") === "true" || this.menu.attributes.has("autofill") === false){
+    autofill = true;
+  } else autofill = false;
 
   // Initialize.
   let lastRow = -1; // Looks bad I know, but I need to start at negative 1 for the loop to work.
@@ -335,18 +343,17 @@ GridLayout.prototype.setCellPositions = function(){
 
   for(let index = 0; index < this.cells.length; index++){
     cell = this.cells[index]; // Current cell.
-    posArray = convertIndexToCoords(index, this.rows); // Grid position of the current cell.
-    row = posArray[0];
-    col = posArray[1];
+    row = cell.row;
+    col = cell.col;
 
     if(row > 0){
-      cellAboveIndex = convertCoordsToIndex(row - 1, col, this.rows);
+      cellAboveIndex = convertCoordsToIndex(row - 1, col, this.cols);
       cellAbove = this.cells[cellAboveIndex];
       y = cellAbove.y + cellAbove.height;
     } else y = 0;
 
     if(col > 0){
-      cellLeftOfIndex = convertCoordsToIndex(row, col - 1, this.rows);
+      cellLeftOfIndex = convertCoordsToIndex(row, col - 1, this.cols);
       cellLeftOf = this.cells[cellLeftOfIndex];
       x = cellLeftOf.x + cellLeftOf.width;
     } else x = 0;
@@ -476,6 +483,17 @@ GridLayout.prototype.setCellSize = function(sizeArray, cell){
   cell.height = sizeArray[1];
 };
 
+GridLayout.prototype.setEntityPositions = function(){
+  this.cells.forEach(cell => {
+    let prevHeight = 0;
+    for(let entity of cell.entities){
+      entity.x = cell.x;
+      entity.y = cell.y + prevHeight;
+      prevHeight += entity.height;
+    };
+  });
+};
+
 /**
  * Parent class for all gui objects.
 */
@@ -501,7 +519,7 @@ function Label(id, text, style="default"){
  * Button gui object.
 */
 function Button(id, text, callback, textStyle="default"){
-  Label.call(this, id, text, textStyle)
+  Label.call(this, id, text, textStyle);
   this.callback = callback;
   this.bgColour;
   this.borderColour;

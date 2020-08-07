@@ -211,20 +211,20 @@ Menu.prototype.executeCallback = function(entity){
   } else console.error(`Error executing callback: ${callName} is not a valid callback.`);
 };
 
-// Returns a bool.
-Menu.prototype._mouseInButton = function(mouse, button){
-  let engine = this.parent;
-    // TODO: Make this more elaborate. Do the same for Renderer.prototype.drawButton.
-  let rect = new Rect([button.x, button.y], button.width, button.height);
-  return engine.pointInRect(mouse.x, mouse.y, rect);
-};
-
 // Check if the Menu has at least one occurrence of the specified gui type.
 Menu.prototype.hasObject = function(constructor){
   for(const [id, entity] of this.entities.entries()){
     if(entity.constructor === constructor){return true};
   };
   return false;
+};
+
+// Returns a bool.
+Menu.prototype._mouseInButton = function(mouse, button){
+  let engine = this.parent;
+    // TODO: Make this more elaborate. Do the same for Renderer.prototype.drawButton.
+  let rect = new Rect([button.x, button.y], button.width, button.height);
+  return engine.pointInRect(mouse.x, mouse.y, rect);
 };
 
 Menu.prototype._setValidEntities = function(){
@@ -384,21 +384,6 @@ GridLayout.prototype.setCellPositions = function(){
   };
 };
 
-GridLayout.prototype._fillCell = function(cell, fillAmount, property){
-  if(property === "width" || property === "height"){
-    cell[property] += fillAmount;
-  } else console.error(`Cannot fill cell: ${cell}. ${property} is not the width or height.`);
-};
-
-
-GridLayout.prototype._getLineSum = function(lineOfCells, property){
-  sum = 0;
-  for(cell of lineOfCells){
-    sum += cell[property];
-  };
-  return sum;
-};
-
 // Autofill the cells in a row / column.
 // Precondition: lineType === "row" || lineType === "col".
 // lineNum is just the row number / column number.
@@ -463,15 +448,6 @@ GridLayout.prototype.getCell = function(row, col){
   return this.cells[cellID];
 };
 
-GridLayout.prototype._createCells = function(){
-  let engine = this.menu.parent;
-  let convertIndexToCoords = engine.convertIndexToCoords;
-  for(let step = 0; step < this.rows * this.cols; step++){
-    let posArray = convertIndexToCoords(step, this.rows);
-    this.cells.push(new Cell(posArray[1], posArray[0]));
-  };
-};
-
 GridLayout.prototype.addToCell = function(row, col, entity){
   let cell = this.getCell(row, col);
   cell.entities.push(entity);
@@ -509,51 +485,80 @@ GridLayout.prototype.setEntityPositions = function(){
     let prevHeight = 0;
     for(let entity of cell.entities){
       let attributes = entity.attributes;
-
-      // Check for pin attribute. Pinning an entity only affects x coordinate.
-      switch(attributes.get("pin")){
-        // Strict pins. These will NOT account for the height of the previous entities.
-        // These should only be used if the object is the only one in its cell.
-        case "topLeft":
-          entity.x = cell.x;
-          entity.y = cell.y;
-          break;
-        case "topRight":
-          entity.x = (cell.x + cell.width) - entity.width;
-          entity.y = cell.y;
-          break;
-        case "bottomLeft":
-          entity.x = cell.x;
-          entity.y = (cell.y + cell.height) - entity.height;
-          break;
-        case "bottomRight":
-          entity.x = (cell.x + cell.width) - entity.width;
-          entity.y = (cell.y + cell.height) - entity.height;
-          break;
-        case "strictCenter":
-          entity.x = cell.x + Math.floor(cell.width / 2) - (entity.width / 2);
-          entity.y = cell.y + Math.floor(cell.height / 2) - (entity.height / 2);
-          break;
-        // Non-strict pins. These will account for the height of the previous entities.
-        case "center":
-          entity.x = cell.x + Math.floor(cell.width / 2) - (entity.width / 2);
-          entity.y = cell.y + prevHeight;
-          prevHeight += entity.height;
-          break;
-        case "right":
-          entity.x = (cell.x + cell.width) - entity.width;
-          entity.y = cell.y + prevHeight;
-          prevHeight += entity.height;
-          break;
-        case "left":
-        case undefined:
-        default:
-          entity.x = cell.x;
-          entity.y = cell.y + prevHeight;
-          prevHeight += entity.height;
-        };
+      // Check for pin attribute.
+      let pinAttribute = attributes.get("pin");
+      prevHeight = this._pinEntity(pinAttribute, cell, entity, prevHeight);
     };
   });
+};
+
+GridLayout.prototype._fillCell = function(cell, fillAmount, property){
+  if(property === "width" || property === "height"){
+    cell[property] += fillAmount;
+  } else console.error(`Cannot fill cell: ${cell}. ${property} is not the width or height.`);
+};
+
+
+GridLayout.prototype._getLineSum = function(lineOfCells, property){
+  sum = 0;
+  for(cell of lineOfCells){
+    sum += cell[property];
+  };
+  return sum;
+};
+
+GridLayout.prototype._createCells = function(){
+  let engine = this.menu.parent;
+  let convertIndexToCoords = engine.convertIndexToCoords;
+  for(let step = 0; step < this.rows * this.cols; step++){
+    let posArray = convertIndexToCoords(step, this.rows);
+    this.cells.push(new Cell(posArray[1], posArray[0]));
+  };
+};
+
+GridLayout.prototype._pinEntity = function(pinAttribute, cell, entity, prevHeight){
+  switch(pinAttribute){
+    // Strict pins. These will NOT account for the height of the previous entities.
+    // These should only be used if the object is the only one in its cell.
+    case "topLeft":
+      entity.x = cell.x;
+      entity.y = cell.y;
+      break;
+    case "topRight":
+      entity.x = (cell.x + cell.width) - entity.width;
+      entity.y = cell.y;
+      break;
+    case "bottomLeft":
+      entity.x = cell.x;
+      entity.y = (cell.y + cell.height) - entity.height;
+      break;
+    case "bottomRight":
+      entity.x = (cell.x + cell.width) - entity.width;
+      entity.y = (cell.y + cell.height) - entity.height;
+      break;
+    case "strictCenter":
+      entity.x = cell.x + Math.floor(cell.width / 2) - (entity.width / 2);
+      entity.y = cell.y + Math.floor(cell.height / 2) - (entity.height / 2);
+      break;
+    // Non-strict pins. These will account for the height of the previous entities.
+    case "center":
+      entity.x = cell.x + Math.floor(cell.width / 2) - (entity.width / 2);
+      entity.y = cell.y + prevHeight;
+      prevHeight += entity.height;
+      break;
+    case "right":
+      entity.x = (cell.x + cell.width) - entity.width;
+      entity.y = cell.y + prevHeight;
+      prevHeight += entity.height;
+      break;
+    case "left":
+    case undefined:
+    default:
+      entity.x = cell.x;
+      entity.y = cell.y + prevHeight;
+      prevHeight += entity.height;
+  };
+  return prevHeight;
 };
 
 /**

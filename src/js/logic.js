@@ -101,13 +101,6 @@ function TileMap(width, height, tiledata){
   this.tiles = tiledata;
 };
 
-// Returns an error message if index doesn't exist. Solely for debugging purposes.
-TileMap.prototype._checkIsValidIndex = function(tileIndex){
-  if(tileIndex < 0 || tileIndex > this.tiles.length){
-    console.error(`Index is invalid. Tile index: ${tileIndex}`)
-  };
-};
-
 TileMap.prototype.tileIsCollidable = function(tileIndex){
   this._checkIsValidIndex(tileIndex);
 
@@ -164,6 +157,13 @@ TileMap.prototype.convertIndexToCoords = function(index){
 
 TileMap.prototype.convertCoordsToIndex = function(index_X, index_Y){
   return Engine.prototype.convertCoordsToIndex(index_X, index_Y, this.width);
+};
+
+// Returns an error message if index doesn't exist. Solely for debugging purposes.
+TileMap.prototype._checkIsValidIndex = function(tileIndex){
+  if(tileIndex < 0 || tileIndex > this.tiles.length){
+    console.error(`Index is invalid. Tile index: ${tileIndex}`)
+  };
 };
 
 /*

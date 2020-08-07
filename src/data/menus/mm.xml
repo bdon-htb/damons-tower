@@ -24,7 +24,7 @@
       <callback>openCredits</callback>
     </button>
     <label row="2" col="2" pin="bottomRight">
-      <text>ver undefined :(</text>
+      <text>development build</text>
     </label>
   </menu>
 </file>

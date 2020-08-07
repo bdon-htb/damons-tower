@@ -69,38 +69,6 @@ Engine.prototype.run = function(data){
   } else this._runLoadingStates(data) // If the engine is not running, then it must be loading something.
 };
 
-Engine.prototype._runLoadingStates = function(data){
-  let state = this.stateMachine.currentState;
-  if(state === "starting"){
-    this.stateMachine.changeState("loading assets"); // Start loading the assets.
-    this.loadAllAssets();
-  }
-  // Check if all assets loaded but the current state hasn't changed to reflect that.
-  else if(state === "loading assets" && this.allAssetsLoaded() === true){
-    this.stateMachine.changeState("loading menus");
-    this.loadAllMenus();
-  }
-  else if(state === "loading menus" && this.allMenusLoaded() === true){
-    // Set it so that when the textures finish loading, the state changes to "running."
-    this.stateMachine.changeState("loading textures");
-    let callback = () => {
-      this.stateMachine.changeState("running");
-      this.tester.init();
-    };
-    this.loadAllTextures(callback);
-  };
-};
-
-// Create the valid game callbacks.
-// TODO: Might make some sense to add this to game.js at some point.
-Engine.prototype._setupCallbacks = function(){
-  this.callbacks = {
-    "startGame": () => console.log("Game started!"),
-    "openOptions": () => console.log("Options opened!"),
-    "openCredits": () => console.log("Credits opened!")
-  };
-};
-
 // ==============================
 // Loader/Asset specific methods.
 // ==============================
@@ -321,6 +289,42 @@ Engine.prototype.getInputDevice = function(deviceName){
   if(devices.has(deviceName)){
     return devices.get(deviceName);
   } else console.error(`Error getting input device! ${deviceName} does not exist.`);
+};
+
+// ================
+// Private methods.
+// ================
+
+Engine.prototype._runLoadingStates = function(data){
+  let state = this.stateMachine.currentState;
+  if(state === "starting"){
+    this.stateMachine.changeState("loading assets"); // Start loading the assets.
+    this.loadAllAssets();
+  }
+  // Check if all assets loaded but the current state hasn't changed to reflect that.
+  else if(state === "loading assets" && this.allAssetsLoaded() === true){
+    this.stateMachine.changeState("loading menus");
+    this.loadAllMenus();
+  }
+  else if(state === "loading menus" && this.allMenusLoaded() === true){
+    // Set it so that when the textures finish loading, the state changes to "running."
+    this.stateMachine.changeState("loading textures");
+    let callback = () => {
+      this.stateMachine.changeState("running");
+      this.tester.init();
+    };
+    this.loadAllTextures(callback);
+  };
+};
+
+// Create the valid game callbacks.
+// TODO: Might make some sense to add this to game.js at some point.
+Engine.prototype._setupCallbacks = function(){
+  this.callbacks = {
+    "startGame": () => console.log("Game started!"),
+    "openOptions": () => console.log("Options opened!"),
+    "openCredits": () => console.log("Credits opened!")
+  };
 };
 
 /**

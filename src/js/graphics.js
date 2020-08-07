@@ -258,23 +258,6 @@ TextureManager.prototype.loadTextures = function(imageMap, callback=function(){}
   this._loadTextureArray(imageArray, imageMap, callback);
 };
 
-// Basically recursively loop through the array and load each image.
-// When all the loading is done. Fire off the callback.
-TextureManager.prototype._loadTextureArray = function(imageArray, imageMap, callback, i=0){
-  let engine = this.parent.parent;
-
-  if(i < imageArray.length){
-    let id = imageArray[i];
-    let url = engine.imgLocation + "/" + imageMap.get(id).name
-    this.loader.add(url);
-    func = this._loadTextureArray(imageArray, imageMap, callback, i + 1)
-    this.loader.onComplete.add(() => func);
-  } else {
-    this.loader.load();
-    this.loader.onComplete.add(() => {callback()});
-  };
-};
-
 // Get the specified texture from loader.resources. By default
 // it returns a copy of the texture.
 TextureManager.prototype.getTexture = function(imageURL, makeNew=true){
@@ -365,6 +348,23 @@ TextureManager.prototype.getSheetFromId = function(id){
   let texture = this.getTexture(imageURL);
   let sprite = this.getSprite(texture);
   return new SpriteSheet(imageURL, texture, sprite, image.width, image.height, image.spriteSize);
+};
+
+// Basically recursively loop through the array and load each image.
+// When all the loading is done. Fire off the callback.
+TextureManager.prototype._loadTextureArray = function(imageArray, imageMap, callback, i=0){
+  let engine = this.parent.parent;
+
+  if(i < imageArray.length){
+    let id = imageArray[i];
+    let url = engine.imgLocation + "/" + imageMap.get(id).name
+    this.loader.add(url);
+    func = this._loadTextureArray(imageArray, imageMap, callback, i + 1)
+    this.loader.onComplete.add(() => func);
+  } else {
+    this.loader.load();
+    this.loader.onComplete.add(() => {callback()});
+  };
 };
 
 /**

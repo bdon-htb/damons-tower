@@ -18,9 +18,6 @@ function Menu(parent, data){
   // Borrow some methods from the Engine.
   this.getXMLChildren = parent.getXMLChildren;
   this.getXMLAttributes = parent.getXMLAttributes;
-  // Moved these over to Engine cause they seemed pretty general.
-  this._getChildTag = parent.getXMLChildTag;
-  this._getAttribute = parent.getXMLAttribute;
 
   // A map of all accept menu entities/object type and their equivalent setter function.
   this.validEntities = new Map();
@@ -114,11 +111,16 @@ Menu.prototype.setLabel = function(id, label){
   let labelText;
   let labelStyle;
 
-  labelText = this._getChildTag(labelSettings, "text", id).innerHTML;
-  labelStyle = this._getAttribute(labelAttributes, "style", objectName=id).innerHTML;
+  // Required.
+  labelText = this._getMapValue(labelSettings, "text").innerHTML;
+
+  // Optional
+  labelStyle = this._getMapValue(labelAttributes, "style", required=false);
+  labelStyle = (labelStyle === "default") ? labelStyle.innerHTML : labelStyle;
 
   // Create label.
   let labelObject = new Label(id, labelText, labelStyle);
+  labelObject.attributes = labelAttributes;
 
   // Add to menu.
   this.addEntity(labelObject);
@@ -137,12 +139,19 @@ Menu.prototype.setButton = function(id, button){
   let buttonStyle;
   let buttonCallBack;
 
-  buttonText = this._getChildTag(buttonSettings, "text", id).innerHTML;
-  buttonStyle = this._getAttribute(buttonAttributes, "style", objectName=id).innerHTML;
-  buttonCallBack = this._getChildTag(buttonSettings, "callback").innerHTML;
+  // Required.
+  buttonText = this._getMapValue(buttonSettings, "text").innerHTML;
+  buttonCallBack = this._getMapValue(buttonSettings, "callback").innerHTML;
+
+  // Optional.
+  buttonStyle = this._getMapValue(buttonAttributes, "style", required=false);
+  buttonStyle = (buttonStyle === "default") ? buttonStyle : buttonStyle.innerHTML;
 
   // Create button.
   let buttonObject = new Button(id, buttonText, buttonCallBack, buttonStyle);
+
+  buttonObject.attributes = buttonAttributes;
+
   this.addEntity(buttonObject);
   this.addToLayout(buttonObject, buttonAttributes);
 };
@@ -233,6 +242,18 @@ Menu.prototype._addToGridLayout = function(entity, attributes){
   this.layout.addToCell(row, col, entity);
 };
 
+// A general function for getting a certain value from a map.
+// Comes with error handling and multiple options.
+Menu.prototype._getMapValue = function(map, value, required=true, defaultValue="default"){;
+  if(map.has(value)){
+    return map.get(value);
+  } else {
+    if(required === true){
+      console.error(`{map} is missing required {value}!`);
+    } else return defaultValue;
+  };
+};
+
 /**
  * Custom grid layout cell object. Contains no methods itself.
 */
@@ -280,7 +301,7 @@ GridLayout.prototype.organize = function(){
 GridLayout.prototype.sizeCells = function(){
   let convertIndexToCoords = this.menu.parent.convertIndexToCoords;
   let autofill;
-  
+
   // Basically check if autofill is set to true. If autofill is not specified at all, set it to true by default.
   if(this.menu.attributes.get("autofill") === "true" || this.menu.attributes.has("autofill") === false){
     autofill = true;
@@ -487,9 +508,50 @@ GridLayout.prototype.setEntityPositions = function(){
   this.cells.forEach(cell => {
     let prevHeight = 0;
     for(let entity of cell.entities){
-      entity.x = cell.x;
-      entity.y = cell.y + prevHeight;
-      prevHeight += entity.height;
+      let attributes = entity.attributes;
+
+      // Check for pin attribute. Pinning an entity only affects x coordinate.
+      switch(attributes.get("pin")){
+        // Strict pins. These will NOT account for the height of the previous entities.
+        // These should only be used if the object is the only one in its cell.
+        case "topLeft":
+          entity.x = cell.x;
+          entity.y = cell.y;
+          break;
+        case "topRight":
+          entity.x = (cell.x + cell.width) - entity.width;
+          entity.y = cell.y;
+          break;
+        case "bottomLeft":
+          entity.x = cell.x;
+          entity.y = (cell.y + cell.height) - entity.height;
+          break;
+        case "bottomRight":
+          entity.x = (cell.x + cell.width) - entity.width;
+          entity.y = (cell.y + cell.height) - entity.height;
+          break;
+        case "strictCenter":
+          entity.x = cell.x + Math.floor(cell.width / 2) - (entity.width / 2);
+          entity.y = cell.y + Math.floor(cell.height / 2) - (entity.height / 2);
+          break;
+        // Non-strict pins. These will account for the height of the previous entities.
+        case "center":
+          entity.x = cell.x + Math.floor(cell.width / 2) - (entity.width / 2);
+          entity.y = cell.y + prevHeight;
+          prevHeight += entity.height;
+          break;
+        case "right":
+          entity.x = (cell.x + cell.width) - entity.width;
+          entity.y = cell.y + prevHeight;
+          prevHeight += entity.height;
+          break;
+        case "left":
+        case undefined:
+        default:
+          entity.x = cell.x;
+          entity.y = cell.y + prevHeight;
+          prevHeight += entity.height;
+        };
     };
   });
 };

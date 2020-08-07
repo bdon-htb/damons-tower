@@ -8,22 +8,22 @@
     <cols>3</cols>
   </header>
   <menu>
-    <label row="1" col="1">
+    <label row="1" col="1" pin="center">
       <text>Damon's Tower</text>
     </label>
-    <button row="1" col="1">
+    <button row="1" col="1" pin="center">
       <text>Play</text>
       <callback>startGame</callback>
     </button>
-    <button row="1" col="1">
+    <button row="1" col="1" pin="center">
       <text>Options</text>
       <callback>openOptions</callback>
     </button>
-    <button row="1" col="1">
+    <button row="1" col="1" pin="center">
       <text>Credits</text>
       <callback>openCredits</callback>
     </button>
-    <label row="2" col="2">
+    <label row="2" col="2" pin="bottomRight">
       <text>ver undefined :(</text>
     </label>
   </menu>

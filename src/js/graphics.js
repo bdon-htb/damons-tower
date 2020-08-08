@@ -38,19 +38,22 @@ Renderer.prototype.createApp = function(){
 };
 
 Renderer.prototype.createTextStyles = function(){
-  this.textStyles = {};
-  this.textStyles.debug = new PIXI.TextStyle({
-    fontFamily: "Arial",
-    fontSize: 36,
-    fill: "white",
-    stroke: '#ff3300',
-    strokeThickness: 4,
-    dropShadow: true,
-    dropShadowColor: "#000000",
-    dropShadowBlur: 4,
-    dropShadowAngle: Math.PI / 6,
-    dropShadowDistance: 6,
-  });
+  this.textStyles = {
+    "debug": new PIXI.TextStyle({
+      fontFamily: "Arial",
+      fontSize: 36,
+      fill: "white",
+      stroke: '#ff3300',
+      strokeThickness: 4,
+      dropShadow: true,
+      dropShadowColor: "#000000",
+      dropShadowBlur: 4,
+      dropShadowAngle: Math.PI / 6,
+      dropShadowDistance: 6}),
+    "default": new PIXI.TextStyle({
+      fontFamily: "Arial",
+      fontSize: 24})
+    };
 };
 
 // ========================
@@ -87,8 +90,8 @@ Renderer.prototype.clear = function(){
   this.app.stage.removeChildren();
 };
 
+// Drawining primitives. Not ideal for drawing per frame.
 Renderer.prototype.drawText = function(msg, style=this.textStyles.debug, x=0, y=0){
-  let canvas = this.parent.context;
   let message;
   if(msg.constructor === PIXI.Text){
     message = msg;
@@ -195,20 +198,77 @@ Renderer.prototype.drawGUIObject = function(entity){
   };
 };
 
+Renderer.prototype.setGUIGraphic = function(entity){
+  switch(entity.constructor){
+    case Label:
+      this.setLabelGraphic(entity);
+      break;
+    case Button:
+      this.setButtonGraphic(entity);
+      break;
+    default:
+      console.error(`Error while trying to create the GUIObject's graphic" ${entity} is an invalid GUIObject.`);
+  };
+};
 // TODO: Implement basic styling to make it look cleaner.
 Renderer.prototype.drawLabel = function(label){
-  let drawText = this.drawText.bind(this);
-  drawText(label.text, label.textStyle, label.x, label.y);
+  if(label.graphic.x !== label.x || label.graphic.y !== label.y){
+    label.graphic.position.set(label.x, label.y);
+  };
+  this.draw(label.graphic);
 };
 
-// TODO: Make this more elaborate. Do the same for Menu.prototype.calculateSize;.
+Renderer.prototype.setLabelGraphic = function(label){
+  let message = label.text;
+  let style = this.textStyles[label.textStyle];
+  let text = new PIXI.Text(message, style);
+  label.graphic = text;
+};
+
 Renderer.prototype.drawButton = function(button){
-  let text = new PIXI.Text(button.text, button.textStyle);
-  let drawRect = this.drawRect.bind(this);
-  let drawText = this.drawText.bind(this);
-  let center = [button.x + button.width / 4, button.y + button.height / 4];
-  drawRect(0x66CCFF, button.x, button.y, button.width, button.height);
-  drawText(button.text, button.textStyle, center[0], center[1]);
+  if(button.graphic.x !== button.x || button.graphic.y !== button.y){
+    button.graphic.setTransform(button.x, button.y);
+  };
+  this.draw(button.graphic);
+};
+
+Renderer.prototype.setButtonGraphic = function(button){
+  let minimumWidth = 150;
+  let minimumHeight = 50;
+  let container = new PIXI.Container();
+
+  // Create label component.
+  let message = button.text;
+  let textStyle = this.textStyles[button.textStyle];
+  let text = new PIXI.Text(message, textStyle);
+
+  // Create button component.
+  let rectangle = this.configureButtonRect(button.style);
+  let rectangleWidth = (text.width < minimumWidth) ? minimumWidth : text.width;
+  let rectangleHeight = (text.height < minimumHeight) ? minimumHeight: text.height;
+  rectangle.drawRect(0, 0, rectangleWidth, rectangleHeight);
+  rectangle.endFill();
+
+  // Center text within containing rectangle.
+  let center = [rectangleWidth / 4, rectangleHeight / 4]
+  text.position.set(center[0], center[1]);
+
+  // Combine them into the container.
+  container.addChild(rectangle);
+  container.addChild(text);
+
+  button.graphic = container;
+};
+
+Renderer.prototype.configureButtonRect = function(buttonStyle){
+  let rectangle = new PIXI.Graphics();
+  let colour;
+  if(buttonStyle === "default"){
+    colour = 0xFFBF75;
+    rectangle.lineStyle(2, 0xCA826C, 1);
+  } else console.error(`Error configuring button rectangle: {buttonStyle} is not a valid button style.`);
+  rectangle.beginFill(colour);
+  return rectangle;
 };
 
 // Caluclates the size of the string in pixels based on PIXI text styling.
@@ -236,6 +296,7 @@ TextureManager.prototype.addToPool = function(object){
 // Destroy Pixi.js graphics object.
 TextureManager.prototype.destroyObject = function(object){
   switch(object.constructor){
+    case PIXI.Container:
     case PIXI.Text:
     case PIXI.Graphics:
       object.destroy(true);
@@ -393,7 +454,7 @@ SpriteSheet.prototype.getFrame = function(index_X, index_Y){
   return rectangle;
 };
 
-SpriteSheet.prototype.getSprite = function(index_X, index_Y, makeNew){
+SpriteSheet.prototype.getSprite = function(index_X, index_Y){
   let rect = this.getFrame(index_X, index_Y);
   this.sprite.texture.frame = rect;
   return this.sprite;

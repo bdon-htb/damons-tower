@@ -15,6 +15,7 @@ function Engine(htmlDOM){
   this.windowHeight = 640;
   // Should be a whole number; determines sprite render size.
   this.scale = 3;
+  // Canvas background colour.
   this.backgroundColor = 0xB8D5EE;
 
   // the image key in assets only stores links to images.
@@ -44,7 +45,6 @@ function Engine(htmlDOM){
   // Placeholder component - purely for testing purposes.
   this.tester = new Tester(this);
 
-  // TODO:
   this.callbacks;
   this._setupCallbacks();
 

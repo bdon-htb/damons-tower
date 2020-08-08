@@ -100,8 +100,8 @@ Menu.prototype.setEntities = function(menuTag){
   };
 };
 
-// TODO: Implement these.
 Menu.prototype.setLabel = function(id, label){
+  let renderer = this.parent.renderer;
   let getXMLChildren = this.getXMLChildren;
   let getXMLAttributes = this.getXMLAttributes;
 
@@ -122,6 +122,9 @@ Menu.prototype.setLabel = function(id, label){
   let labelObject = new Label(id, labelText, labelStyle);
   labelObject.attributes = labelAttributes;
 
+  // Create label graphic.
+  renderer.setGUIGraphic(labelObject);
+
   // Add to menu.
   this.addEntity(labelObject);
   this.addToLayout(labelObject, labelAttributes);
@@ -129,6 +132,7 @@ Menu.prototype.setLabel = function(id, label){
 };
 
 Menu.prototype.setButton = function(id, button){
+  let renderer = this.parent.renderer;
   let getXMLChildren = this.getXMLChildren;
   let getXMLAttributes = this.getXMLAttributes;
 
@@ -152,6 +156,9 @@ Menu.prototype.setButton = function(id, button){
 
   buttonObject.attributes = buttonAttributes;
 
+  // Create button graphic.
+  renderer.setGUIGraphic(buttonObject);
+
   this.addEntity(buttonObject);
   this.addToLayout(buttonObject, buttonAttributes);
 };
@@ -171,10 +178,8 @@ Menu.prototype.calculateEntitySize = function(entity){
   let renderer = this.parent.renderer;
   switch(entity.constructor){
     case Label:
-      return renderer.calculateTextSize(entity.text, entity.textStyle);
     case Button:
-      let dimensions = renderer.calculateTextSize(entity.text, entity.textStyle);
-      return [dimensions[0] * 2, dimensions[1] * 2];
+      return [entity.graphic.width, entity.graphic.height];
     default:
       console.error(`Could not calculate the size of ${entity}.`);
   };
@@ -571,6 +576,7 @@ function GUIObject(id){
   this.width = 0;
   this.height = 0;
   this.attributes = new Map();
+  this.graphic = null; // PIXI Graphical object / container stored here.
 };
 
 /**
@@ -585,9 +591,8 @@ function Label(id, text, style="default"){
 /**
  * Button gui object.
 */
-function Button(id, text, callback, textStyle="default"){
+function Button(id, text, callback, textStyle="default", buttonStyle="default"){
   Label.call(this, id, text, textStyle);
   this.callback = callback;
-  this.bgColour;
-  this.borderColour;
+  this.style = buttonStyle;
 };

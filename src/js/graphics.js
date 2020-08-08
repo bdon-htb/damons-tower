@@ -180,10 +180,6 @@ Renderer.prototype.drawMenu = function(menu){
   menu.entities.forEach(e => this.drawGUIObject(e));
 };
 
-// TODO:
-Renderer.prototype.drawCell = function(cell){
-  this.drawRect(0x7a7a7a, cell)
-};
 // Shorthand method.
 Renderer.prototype.drawGUIObject = function(entity){
   switch(entity.constructor){
@@ -210,7 +206,7 @@ Renderer.prototype.setGUIGraphic = function(entity){
       console.error(`Error while trying to create the GUIObject's graphic" ${entity} is an invalid GUIObject.`);
   };
 };
-// TODO: Implement basic styling to make it look cleaner.
+
 Renderer.prototype.drawLabel = function(label){
   if(label.graphic.x !== label.x || label.graphic.y !== label.y){
     label.graphic.position.set(label.x, label.y);
@@ -250,7 +246,7 @@ Renderer.prototype.setButtonGraphic = function(button){
   rectangle.endFill();
 
   // Center text within containing rectangle.
-  let center = [rectangleWidth / 4, rectangleHeight / 4]
+  let center = [(rectangleWidth / 2) - (text.width / 2), (rectangleHeight / 2) - (text.height / 2)]
   text.position.set(center[0], center[1]);
 
   // Combine them into the container.
@@ -260,6 +256,7 @@ Renderer.prototype.setButtonGraphic = function(button){
   button.graphic = container;
 };
 
+// TODO: Implement basic styling to make it look cleaner.
 Renderer.prototype.configureButtonRect = function(buttonStyle){
   let rectangle = new PIXI.Graphics();
   let colour;

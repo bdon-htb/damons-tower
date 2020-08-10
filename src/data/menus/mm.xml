@@ -7,7 +7,7 @@
     <rows>3</rows>
     <cols>3</cols>
   </header>
-  <menu>
+  <menu spaceBetween="10">
     <label row="1" col="1" pin="center">
       <text>Damon's Tower</text>
     </label>

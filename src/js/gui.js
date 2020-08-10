@@ -475,7 +475,7 @@ GridLayout.prototype.calculateCellSize = function(cell){
 
   for(const entity of cell.entities){
     maxWidth = Math.max(maxWidth, entity.width);
-    totalHeight += entity.height;
+    totalHeight += this._getPreviousHeight(entity.height);
   };
   return [maxWidth, totalHeight];
 };
@@ -549,23 +549,32 @@ GridLayout.prototype._pinEntity = function(pinAttribute, cell, entity, prevHeigh
     case "center":
       entity.x = cell.x + Math.floor(cell.width / 2) - (entity.width / 2);
       entity.y = cell.y + prevHeight;
-      prevHeight += entity.height;
+      prevHeight += this._getPreviousHeight(entity.height);
       break;
     case "right":
       entity.x = (cell.x + cell.width) - entity.width;
       entity.y = cell.y + prevHeight;
-      prevHeight += entity.height;
+      prevHeight += this._getPreviousHeight(entity.height);
       break;
     case "left":
     case undefined:
     default:
       entity.x = cell.x;
       entity.y = cell.y + prevHeight;
-      prevHeight += entity.height;
+      prevHeight += this._getPreviousHeight(entity.height);
   };
   return prevHeight;
 };
 
+// Get the height of entity above it.
+GridLayout.prototype._getPreviousHeight = function(entityHeight){
+  let spaceBetween = 0;
+  let attributes = this.menu.attributes;
+  if(attributes.has("spaceBetween")){
+    spaceBetween = Number(attributes.get("spaceBetween"));
+  };
+  return entityHeight + spaceBetween;
+}
 /**
  * Parent class for all gui objects.
 */

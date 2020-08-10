@@ -51,8 +51,8 @@ Renderer.prototype.createTextStyles = function(){
       dropShadowAngle: Math.PI / 6,
       dropShadowDistance: 6}),
     "default": new PIXI.TextStyle({
-      fontFamily: "Arial",
-      fontSize: 24})
+      fontFamily: "Bitmgothic",
+      fontSize: 26})
     };
 };
 

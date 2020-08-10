@@ -30,11 +30,14 @@ function Engine(htmlDOM){
   this.menuDataKey = "menuData";
   // contains menu objects of the game's menus.
   this.menuKey = "menus";
+  // contains the names of all the game's custom fonts.
+  this.fontsKey = "customFonts";
 
   // AssetLoader variables.
   this.dataLocation = "data";
   this.imgLocation = "img";
   this.menuLocation = this.dataLocation + "/" + "menus";
+  this.fontLocation = "fonts";
 
   // Create components.
   this.stateMachine = new StateMachine(this);
@@ -45,9 +48,9 @@ function Engine(htmlDOM){
   // Placeholder component - purely for testing purposes.
   this.tester = new Tester(this);
 
+  // Setup callback functions.
   this.callbacks;
   this._setupCallbacks();
-
 };
 
 Engine.prototype.draw = function(data){
@@ -87,6 +90,8 @@ Engine.prototype.loadAllAssets = function(){
   this.assetLoader.getAsset(dataLocation + "/" + "levels.json", true);
 
   this.assetLoader.getAsset(dataLocation + "/" + "menus.json", true);
+
+  this.assetLoader.getAsset(dataLocation + "/" + "customFonts.json", true);
 };
 
 Engine.prototype.assetIsLoaded = function(id){
@@ -99,6 +104,7 @@ Engine.prototype.allAssetsLoaded = function(){
     this.animKey,
     this.levelKey,
     this.menuDataKey,
+    this.fontsKey
   ];
 
   for(const key of assetsKeys){
@@ -123,6 +129,12 @@ Engine.prototype.allMenusLoaded = function(){
   if(menus === undefined || menuURLS === undefined){
     return false;
   } else return menus.size === menuURLS.size;
+};
+
+Engine.prototype.loadAllFonts = function(callback){
+  allFonts = this.assets.get(this.fontsKey);
+  allFonts = allFonts.map(font => new FontFaceObserver(font).load());
+  Promise.all(allFonts).then(callback);
 };
 
 // ==========================
@@ -297,23 +309,34 @@ Engine.prototype.getInputDevice = function(deviceName){
 
 Engine.prototype._runLoadingStates = function(data){
   let state = this.stateMachine.currentState;
+  // starting => loading (data) assets.
   if(state === "starting"){
     this.stateMachine.changeState("loading assets"); // Start loading the assets.
     this.loadAllAssets();
   }
-  // Check if all assets loaded but the current state hasn't changed to reflect that.
+  // loading assets => loading menus.
   else if(state === "loading assets" && this.allAssetsLoaded() === true){
     this.stateMachine.changeState("loading menus");
     this.loadAllMenus();
   }
+
+  // loading menus => loading textures.
   else if(state === "loading menus" && this.allMenusLoaded() === true){
-    // Set it so that when the textures finish loading, the state changes to "running."
     this.stateMachine.changeState("loading textures");
+    let callback = () => {
+      this.stateMachine.changeState("loading fonts");
+      this.tester.init();
+    };
+    this.loadAllTextures(callback);
+  }
+
+  // loading textures => loading fonts.
+  else if(state === "loading fonts"){
     let callback = () => {
       this.stateMachine.changeState("running");
       this.tester.init();
     };
-    this.loadAllTextures(callback);
+    this.loadAllFonts(callback);
   };
 };
 
@@ -359,12 +382,18 @@ AssetLoader.prototype.getAsset = function(url, load=false){
 
 AssetLoader.prototype.loadJson = function(data, success){
   let jsonKeys = Object.keys(data);
-  let assetMap = new Map();
   jsonKeys.forEach((key) => {
-    for(const [id, value] of Object.entries(data[key])){
-      assetMap.set(id, value);
+    // If the value is an array just set it as an array.
+    if(data[key].constructor === Array){
+      this.parent.assets.set(key, data[key])
+    } // Otherwise create a map out of the data.
+    else {
+      let assetMap = new Map();
+      for(const [id, value] of Object.entries(data[key])){
+        assetMap.set(id, value);
+      };
+      this.parent.assets.set(key, assetMap);
     };
-    this.parent.assets.set(key, assetMap);
   });
 };
 
@@ -408,6 +437,7 @@ function StateMachine(parent){
     "loading assets",
     "loading menus",
     "loading textures",
+    "loading fonts",
     "error",
     "debug"
   ];

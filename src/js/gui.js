@@ -575,6 +575,7 @@ GridLayout.prototype._getPreviousHeight = function(entityHeight){
   };
   return entityHeight + spaceBetween;
 }
+
 /**
  * Parent class for all gui objects.
 */

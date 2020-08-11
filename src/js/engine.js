@@ -39,8 +39,21 @@ function Engine(htmlDOM){
   this.menuLocation = this.dataLocation + "/" + "menus";
   this.fontLocation = "fonts";
 
+  this.gameObject = new Game(this);
+
+  // Array of all the engine's states.
+  let allStates = [
+    "starting",
+    "running",
+    "loading assets",
+    "loading menus",
+    "loading textures",
+    "loading fonts",
+    "error"
+  ];
+
   // Create components.
-  this.stateMachine = new StateMachine(this);
+  this.stateMachine = new StateMachine(this, allStates, "starting");
   this.assetLoader = new AssetLoader(this);
   this.renderer = new Renderer(this);
   this.inputManager = new InputManager(this);
@@ -49,8 +62,7 @@ function Engine(htmlDOM){
   this.tester = new Tester(this);
 
   // Setup callback functions.
-  this.callbacks;
-  this._setupCallbacks();
+  this.callbacks = this.gameObject.callbacks;
 };
 
 Engine.prototype.draw = function(data){
@@ -340,16 +352,6 @@ Engine.prototype._runLoadingStates = function(data){
   };
 };
 
-// Create the valid game callbacks.
-// TODO: Might make some sense to add this to game.js at some point.
-Engine.prototype._setupCallbacks = function(){
-  this.callbacks = {
-    "startGame": () => console.log("Game started!"),
-    "openOptions": () => console.log("Options opened!"),
-    "openCredits": () => console.log("Credits opened!")
-  };
-};
-
 /**
  * Custom asset loader. Is responsible for loading data file assets
  * into the game.
@@ -426,30 +428,45 @@ AssetLoader.prototype.loadMenu = function(data, success){
 /**
  * Custom state machine class. Is responsible for chaning and keeping track
  * of ENGINE state.
+ *
+ * [states] can be an array of strings if none of the states require methods to be called.
+ * on change. i.e. ["starting", "loading", "runnng"]
+ *
+ * If any states in [states] DO require transition methods then an object must be passed,
+ * where each key corresponds to an array.
+ * i.e. "stateName": [transitionInMethod, transitionOutMethod]
 */
-function StateMachine(parent){
+function StateMachine(parent, states, initialState){
   this.parent = parent;
   // A lot of the states are currently placeholder. Will be adapted as needed.
-  this.allStates = [
-    "starting",
-    "running",
-    "paused",
-    "loading assets",
-    "loading menus",
-    "loading textures",
-    "loading fonts",
-    "error",
-    "debug"
-  ];
-  this.currentState = "starting";
+  this.allStates = states;
+  this.currentState = initialState;
 };
 
 StateMachine.prototype.isValidState = function(string){
-  return this.allStates.includes(string);
+  let result;
+  if(this.allStates.constructor === Array){
+    result = this.allStates.includes(string);
+  } else result = this.allStates[string] !== undefined; // Else; assume allStates is an object.
+  return result;
 };
 
 StateMachine.prototype.changeState = function(newState){
   if(this.isValidState(newState) === true){
-    this.currentState = newState;
-  } else console.error(`${newState} is not a valid state.`);
+    if(this.allStates.constructor !== Array){ // Assume allStates is an object.
+      this._callTransitionMethod(this.currentState, "out"); // Call the out method of the last state.
+      this.currentState = newState; // Change state.
+      this._callTransitionMethod(this.currentState, "in"); // Call the in method of the new state.
+    } else this.currentState = newState; // Else; is an array. Just change the state.
+  } else console.error(`${newState} is not a valid state.`); // Error handling.
+};
+
+// Precondition: stateName is a valid state. and this.allStates is an object.
+StateMachine.prototype._callTransitionMethod = function(stateName, type){
+  let validTypes = {"in": 0, "out": 1}
+  let methodIndex = validTypes[type];
+  if(this.allStates[stateName] !== null){
+    let transitionMethod = this.allStates[stateName][methodIndex];
+    transitionMethod();
+  };
 };

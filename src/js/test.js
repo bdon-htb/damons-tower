@@ -83,7 +83,8 @@ Tester.prototype.thirdTestInit = function(){
   let renderer = parent.renderer;
   this.sceneManager = new SceneManager();
   let level = parent.getLoadedAsset("levelData").get("testLevel");
-  level = new Scene(parent, level);
+  let levelSprite = parent.renderer.getSheetFromId(level.spriteSheet)
+  level = new Scene(parent, levelSprite, level);
   // Create player entity.
   let spriteSheet = renderer.getSheetFromId("player");
   let animation = parent.getLoadedAsset(parent.animKey).get("swordbro_idle");
@@ -132,7 +133,8 @@ Tester.prototype.fourthTestInit = function(){
   let renderer = parent.renderer;
   this.sceneManager = new SceneManager();
   let level = parent.getLoadedAsset("levelData").get("testLevel");
-  level = new Scene(parent, level);
+  let levelSprite = parent.renderer.getSheetFromId(level.spriteSheet)
+  level = new Scene(parent, levelSprite, level);
   level.camera.setup(spawnpoint[0], spawnpoint[1],
     parent.windowWidth, parent.windowHeight);
   // Create player entity.

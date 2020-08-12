@@ -21,21 +21,14 @@ function Entity(id, sprite, type, state, x, y){
 
 /**
  * Custom scene object. Will essentially represent a level in the game.
+ *
 */
-function Scene(parent, sceneData){
-  this.name;
-  this.spriteSheet; // spriteSheet of all the tiles in the scene.
-  this.entities = new Map();
-  this.tileMap;
-  this.camera = new Camera();
-  this.coords; // represents the "world" or true coordinates of everything.
-  this.parseData(parent, sceneData);
-};
-
-Scene.prototype.parseData = function(parent, sceneData){
+function Scene(engine, spriteSheet, sceneData){
   this.name = sceneData.name;
-  this.spriteSheet = parent.renderer.getSheetFromId(sceneData.spriteSheet);
+  this.spriteSheet = spriteSheet; // Shared spriteSheet of all the tiles in the scene.
   this.tileMap = new TileMap(sceneData.width, sceneData.height, sceneData.tileData);
+  this.entities = new Map();
+  this.camera = new Camera();
 };
 
 Scene.prototype.addEntity = function(entity){

@@ -12,13 +12,17 @@ function Game(engine){
 
   // TODO: Figure out how to organize transition structure
   let allStates = {
-    "mainMenu": null,
-    "inLevel": null,
+    "mainMenu": [this._loadMenu.bind(this, "mainMenu"), this._clearGameStateObject.bind(this)],
+    "inLevel": [this._loadTestLevel.bind(this), this._clearGameStateObject.bind(this)],
     "options": null,
     "credits": null,
     "paused": null,
   };
-  this._setupTransitions(allStates);
+
+  this.startingState = "mainMenu"
+  this.stateMenus = {
+    "mainMenu": "mainMenu"
+  };
 
   // Create components.
   this.stateMachine = new StateMachine(this, allStates, "mainMenu");
@@ -26,14 +30,21 @@ function Game(engine){
 
   // Setup callbacks.
   this.callbacks = {
-    "startGame": () => this.stateMachine.changeState("inLevel"),
-    "openOptions": () => this.stateMachine.changeState("options"),
-    "openCredits": () => this.stateMachine.changeState("credits")
+    "startGame":  this.stateMachine.changeState.bind(this.stateMachine,"inLevel"),
+    "openOptions": this.stateMachine.changeState.bind(this.stateMachine, "options"),
+    "openCredits": this.stateMachine.changeState.bind(this.stateMachine, "credits")
   };
 };
 
 Game.prototype.update = function(){
   let currentState = this.stateMachine.currentState;
+  switch(currentState){
+    case "mainMenu":
+      let inputs = this.engine.getInputEvents();
+      if(inputs.size > 0){
+        this.gameStateObject["menu"].checkClicks();
+    };
+  };
 };
 
 Game.prototype.draw = function(){
@@ -44,14 +55,32 @@ Game.prototype.draw = function(){
       renderer.drawMenu(this.gameStateObject["menu"]);
       break;
     case "inLevel":
-
+      renderer.drawTiles(this.gameStateObject["scene"])
   };
 };
 
-Game.prototype._updateMenu = function(menuName){
+// =========================
+// State transition methods.
+// =========================
+Game.prototype._loadMenu = function(menuName){
+  let state = this.stateMachine.currentState;
+  let gameStateObject = this.gameStateObject;
+
   if(gameStateObject["menu"] === undefined || gameStateObject["menu"].name !== menuName){
     gameStateObject["menu"] = this.engine.getLoadedAsset("menus").get(menuName);
+    gameStateObject["menu"].layout.organize();
   };
 };
 
-Game.prototype._setupTransitions = function(){}
+Game.prototype._loadTestLevel = function(){
+  let spawnpoint = [0, 0];
+  let levelData = this.engine.getLoadedAsset("levelData").get("testLevel");
+  let levelSpriteSheet = this.engine.renderer.getSheetFromId(levelData.spriteSheet);
+  let level = new Scene(this.engine, levelSpriteSheet, levelData);
+  level.camera.setup(spawnpoint[0], spawnpoint[1], this.engine.windowWidth, this.engine.windowHeight);
+  this.gameStateObject["scene"] = level;
+};
+
+Game.prototype._clearGameStateObject = function(){
+  this.gameStateObject = {};
+};

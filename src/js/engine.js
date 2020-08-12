@@ -39,7 +39,7 @@ function Engine(htmlDOM){
   this.menuLocation = this.dataLocation + "/" + "menus";
   this.fontLocation = "fonts";
 
-  this.gameObject = new Game(this);
+  this.app = new Game(this); // The game itself.
 
   // Array of all the engine's states.
   let allStates = [
@@ -62,17 +62,19 @@ function Engine(htmlDOM){
   this.tester = new Tester(this);
 
   // Setup callback functions.
-  this.callbacks = this.gameObject.callbacks;
+  this.callbacks = this.app.callbacks;
 };
 
 Engine.prototype.draw = function(data){
   this.renderer.clear();
-  this.tester.testDraw(data);
+  // this.tester.testDraw(data);
+  this.app.draw();
 };
 
 Engine.prototype.update = function(data){
   this.inputManager.captureInputs();
-  this.tester.testUpdate(data);
+  // this.tester.testUpdate(data);
+  this.app.update();
 };
 
 // This will obviously have to be more elaborate when the actual game is being made.
@@ -337,7 +339,6 @@ Engine.prototype._runLoadingStates = function(data){
     this.stateMachine.changeState("loading textures");
     let callback = () => {
       this.stateMachine.changeState("loading fonts");
-      this.tester.init();
     };
     this.loadAllTextures(callback);
   }
@@ -346,7 +347,8 @@ Engine.prototype._runLoadingStates = function(data){
   else if(state === "loading fonts"){
     let callback = () => {
       this.stateMachine.changeState("running");
-      this.tester.init();
+      this.app.stateMachine.changeState(this.app.startingState);
+      // this.tester.init()
     };
     this.loadAllFonts(callback);
   };

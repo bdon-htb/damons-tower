@@ -59,7 +59,7 @@ function Engine(htmlDOM){
   this.inputManager = new InputManager(this);
 
   // Placeholder component - purely for testing purposes.
-  this.tester = new Tester(this);
+  // this.tester = new Tester(this);
 
   // Setup callback functions.
   this.callbacks = this.app.callbacks;

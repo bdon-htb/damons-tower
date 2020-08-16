@@ -1,11 +1,5 @@
 [Tasks are in no particular order]
 
-=== Animations.
-- Create an animation manager to connect image data to animation data.
-- Implement loop / don't loop functionality and animation chaining.
-===
-=== Menu / GUI.
-===
 === Level System.
 - Implement a level editor.
 - Implement procedural generation for levels.

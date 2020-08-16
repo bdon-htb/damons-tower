@@ -19,15 +19,6 @@ function Entity(id, sprite, type, state, x, y){
   };
 };
 
-// Player object.
-// TODO: Implement.
-function Player(id, sprite, animations, direction, state, x, y){
-  Entity.call(id, sprite, "player", state, x, y);
-  this.attributes["direction"] = direction; // The direction the player is currently facing.
-  this.attributes["animations"] = animations;
-};
-
-
 /**
  * Custom scene object. Will essentially represent a level in the game.
  *

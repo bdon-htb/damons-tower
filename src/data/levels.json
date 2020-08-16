@@ -1,7 +1,7 @@
 {
   "levelData": {
     "testLevel": {
-      "name": "test",
+      "name": "testLevel",
       "spriteSheet": "testDungeon",
       "width": 12,
       "height": 7,

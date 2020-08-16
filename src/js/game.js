@@ -96,19 +96,23 @@ Game.prototype._loadMenu = function(menuName){
   };
 };
 
+Game.prototype._loadLevel = function(levelData){
+  let levelSpriteSheet = this.engine.renderer.getSheetFromId(levelData.spriteSheet);
+  let level = new Scene(this.engine, levelSpriteSheet, levelData);
+  level.camera.setup(0, 0, this.engine.windowWidth, this.engine.windowHeight);
+  this.gameStateObject["scene"] = level;
+};
+
 Game.prototype._loadTestLevel = function(){
   let spawnpoint = [0, 0];
   let levelData = this.engine.getLoadedAsset(this.engine.levelKey).get("testLevel");
-  let levelSpriteSheet = this.engine.renderer.getSheetFromId(levelData.spriteSheet);
-  let level = new Scene(this.engine, levelSpriteSheet, levelData);
-  level.camera.setup(spawnpoint[0], spawnpoint[1], this.engine.windowWidth, this.engine.windowHeight);
-  this.gameStateObject["scene"] = level;
-
+  this._loadLevel(levelData);
+  let level = this.gameStateObject["scene"];
   let player = this._createPlayer();
   level.addEntity(player);
   this.sceneManager.setScene(level);
   let camera = level.camera;
-  let posArray = [player.attributes["x"], player.attributes["y"]]
+  let posArray = [player.attributes["x"], player.attributes["y"]];
   camera.center(posArray[0], posArray[1], player.attributes["sprite"].height);
 };
 

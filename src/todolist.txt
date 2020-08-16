@@ -5,13 +5,9 @@
 - Implement loop / don't loop functionality and animation chaining.
 ===
 === Menu / GUI.
-- Implement a grid layout.
-- Get widgets to display.
-- Implement button click support.
 ===
 === Level System.
 - Implement a level editor.
 - Implement procedural generation for levels.
 ===
 - Event system.
-- A flexible Texture manager to optimize the game as much as possible.

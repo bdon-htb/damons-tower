@@ -39,8 +39,6 @@ function Engine(htmlDOM){
   this.menuLocation = this.dataLocation + "/" + "menus";
   this.fontLocation = "fonts";
 
-  this.app = new Game(this); // The game itself.
-
   // Array of all the engine's states.
   let allStates = [
     "starting",
@@ -58,8 +56,7 @@ function Engine(htmlDOM){
   this.renderer = new Renderer(this);
   this.inputManager = new InputManager(this);
 
-  // Placeholder component - purely for testing purposes.
-  // this.tester = new Tester(this);
+  this.app = new Game(this); // Create the game itself. Note that it must be created AFTER the components.
 
   // Setup callback functions.
   this.callbacks = this.app.callbacks;

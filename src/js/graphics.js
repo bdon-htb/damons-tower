@@ -14,6 +14,7 @@ function Renderer(parent){
   this.verifyAPI();
   this.createApp();
   this.textureManager = new TextureManager(this);
+  this.animationManager = new AnimationManager(this);
 };
 
 Renderer.prototype.verifyAPI = function(){
@@ -164,8 +165,8 @@ Renderer.prototype.drawTiles = function(scene){
 
     if(camera.rectInView(tileRect) === true){
       spriteIndexArray = tileMap.getSpriteIndex(index);
-      frame = spriteSheet.getFrame(spriteIndexArray[0], spriteIndexArray[1]);
       tileSprite = textureManager.copySprite(spriteSheet.sprite);
+      frame = textureManager.getRectFromSheet(spriteSheet, spriteIndexArray[0], spriteIndexArray[1]);
       tileSprite.texture.frame = frame;
       this.drawSprite(tileSprite, pos_X, pos_Y);
     };
@@ -277,7 +278,7 @@ Renderer.prototype.calculateTextSize = function(s, textStyle){
 
 /**
  * Custom texture manager. Will be responsible for the loading, creation and destruction of
- * all textures.
+ * all textures / sprites.
 */
 function TextureManager(parent){
   this.parent = parent; // Reference to the renderer.
@@ -399,6 +400,8 @@ TextureManager.prototype.copySprite = function(sprite, pool=true){
   };
 };
 
+// Create a spritesheet from the given id.
+// Note: Copies of spritesheets must be made because of framining issues with shared spritesheets.
 TextureManager.prototype.getSheetFromId = function(id){
   let engine = this.parent.parent;
   let image = engine.getImage(id);
@@ -406,6 +409,23 @@ TextureManager.prototype.getSheetFromId = function(id){
   let texture = this.getTexture(imageURL);
   let sprite = this.getSprite(texture);
   return new SpriteSheet(imageURL, texture, sprite, image.width, image.height, image.spriteSize);
+};
+
+// Calculate and return the pixi texture frame of the specified sprite from the spritesheet.
+TextureManager.prototype.getRectFromSheet = function(spriteSheet, index_X, index_Y){
+  size = spriteSheet.spriteSize;
+  let posX = index_X * size;
+  let posY = index_Y * size;
+
+  let rectangle = new PIXI.Rectangle(posX, posY, size, size);
+  return rectangle;
+};
+
+// Get the actual sprite from the spritesheet.
+TextureManager.prototype.getSpriteFromSheet = function(spriteSheet, index_X, index_Y){
+  let rect = this.getRectFromSheet(spriteSheet, index_X, index_Y);
+  spriteSheet.sprite.texture.frame = rect;
+  return spriteSheet.sprite;
 };
 
 // Basically recursively loop through the array and load each image.
@@ -441,90 +461,80 @@ function SpriteSheet(imageURL, texture, sprite, sheetWidth, sheetHeight, spriteS
   this.numberOfSprites = Math.floor((this.width * this.height) / (this.spriteSize ** 2))
 };
 
-// Calculate and return the texture frame of the specified sprite.
-SpriteSheet.prototype.getFrame = function(index_X, index_Y){
-  size = this.spriteSize;
-  let posX = index_X * size;
-  let posY = index_Y * size;
-
-  let rectangle = new PIXI.Rectangle(posX, posY, size, size);
-  return rectangle;
-};
-
-SpriteSheet.prototype.getSprite = function(index_X, index_Y){
-  let rect = this.getFrame(index_X, index_Y);
-  this.sprite.texture.frame = rect;
-  return this.sprite;
-};
-
 /**
  * Custom SINGLE sprite animation object.
  * Animation assumes that every frame of the animation is within
  * the spritesheet provided.
- * TODO: Implement loop and non-loop functionality.
 */
 function Animation(id, spriteSheet, animationData){
   this.id = id;
   this.spriteSheet = spriteSheet;
-  this.frames; // An array of indexes; each index corresponds to the frame's sprite index in the sheet.
-  this.currentFrame;
-  this.frameIndex;
-  this.loops;
-  this.defaultSpeed = 8; // Avoid changing this value as much as possible.
-  this.speed; // Frames it takes to reach the next animation frame.
-  this.type;
+  this.frames = animationData.frames; // An array of indexes; each index corresponds to the frame's sprite index in the sheet.
+  this.currentFrame = this.frames[0];
+  this.frameIndex = 0;
+  this.active = false;
+  this.loops = animationData.loops;
+  this._defaultSpeed = 8; // Avoid changing this value as much as possible.
+  this.speed = (animationData.speed === "default") ? this._defaultSpeed : animationData.speed; // Frames it takes to reach the next animation frame.
+  this.type = animationData.type;
   this.counter = 0; // A counter that keeps track of the frames while the animation is active.
-
-  this.parseData(animationData);
-};
-
-Animation.prototype.incrementCounter = function(){
-  this.counter += 1;
-  let complete = false; // Flag; whether the counter = speed; the number of frames to move on.
-
-  if(this.counter >= this.speed){
-    this.counter = 0;
-    complete = true;
-  };
-  return complete;
-};
-
-// I probably COULD just copy the json stuff directly since js treats them
-// as objects anyhow but this is more readable.
-Animation.prototype.parseData = function(data){
-  this.frames = data.frames;
-  this.setDefaultFrame();
-  this.loops = data.loops;
-  this.speed = (data.speed === "default") ? this.defaultSpeed : data.speed
-  this.type = data.type;
-};
-
-Animation.prototype.setDefaultFrame = function(){
-  this.frameIndex = 0; // Index of first frame in this.frames.
-  this.currentFrame = this.frames[this.frameIndex]; // Init. as first frame.
-}
-
-// Play this function every frame the animation is active.
-Animation.prototype.nextFrame = function(){
-  let goToNextFrame = this.incrementCounter(); // goToNextFrame is a flag.
-
-  // If animation completes the period for one frame...
-  if(goToNextFrame === true){
-    if(this.frameIndex + 1 < this.frames.length){
-      this.frameIndex += 1;
-      this.currentFrame = this.frames[this.frameIndex];
-    } else this.setDefaultFrame(); // Cycle back to start if done animation.
-  };
-};
-
-Animation.prototype.getSprite = function(){
-  let spriteSheet = this.spriteSheet;
-  let spriteIndex = this.currentFrame;
-  return spriteSheet.getSprite(spriteIndex[0], spriteIndex[1]);
 };
 
 // TODO: Animation Manager; would be responsible for linking spriteSheets to animations.
 // If I really want to follow the entity system. I should move all the animation methods
 // to here. There could be thousands of animations loaded at once and they don't all
 // need their own functions to save space.
-function AnimationManager(){};
+function AnimationManager(parent){
+  this.parent = parent; // Reference to the renderer.
+};
+
+AnimationManager.prototype.setFrame = function(animation, index){
+  animation.frameIndex = index;
+  animation.currentFrame = animation.frames[index];
+};
+
+AnimationManager.prototype.setDefaultFrame = function(animation){
+  this.setFrame(animation, 0)
+};
+
+// Play this function every frame the animation is active.
+AnimationManager.prototype.nextFrame = function(animation){
+  if(animation.active === false){return}; // Stop any incrementing if the animation is inactive.
+
+  let goToNextFrame = this._incrementCounter(animation); // goToNextFrame is a flag.
+
+  // If animation completes the period for one frame...
+  if(goToNextFrame === true){
+    if(animation.frameIndex + 1 < animation.frames.length){ // If there are still frames in the animation...
+      this.setFrame(animation, animation.frameIndex + 1); // Set to the next frame.
+    }
+    else if(animation.frameIndex + 1 >= animation.frames.length && this.loops === false){// If the animation is complete and it DOESN'T loop
+      this.active = false; // Deactivate
+    }
+    else { // Else; if the animation is complete and the animation DOES loop.
+      this.setDefaultFrame(animation); // Cycle back to start if done animation.
+    };
+  };
+};
+
+// Get the sprite of the current frame in animation.
+AnimationManager.prototype.getSprite = function(animation){
+  let spriteSheet = animation.spriteSheet;
+  let spriteIndex = animation.currentFrame;
+  return this.parent.textureManager.getSpriteFromSheet(spriteSheet, spriteIndex[0], spriteIndex[1]);
+};
+
+AnimationManager.prototype.activateAnimation = function(animation){
+  animation.active = true;
+};
+
+AnimationManager.prototype._incrementCounter = function(animation){
+  animation.counter += 1;
+  let complete; // Flag; whether the counter = speed; the number of frames to move on.
+
+  if(animation.counter >= animation.speed){
+    animation.counter = 0;
+    complete = true;
+  } else complete = false;
+  return complete;
+};

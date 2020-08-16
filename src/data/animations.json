@@ -1,18 +1,34 @@
 {
   "animationData": {
-    "jtp_walk_right": {
-      "spriteSheet": "jtp",
-      "frames": [[0,1], [1,1], [2,1], [1,1]],
+    "player_idle_front": {
+      "spriteSheet": "player_idle",
+      "frames": [[0,0], [1,0], [2,0], [3,0], [4,0], [5,0], [6,0], [7,0]],
       "loops": true,
-      "type": "walk",
+      "type": "idle",
       "speed": "default"
     },
 
-    "swordbro_idle": {
-      "spriteSheet": "player",
-      "frames": [[0,0], [1,0], [2,0], [3,0], [4,0], [5,0], [6,0], [7,0]],
+    "player_idle_back": {
+      "spriteSheet": "player_idle",
+      "frames": [[0,1], [1,1], [2,1], [3,1], [4,1], [5,1], [6,1], [7,1]],
       "loops": true,
-      "type": "walk",
+      "type": "idle",
+      "speed": "default"
+    },
+
+    "player_idle_left": {
+      "spriteSheet": "player_idle",
+      "frames": [[0,2], [1,2], [2,2], [3,2], [4,2], [5,2], [6,2], [7,2]],
+      "loops": true,
+      "type": "idle",
+      "speed": "default"
+    },
+
+    "player_idle_right": {
+      "spriteSheet": "player_idle",
+      "frames": [[0,3], [1,3], [2,3], [3,3], [4,3], [5,3], [6,3], [7,3]],
+      "loops": true,
+      "type": "idle",
       "speed": "default"
     }
   }

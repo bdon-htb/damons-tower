@@ -8,9 +8,11 @@
 
 function Game(engine){
   this.engine = engine;
+  // Create aliases for engine components.
+  this.renderer = engine.renderer;
+  this.animationManager = this.renderer.animationManager;
   this.gameStateObject = {};
 
-  // TODO: Figure out how to organize transition structure
   let allStates = {
     "mainMenu": [this._loadMenu.bind(this, "mainMenu"), this._clearGameStateObject.bind(this)],
     "inLevel": [this._loadTestLevel.bind(this), this._clearGameStateObject.bind(this)],
@@ -43,7 +45,18 @@ Game.prototype.update = function(){
       let inputs = this.engine.getInputEvents();
       if(inputs.size > 0){
         this.gameStateObject["menu"].checkClicks();
-    };
+      };
+      break;
+    case "inLevel":
+      let level = this.gameStateObject["scene"];
+      let player = this.gameStateObject["scene"].getEntity("player");
+      let camera = level.camera;
+      let posArray = [player.attributes["x"], player.attributes["y"]]
+      camera.center(posArray[0], posArray[1], player.attributes["sprite"].height);
+      let relPosArray = camera.getRelative(posArray[0], posArray[1]);
+      this.animationManager.nextFrame(player.attributes["currentAnimation"]);
+      player.attributes["sprite"] = this.animationManager.getSprite(player.attributes["currentAnimation"]);
+      break;
   };
 };
 
@@ -55,13 +68,24 @@ Game.prototype.draw = function(){
       renderer.drawMenu(this.gameStateObject["menu"]);
       break;
     case "inLevel":
+      let level = this.gameStateObject["scene"];
+      let player = this.gameStateObject["scene"].getEntity("player");
+      let camera = level.camera;
+      let posArray = [player.attributes["x"], player.attributes["y"]]
+      let relPosArray = camera.getRelative(posArray[0], posArray[1]);
       renderer.drawTiles(this.gameStateObject["scene"])
+      this.renderer.drawSprite(player.attributes["sprite"], relPosArray[0], relPosArray[1])
   };
 };
+
 
 // =========================
 // State transition methods.
 // =========================
+Game.prototype._clearGameStateObject = function(){
+  this.gameStateObject = {};
+};
+
 Game.prototype._loadMenu = function(menuName){
   let state = this.stateMachine.currentState;
   let gameStateObject = this.gameStateObject;
@@ -74,13 +98,50 @@ Game.prototype._loadMenu = function(menuName){
 
 Game.prototype._loadTestLevel = function(){
   let spawnpoint = [0, 0];
-  let levelData = this.engine.getLoadedAsset("levelData").get("testLevel");
+  let levelData = this.engine.getLoadedAsset(this.engine.levelKey).get("testLevel");
   let levelSpriteSheet = this.engine.renderer.getSheetFromId(levelData.spriteSheet);
   let level = new Scene(this.engine, levelSpriteSheet, levelData);
   level.camera.setup(spawnpoint[0], spawnpoint[1], this.engine.windowWidth, this.engine.windowHeight);
   this.gameStateObject["scene"] = level;
+
+  let player = this._createPlayer();
+  level.addEntity(player);
+  this.sceneManager.setScene(level);
+  let camera = level.camera;
+  let posArray = [player.attributes["x"], player.attributes["y"]]
+  camera.center(posArray[0], posArray[1], player.attributes["sprite"].height);
 };
 
-Game.prototype._clearGameStateObject = function(){
-  this.gameStateObject = {};
+// Create the player object.
+Game.prototype._createPlayer = function(){
+  let engine = this.engine // create alias.
+  let player = new Entity("player", null, "player", "idle", 0, 0);
+  player.attributes["animations"] = new Map(); // Animations is a map of all the available animations.
+
+  let idleAnimations = {
+    "idle_front": engine.getLoadedAsset(engine.animKey).get("player_idle_front"),
+    "idle_back": engine.getLoadedAsset(engine.animKey).get("player_idle_back"),
+    "idle_left": engine.getLoadedAsset(engine.animKey).get("player_idle_left"),
+    "idle_right": engine.getLoadedAsset(engine.animKey).get("player_idle_right")
+  };
+
+  let allAnimations = [idleAnimations];
+
+  // Add all of the animations in allAnimations to the player's attribute "animations".
+  allAnimations.forEach(object => {
+    let spriteSheet;
+    let animation;
+    for(let [key, value] of Object.entries(object)){
+      spriteSheet = this.renderer.getSheetFromId(value["spriteSheet"]);
+      animation = new Animation(key, spriteSheet, value);
+      player.attributes["animations"].set(key, animation)
+    }
+  });
+
+  // Set the default sprite.
+  let defaultAnimation = player.attributes["animations"].get("idle_front");
+  this.animationManager.activateAnimation(defaultAnimation);
+  player.attributes["currentAnimation"] = defaultAnimation;
+  player.attributes["sprite"] = this.animationManager.getSprite(defaultAnimation);
+  return player
 };

@@ -4,7 +4,7 @@
 */
 
 /**
- * Custom entity object. for the purpose of this game this will be the base
+ * Simple entity object. for the purpose of this game this will be the base
  * of the player, enemy, items, doors, switches, etc.
 */
 function Entity(id, sprite, type, state, x, y){
@@ -18,6 +18,15 @@ function Entity(id, sprite, type, state, x, y){
     "y": y
   };
 };
+
+// Player object.
+// TODO: Implement.
+function Player(id, sprite, animations, direction, state, x, y){
+  Entity.call(id, sprite, "player", state, x, y);
+  this.attributes["direction"] = direction; // The direction the player is currently facing.
+  this.attributes["animations"] = animations;
+};
+
 
 /**
  * Custom scene object. Will essentially represent a level in the game.
@@ -76,6 +85,10 @@ SceneManager.prototype.setScene = function(newScene){
     this.sceneHistory.push(newScene);
   };
   this.currentScene = newScene;
+};
+
+SceneManager.prototype.clearHistory = function(){
+  this.sceneHistory.clear();
 };
 
 /**
@@ -227,4 +240,4 @@ function Rect(topLeft, width, height=undefined){
   this.topRight = [this.topLeft[0] + this.width, this.topLeft[1]];
   this.bottomLeft = [this.topLeft[0], this.topLeft[1] + this.height];
   this.bottomRight = [this.topLeft[0] + this.width, this.topLeft[1] + this.height];
-}
+};

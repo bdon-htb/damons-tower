@@ -13,6 +13,9 @@ function Game(engine){
   this.animationManager = this.renderer.animationManager;
   this.gameStateObject = {};
 
+  // Create game components.
+  this.controller = new Controller();
+
   let allStates = {
     "mainMenu": [this._loadMenu.bind(this, "mainMenu"), this._clearGameStateObject.bind(this)],
     "inLevel": [this._loadTestLevel.bind(this), this._clearGameStateObject.bind(this)],
@@ -40,14 +43,19 @@ function Game(engine){
 
 Game.prototype.update = function(){
   let currentState = this.stateMachine.currentState;
+  this.gameStateObject["events"] = new Map(); // Init / re-init the game events.
+  let events = this.gameStateObject["events"] // Create an alias.
+  let inputs = this.engine.getInputEvents();
+  events.set("inputEvents", this.engine.getInputEvents());
+
   switch(currentState){
     case "mainMenu":
-      let inputs = this.engine.getInputEvents();
-      if(inputs.size > 0){
-        this.gameStateObject["menu"].checkClicks();
-      };
+      if(events.get("inputEvents").size > 0){
+        this.gameStateObject["menu"].checkClicks()};
       break;
     case "inLevel":
+      let scene = this.gameStateObject["scene"];
+      this._updateLevel(scene);
       let level = this.gameStateObject["scene"];
       let player = this.gameStateObject["scene"].getEntity("player");
       let camera = level.camera;
@@ -78,7 +86,6 @@ Game.prototype.draw = function(){
   };
 };
 
-
 // =========================
 // State transition methods.
 // =========================
@@ -96,6 +103,7 @@ Game.prototype._loadMenu = function(menuName){
   };
 };
 
+// Set the gameStateObject's scene.
 Game.prototype._loadLevel = function(levelData){
   let levelSpriteSheet = this.engine.renderer.getSheetFromId(levelData.spriteSheet);
   let level = new Scene(this.engine, levelSpriteSheet, levelData);
@@ -115,6 +123,24 @@ Game.prototype._loadTestLevel = function(){
   let posArray = [player.attributes["x"], player.attributes["y"]];
   camera.center(posArray[0], posArray[1], player.attributes["sprite"].height);
 };
+
+// ===============
+// Update methods.
+// ===============
+
+Game.prototype._updateLevel = function(scene){
+  let events = this.gameStateObject["events"]
+  if(scene.entities.has("player") === true){
+    let player = scene.getEntity("player");
+    if(events.get("inputEvents").has("keyboard")){ // Check for player movement.
+      console.log(events.get("inputEvents").get("keyboard"))
+    };
+  };
+};
+
+// ===============================
+// Entity Object creation methods.
+// ===============================
 
 // Create the player object.
 Game.prototype._createPlayer = function(){

@@ -79,7 +79,7 @@ SceneManager.prototype.setScene = function(newScene){
 };
 
 SceneManager.prototype.clearHistory = function(){
-  this.sceneHistory.clear();
+  this.sceneHistory = [];
 };
 
 /**
@@ -147,7 +147,6 @@ TileMap.prototype.convertPos = function(position){
 };
 
 // Moved the following over to Engine because it's a pretty widespread calculation.
-// Aliases.
 TileMap.prototype.convertIndexToCoords = function(index){
   return Engine.prototype.convertIndexToCoords(index, this.width);
 };
@@ -232,3 +231,9 @@ function Rect(topLeft, width, height=undefined){
   this.bottomLeft = [this.topLeft[0], this.topLeft[1] + this.height];
   this.bottomRight = [this.topLeft[0] + this.width, this.topLeft[1] + this.height];
 };
+
+/**
+ * Custom controller class. Responsible for converting input data into
+ * useful commands.
+*/
+function Controller(){}

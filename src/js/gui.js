@@ -198,7 +198,7 @@ Menu.prototype.checkClicks = function(){
   let pointInRect = engine.pointInRect;
   let mouse = engine.getInputDevice("mouse");
 
-  if(inputs.size > 0 && this._hasButtons === true){
+  if(inputs.has("mouse") === true && this._hasButtons === true && inputs.get("mouse").includes("leftClick")){
     for(const [id, entity] of this.entities.entries()){
       if(entity.constructor === Button && this._mouseInButton(mouse, entity) === true){
         this.executeCallback(entity);

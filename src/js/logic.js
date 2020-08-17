@@ -234,6 +234,12 @@ function Rect(topLeft, width, height=undefined){
 
 /**
  * Custom controller class. Responsible for converting input data into
- * useful commands.
+ * useful commands. The controller is a uniform interface for any input
+ * device to communicate with the game.
+ * configuredDevices is a Map of the input devices currently connected.
 */
-function Controller(){}
+function Controller(configuredDevices){
+  this.devices = configuredDevices;
+}
+
+Controller.prototype.getPresses = function(){}

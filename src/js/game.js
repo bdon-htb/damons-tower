@@ -116,7 +116,7 @@ Game.prototype._loadTestLevel = function(){
   let levelData = this.engine.getLoadedAsset(this.engine.levelKey).get("testLevel");
   this._loadLevel(levelData);
   let level = this.gameStateObject["scene"];
-  let player = this._createPlayer();
+  let player = this._createPlayerObject();
   level.addEntity(player);
   this.sceneManager.setScene(level);
   let camera = level.camera;
@@ -132,10 +132,30 @@ Game.prototype._updateLevel = function(scene){
   let events = this.gameStateObject["events"]
   if(scene.entities.has("player") === true){
     let player = scene.getEntity("player");
-    if(events.get("inputEvents").has("keyboard")){ // Check for player movement.
-      console.log(events.get("inputEvents").get("keyboard"))
-    };
+    let presses;
+    if(events.get("inputEvents").has("keyboard")){
+      presses = events.get("inputEvents").get("keyboard")
+    } else presses = []
+    this._handlePlayerMovement(player, presses);
   };
+};
+
+Game.prototype._handlePlayerMovement = function(player, presses){
+  let velocity = player.attributes["speed"]
+  let movMap = {
+    "left": ["x", -velocity],
+    "right": ["x", +velocity],
+    "up": ["y", -velocity],
+    "down": ["y", +velocity]
+  };
+
+  presses.forEach(p => {
+    if(Object.keys(movMap).includes(p)){
+      let moveProperty = movMap[p];
+      // Adjust the player's x / y coordinate accprdomg tp the movMap.
+      player.attributes[moveProperty[0]] += moveProperty[1];
+    }
+  });
 };
 
 // ===============================
@@ -143,10 +163,11 @@ Game.prototype._updateLevel = function(scene){
 // ===============================
 
 // Create the player object.
-Game.prototype._createPlayer = function(){
+Game.prototype._createPlayerObject = function(){
   let engine = this.engine // create alias.
   let player = new Entity("player", null, "player", "idle", 0, 0);
   player.attributes["animations"] = new Map(); // Animations is a map of all the available animations.
+  player.attributes["speed"] = 5; // Set the default player movement speed.
 
   let idleAnimations = {
     "idle_front": engine.getLoadedAsset(engine.animKey).get("player_idle_front"),

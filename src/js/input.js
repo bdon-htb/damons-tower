@@ -98,12 +98,12 @@ Keyboard.prototype.captureInputs = function(){
 };
 
 Keyboard.prototype.addListeners = function(element){
-  element.addEventListener("keyDown", this.keyDownHandler.bind(this), false);
+  element.addEventListener("keydown", this.keyDownHandler.bind(this), false);
   element.addEventListener("keyup", this.keyUpHandler.bind(this), false);
 };
 
 Keyboard.prototype.removeListeners = function(element){
-  element.removeEventListener("keyDown", this.keyDownHandler.bind(this), false);
+  element.removeEventListener("keydown", this.keyDownHandler.bind(this), false);
   element.removeEventListener("keyup", this.keyUpHandler.bind(this), false);
 };
 

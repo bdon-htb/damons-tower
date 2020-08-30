@@ -55,6 +55,7 @@ Game.prototype.update = function(){
       break;
     case "inLevel":
       let scene = this.gameStateObject["scene"];
+      this.controller.updatePresses(events);
       this._updateLevel(scene);
       let level = this.gameStateObject["scene"];
       let player = this.gameStateObject["scene"].getEntity("player");
@@ -132,16 +133,13 @@ Game.prototype._updateLevel = function(scene){
   let events = this.gameStateObject["events"]
   if(scene.entities.has("player") === true){
     let player = scene.getEntity("player");
-    let presses;
-    if(events.get("inputEvents").has("keyboard")){
-      presses = events.get("inputEvents").get("keyboard")
-    } else presses = []
-    this._handlePlayerMovement(player, presses);
+    this._handlePlayerMovement(player);
   };
 };
 
-Game.prototype._handlePlayerMovement = function(player, presses){
-  let velocity = player.attributes["speed"]
+Game.prototype._handlePlayerMovement = function(player){
+  let presses = this.controller.getPresses();
+  let velocity = player.attributes["speed"];
   let movMap = {
     "left": ["x", -velocity],
     "right": ["x", +velocity],

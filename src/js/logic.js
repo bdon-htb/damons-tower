@@ -236,10 +236,38 @@ function Rect(topLeft, width, height=undefined){
  * Custom controller class. Responsible for converting input data into
  * useful commands. The controller is a uniform interface for any input
  * device to communicate with the game.
- * configuredDevices is a Map of the input devices currently connected.
+ * mode is a string identifier that dictates how the controller parse
+ * input events.
+ * Modes:
+ * - keyboard = mouse & keyboard.
 */
-function Controller(configuredDevices){
-  this.devices = configuredDevices;
-}
+function Controller(mode="default"){
+  this._allModes = ["keyboard"] // Mostly for documentation purposes.
+  this._defaultMode = "keyboard"
+  this.mode = (mode === "default") ? this._defaultMode : mode;
+  // TODO: Implement pretty much all of this.
+  this.bufferSize = 5; // Number of frames before presses empties.
+  this.bufferCounter = 0;
+  this.counters = new Map() // For keeping track
+  this.presses = [];
+  this.commands = []; // Queue for commands to activate.
+};
 
-Controller.prototype.getPresses = function(){}
+Controller.prototype._emptyPresses = function(){
+  this.presses = [];
+};
+
+// Update the controller's current presses. Should be called once per frame.
+Controller.prototype.updatePresses = function(events){
+  this._emptyPresses();
+  let p;
+  if(this.mode === "keyboard" && events.get("inputEvents").has("keyboard")){
+    p = events.get("inputEvents").get("keyboard");
+    this.presses.concat(p);
+  };
+};
+
+// Return an array of all inputs. Primitive and complicated inputs included.
+Controller.prototype.getPresses = function(){
+  return this.presses;
+};

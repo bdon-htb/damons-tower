@@ -242,15 +242,10 @@ function Rect(topLeft, width, height=undefined){
  * - keyboard = mouse & keyboard.
 */
 function Controller(mode="default"){
-  this._allModes = ["keyboard"] // Mostly for documentation purposes.
-  this._defaultMode = "keyboard"
+  this._allModes = ["keyboard"]; // Mostly for documentation purposes.
+  this._defaultMode = this._allModes[0];
   this.mode = (mode === "default") ? this._defaultMode : mode;
-  // TODO: Implement pretty much all of this.
-  this.bufferSize = 5; // Number of frames before presses empties.
-  this.bufferCounter = 0;
-  this.counters = new Map() // For keeping track
-  this.presses = [];
-  this.commands = []; // Queue for commands to activate.
+  this.presses = []; // Controller presses recorded every frame.
 };
 
 Controller.prototype._emptyPresses = function(){
@@ -263,7 +258,7 @@ Controller.prototype.updatePresses = function(events){
   let p;
   if(this.mode === "keyboard" && events.get("inputEvents").has("keyboard")){
     p = events.get("inputEvents").get("keyboard");
-    this.presses.concat(p);
+    this.presses = this.presses.concat(p);
   };
 };
 

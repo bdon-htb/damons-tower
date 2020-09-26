@@ -71,7 +71,7 @@ Engine.prototype.draw = function(data){
 Engine.prototype.update = function(data){
   this.inputManager.captureInputs();
   // this.tester.testUpdate(data);
-  this.app.update();
+  this.app.update(data);
 };
 
 // This will obviously have to be more elaborate when the actual game is being made.

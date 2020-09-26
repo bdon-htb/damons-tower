@@ -246,6 +246,10 @@ function Controller(mode="default"){
   this._defaultMode = this._allModes[0];
   this.mode = (mode === "default") ? this._defaultMode : mode;
   this.presses = []; // Controller presses recorded every frame.
+  this._patterns
+  this.commandStack = [];
+  this.timeLimit = 60; // Number of ticks before flush.
+  this.counter = 0; // Internal count.
 };
 
 Controller.prototype._emptyPresses = function(){
@@ -253,12 +257,18 @@ Controller.prototype._emptyPresses = function(){
 };
 
 // Update the controller's current presses. Should be called once per frame.
-Controller.prototype.updatePresses = function(events){
-  this._emptyPresses();
-  let p;
+// NOTE: In case I take another long break, the reason why the game bricks is because press is an object
+// when the game is expecting an array.
+Controller.prototype.updatePresses = function(events, data){
+  let p; // Input event.
+  let timeStamp = data["timeStamp"]; // Get the timeStamp of the current frame.
   if(this.mode === "keyboard" && events.get("inputEvents").has("keyboard")){
     p = events.get("inputEvents").get("keyboard");
-    this.presses = this.presses.concat(p);
+    for(const p of events.get("inputEvents").get("keyboard")){
+      let press = {}; // Create press object in the format {pressName: timeStamp}.
+      press[p] = timeStamp;
+      this.presses.push(press);
+    };
   };
 };
 
@@ -266,3 +276,17 @@ Controller.prototype.updatePresses = function(events){
 Controller.prototype.getPresses = function(){
   return this.presses;
 };
+
+// Increment the internal counter and flush if the time limit is reached.
+Controller.prototype.tick = function(){
+  if(this.counter > this.timeLimit){
+    this.counter = 0;
+    this._emptyPresses();
+  };
+  this.counter += 1;
+};
+
+Controller.protoype.parsePresses = function(){
+};
+
+function Pattern(){};

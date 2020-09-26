@@ -41,7 +41,7 @@ function Game(engine){
   };
 };
 
-Game.prototype.update = function(){
+Game.prototype.update = function(data){
   let currentState = this.stateMachine.currentState;
   this.gameStateObject["events"] = new Map(); // Init / re-init the game events.
   let events = this.gameStateObject["events"] // Create an alias.
@@ -55,7 +55,8 @@ Game.prototype.update = function(){
       break;
     case "inLevel":
       let scene = this.gameStateObject["scene"];
-      this.controller.updatePresses(events);
+      this.controller.tick();
+      this.controller.updatePresses(events, data);
       this._updateLevel(scene);
       let level = this.gameStateObject["scene"];
       let player = this.gameStateObject["scene"].getEntity("player");

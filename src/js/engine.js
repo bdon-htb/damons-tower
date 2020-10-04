@@ -142,6 +142,7 @@ Engine.prototype.allMenusLoaded = function(){
   } else return menus.size === menuURLS.size;
 };
 
+// TODO: Figure out if fonts are loading completely before game starts.
 Engine.prototype.loadAllFonts = function(callback){
   allFonts = this.assets.get(this.fontsKey);
   allFonts = allFonts.map(font => new FontFaceObserver(font).load());

@@ -299,7 +299,7 @@ GridLayout.prototype.organize = function(){
   this.sizeCells();
   this.setCellPositions();
   this.setEntityPositions();
-  console.log(this.cells)
+  // console.log(this.cells)
 };
 
 // Sets the sizes and position of all the cells.

@@ -140,6 +140,9 @@ Game.prototype._updateLevel = function(scene){
 
 Game.prototype._handlePlayerMovement = function(player){
   let presses = this.controller.getPresses();
+
+  if(presses.length > 0){console.log(presses)}
+
   let velocity = player.attributes["speed"];
   let movMap = {
     "left": ["x", -velocity],

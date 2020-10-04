@@ -244,11 +244,13 @@ function Rect(topLeft, width, height=undefined){
 function Controller(mode="default"){
   this._allModes = ["keyboard"]; // Mostly for documentation purposes.
   this._defaultMode = this._allModes[0];
-  this.mode = (mode === "default") ? this._defaultMode : mode;
-  this.presses = []; // Controller presses recorded every frame.
+  this.mode = (mode === "default") ? this._defaultMode : mode; // why do I have modes!?!?!
+  // An array of controller presses per frame. Each recorded frame is an element in the format: [timeStamp, [inputs]]
+  this.presses = [];
   this._patterns
   this.commandStack = [];
-  this.timeLimit = 60; // Number of ticks before flush.
+  this.maxDelay = 100; // Number of ticks before
+  this.timeLimit = 10; // Number of ticks before flush.
   this.counter = 0; // Internal count.
 };
 
@@ -260,15 +262,29 @@ Controller.prototype._emptyPresses = function(){
 // NOTE: In case I take another long break, the reason why the game bricks is because press is an object
 // when the game is expecting an array.
 Controller.prototype.updatePresses = function(events, data){
-  let p; // Input event.
+  let presses = this.presses; // Create alias.
   let timeStamp = data["timeStamp"]; // Get the timeStamp of the current frame.
+
+  let current_presses;
+  let inputs = []; // Inputs detected this frame.
+  let p;
+
   if(this.mode === "keyboard" && events.get("inputEvents").has("keyboard")){
-    p = events.get("inputEvents").get("keyboard");
-    for(const p of events.get("inputEvents").get("keyboard")){
-      let press = {}; // Create press object in the format {pressName: timeStamp}.
-      press[p] = timeStamp;
-      this.presses.push(press);
+    inputs = events.get("inputEvents").get("keyboard");
+  };
+
+  if(inputs.length > 0){
+    p = [timeStamp, inputs]; // log all inputs this frame with timestamp.
+
+    if(presses.length > 0){
+      lastIndex = presses.length - 1
+      last_p = presses[lastIndex]; // Get the inputs of the last frame if it exists.
+      if((p[0] - last_p[0]) <= this.maxDelay){ // Compare the timestamps between the two frames.
+        presses[lastIndex] = p; // Replace the last stored frame.
+        return
+      };
     };
+    presses.push(p);
   };
 };
 
@@ -286,7 +302,7 @@ Controller.prototype.tick = function(){
   this.counter += 1;
 };
 
-Controller.protoype.parsePresses = function(){
-};
+//Controller.protoype.parsePresses = function(){
+//};
 
 function Pattern(){};

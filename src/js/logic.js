@@ -271,6 +271,7 @@ Controller.prototype.updatePresses = function(events, data){
 
   if(this.mode === "keyboard" && events.get("inputEvents").has("keyboard")){
     inputs = events.get("inputEvents").get("keyboard");
+    // console.log(inputs)
   };
 
   if(inputs.length > 0){

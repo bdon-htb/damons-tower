@@ -32,7 +32,8 @@ InputManager.prototype.captureInputs = function(clearFirst=true){
   };
   this.inputDevices.forEach((device) => {
     let inputs = device.captureInputs();
-    if(inputs.length > 0){this.events.set(device.name, inputs)};
+    if(inputs.constructor === Array && inputs.length > 0 || inputs.constructor === Map && inputs.size > 0){
+      this.events.set(device.name, inputs)};
   });
 };
 
@@ -95,13 +96,21 @@ function Keyboard(){
   InputDevice.call(this, "keyboard", defaultKeys);
 };
 
+// The difference between the keyboard and other input devices (currently),
+// is that the keyboard returns a map for keyDown and keyUp.
+// I wouldn't be surprised if I eventually just transition everything to a map.
 Keyboard.prototype.captureInputs = function(){
   inputs = new Map()
   inputs.set("keyDown", InputDevice.prototype.captureInputs(this.keyDown));
   inputs.set("keyUp", InputDevice.prototype.captureInputs(this.keyUp));
+
+  if(inputs.get("keyDown").length === 0 && inputs.get("keyUp").length === 0){
+    return []; // If there are no detected inputs, just return an empty list as usual.
+  };
+
   if(inputs.get("keyUp").length > 0){
     let resetFunc = this.resetKeyObject.bind(this);
-    resetFunc(this.keyUp); // Once captured key releases are resetted.
+    resetFunc(this.keyUp); // Once captured, stored keyUps are resetted.
   };
   return inputs;
 };

@@ -100,7 +100,9 @@ function Keyboard(){
 // is that the keyboard returns a map for keyDown and keyUp.
 // I wouldn't be surprised if I eventually just transition everything to a map.
 Keyboard.prototype.captureInputs = function(){
+  // Side note: the reason why I didn't just output an array here is to keep the data neat for checking.
   inputs = new Map()
+
   inputs.set("keyDown", InputDevice.prototype.captureInputs(this.keyDown));
   inputs.set("keyUp", InputDevice.prototype.captureInputs(this.keyUp));
 
@@ -110,7 +112,7 @@ Keyboard.prototype.captureInputs = function(){
 
   if(inputs.get("keyUp").length > 0){
     let resetFunc = this.resetKeyObject.bind(this);
-    resetFunc(this.keyUp); // Once captured, stored keyUps are resetted.
+    resetFunc(this.keyUp); // Once captured, reset stored keyUps.
   };
   return inputs;
 };

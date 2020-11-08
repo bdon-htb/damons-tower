@@ -244,7 +244,7 @@ function Rect(topLeft, width, height=undefined){
 function Controller(mode="default"){
   this._allModes = ["keyboard"]; // Mostly for documentation purposes.
   this._defaultMode = this._allModes[0];
-  this.mode = (mode === "default") ? this._defaultMode : mode; // why do I have modes!?!?!
+  this.mode = (mode === "default") ? this._defaultMode : mode;
   // An array of controller presses per frame. Each recorded frame is an element in the format: [timeStamp, [inputs]]
   this.presses = [];
   this._patterns
@@ -269,11 +269,16 @@ Controller.prototype.updatePresses = function(events, data){
   let inputs = []; // Inputs detected this frame.
   let p;
 
+  // TODO: 2020-11-08 Reformat presses into a better structure to take keyDown and keyUp
   if(this.mode === "keyboard" && events.get("inputEvents").has("keyboard")){
-    inputs = events.get("inputEvents").get("keyboard");
-    // console.log(inputs)
+    let m = events.get("inputEvents").get("keyboard"); // This is a map.
+    // Essentially flatten the map. Prepend descriptive tags for each input.
+    inputs = inputs.concat(m.get("keyDown").map(x => "keyDown-" + x));
+    inputs = inputs.concat(m.get("keyUp").map(x => "keyUp-" + x));
   };
 
+  // this.presses = inputs;
+  /*
   if(inputs.length > 0){
     p = [timeStamp, inputs]; // log all inputs this frame with timestamp.
 
@@ -287,6 +292,7 @@ Controller.prototype.updatePresses = function(events, data){
     };
     presses.push(p);
   };
+  */
 };
 
 // Return an array of all inputs. Primitive and complicated inputs included.

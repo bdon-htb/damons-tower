@@ -247,8 +247,8 @@ function Controller(mode="default"){
   this.mode = (mode === "default") ? this._defaultMode : mode;
   // An array of controller presses per frame. Each recorded frame is an element in the format: [timeStamp, [inputs]]
   this.presses = [];
-  this._patterns
-  this.commandStack = [];
+  this.commands = [];
+  this.patterns = {"tap": ["keyDown", "keyUp", "keyDown"]}
   this.maxDelay = 100; // Number of ticks before
   this.timeLimit = 10; // Number of ticks before flush.
   this.counter = 0; // Internal count.
@@ -258,24 +258,20 @@ Controller.prototype._emptyPresses = function(){
   this.presses = [];
 };
 
-// Update the controller's current presses. Should be called once per frame.
-// NOTE: In case I take another long break, the reason why the game bricks is because press is an object
-// when the game is expecting an array.
-Controller.prototype.updatePresses = function(events, data){
-  let presses = this.presses; // Create alias.
+// Gets all inputs from active devices (based on mode);
+Controller.prototype.getInputs = function(events, data){
   let timeStamp = data["timeStamp"]; // Get the timeStamp of the current frame.
-
-  let current_presses;
   let inputs = []; // Inputs detected this frame.
-  let p;
 
-  // TODO: 2020-11-08 Reformat presses into a better structure to take keyDown and keyUp
   if(this.mode === "keyboard" && events.get("inputEvents").has("keyboard")){
     let m = events.get("inputEvents").get("keyboard"); // This is a map.
-    // Essentially flatten the map. Prepend descriptive tags for each input.
+    // Essentially flatten the map. Prepend descriptive words for each input.
     inputs = inputs.concat(m.get("keyDown").map(x => "keyDown-" + x));
     inputs = inputs.concat(m.get("keyUp").map(x => "keyUp-" + x));
   };
+
+  return inputs;
+};
 
   // this.presses = inputs;
   /*
@@ -293,7 +289,6 @@ Controller.prototype.updatePresses = function(events, data){
     presses.push(p);
   };
   */
-};
 
 // Return an array of all inputs. Primitive and complicated inputs included.
 Controller.prototype.getPresses = function(){

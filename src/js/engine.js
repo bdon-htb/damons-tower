@@ -32,6 +32,8 @@ function Engine(htmlDOM){
   this.menuKey = "menus";
   // contains the names of all the game's custom fonts.
   this.fontsKey = "customFonts";
+  // contains input command objects.
+  this.inputsKey = "inputCommands";
 
   // AssetLoader variables.
   this.dataLocation = "data";
@@ -92,17 +94,13 @@ Engine.prototype.loadAllAssets = function(){
   let dataLocation = this.dataLocation;
   let imgLocation = this.imgLocation;
 
-  // Load image locations.
-  this.assetLoader.getAsset(dataLocation + "/" + "image.json", true);
-  // Load animation data.
-  this.assetLoader.getAsset(dataLocation + "/" + "animations.json", true);
+  this.assetLoader.getAsset(dataLocation + "/" + "image.json", true); // image urls.
+  this.assetLoader.getAsset(dataLocation + "/" + "animations.json", true); // animation data.
+  this.assetLoader.getAsset(dataLocation + "/" + "menus.json", true); // menu filenames.
+  this.assetLoader.getAsset(dataLocation + "/" + "customFonts.json", true); // custom font names.
+  this.assetLoader.getAsset(dataLocation + "/" + "inputs.json", true); // input commands / patterns.
 
-  // Load TEST level data.
-  this.assetLoader.getAsset(dataLocation + "/" + "levels.json", true);
-
-  this.assetLoader.getAsset(dataLocation + "/" + "menus.json", true);
-
-  this.assetLoader.getAsset(dataLocation + "/" + "customFonts.json", true);
+  this.assetLoader.getAsset(dataLocation + "/" + "levels.json", true); // (test) level data.
 };
 
 Engine.prototype.assetIsLoaded = function(id){
@@ -115,7 +113,8 @@ Engine.prototype.allAssetsLoaded = function(){
     this.animKey,
     this.levelKey,
     this.menuDataKey,
-    this.fontsKey
+    this.fontsKey,
+    this.inputsKey
   ];
 
   for(const key of assetsKeys){

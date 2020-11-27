@@ -2,8 +2,8 @@
   "inputCommands": {
     "doubleTap": {
       "condition": "samePrefix",
-      "pattern": ["keyDown-", "keyUp-", "keyDown-"],
-      "timeLimit": 60
+      "timeLimit": 60,
+      "pattern": ["keyDown-", "keyUp-", "keyDown-"]
     }
   }
 }

@@ -27,7 +27,7 @@ function Game(engine){
   this.startingState = "mainMenu"
   this.stateMenus = {
     "mainMenu": "mainMenu"
-  };
+  }; // Wtf is this?
 
   // Create components.
   this.stateMachine = new StateMachine(this, allStates, "mainMenu");
@@ -86,6 +86,16 @@ Game.prototype.draw = function(){
       renderer.drawTiles(this.gameStateObject["scene"])
       this.renderer.drawSprite(player.attributes["sprite"], relPosArray[0], relPosArray[1])
   };
+};
+
+// =========================
+// Loading related methods.
+// =========================
+// TODO: I need to put this somewhere so it only happens once before game starts.
+// Or I just make patterns an engine thing.
+Game.prototype._createPatterns = function(engine){
+  let patternData = engine.assets.get(engine.inputsKey); // Get the input commands from engine assets.
+  console.log(engine.assets.get(engine.inputsKey));
 };
 
 // =========================

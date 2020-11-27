@@ -307,4 +307,14 @@ Controller.prototype.tick = function(){
 //Controller.protoype.parsePresses = function(){
 //};
 
-function Pattern(){};
+// Take a input map from engine.assets.inputCommands and convert to a pattern.
+function InputPattern(name, inputMap){
+  this.defaultTimeLimit = 60;
+
+  this.name = name;
+  this.condition = inputMap.has("condition") ? inputMap.get("condition") : "default";
+  this.timeLimit = inputMap.has("timeLimit") ? inputMap.get("timeLimit") : this.defaultTimeLimit;
+  this.pattern = inputMap.get("pattern");
+
+  this.state = -1; // The index of the current input of the active pattern. -1 means that it's not active.
+};

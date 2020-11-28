@@ -51,7 +51,7 @@ Game.prototype.update = function(data){
 
   switch(currentState){
     case "starting": // For loading stuff specific to the game.
-      this.controller.createPatterns(this.engine);
+      this.controller.createPatterns(this.engine, data["timeStamp"]);
       this.stateMachine.changeState("mainMenu")
       break;
     case "mainMenu":
@@ -92,6 +92,9 @@ Game.prototype.draw = function(){
       let camera = level.camera;
       let posArray = [player.attributes["x"], player.attributes["y"]]
       let relPosArray = camera.getRelative(posArray[0], posArray[1]);
+      // For debugging purposes.
+      this.renderer.drawText(`${this.controller.patterns.get("doubleTap").state}`)
+    
       renderer.drawTiles(this.gameStateObject["scene"])
       this.renderer.drawSprite(player.attributes["sprite"], relPosArray[0], relPosArray[1])
   };

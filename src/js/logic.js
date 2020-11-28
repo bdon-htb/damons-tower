@@ -292,27 +292,30 @@ Controller.prototype.getInputs = function(events, data){
 
 // Should only be called once on startup.
 // Create InputPatterns from the information in inputs.json and store them in Controller.
-Controller.prototype.createPatterns = function(engine){
+Controller.prototype.createPatterns = function(engine, timeStamp){
   let patternData = engine.assets.get(engine.inputsKey); // Get the input commands from engine assets.
   for(const [name, obj] of patternData){
-    let p = new InputPattern(name, obj);
+    let p = new InputPattern(name, obj, timeStamp);
     this.patterns.set(name, p);
   };
 };
 
 Controller.prototype.resetPattern = function(inputPattern, timeStamp){
   Engine.prototype.resetTimer(inputPattern.timer, timeStamp);
-  inputPattern.state = 0
+  inputPattern.state = inputPattern._initialState;
+};
+
+Controller.prototype.patternActive = function(inputPattern){
+  return inputPattern.state != inputPattern._initialState;
 };
 
 // Update the state of all InputPattern objects.
 // TODO: Implement some way to check for timelimit.
 Controller.prototype.updatePatterns = function(inputs, timeStamp){
-  console.log("hello?")
   for(const [name, p] of this.patterns){
-
     Engine.prototype.updateTimer(p.timer, timeStamp); // Check for timeLimit
-    if(p.timer.complete === true){
+    if(this.patternActive(p) === true && p.timer.complete === true){
+      console.log("reset")
       this.resetPattern(p, timeStamp)
     };
 
@@ -332,13 +335,16 @@ Controller.prototype.updatePatterns = function(inputs, timeStamp){
 // Checks if the pattern (at its current state) includes the SINGLE input.
 // Will take into account things like condition.
 Controller.prototype.patternIncludes = function(inputPattern, input){
+  // so ugly ;-;. Basically while coding I got tired. If the pattern is inactive, check the first index instead of bricking.
+  let index = (this.patternActive(inputPattern) === true) ? inputPattern.state : 0;
+
   switch (inputPattern.condition) {
     case "samePrefix":
       let prefix = input.split('-')[0];
-      return inputPattern.pattern[inputPattern.state].startsWith(input); // Check if input shares the same prefix.
+      return inputPattern.pattern[index].startsWith(prefix); // Check if input shares the same prefix.
       break;
     default:
-      return inputPattern.pattern[inputPattern.state] === input; // Check for EXACT input.
+      return inputPattern.pattern[index] === input; // Check for EXACT input.
   };
 };
 
@@ -349,7 +355,7 @@ Controller.prototype.nextState = function(p){
   let complete = false; // Boolean value to determine if the full command has been inputted.
   p.state++;
   if(p.state >= p.pattern.length){ // If command has been inputted, reset and update bool.
-    p.state = 0;
+    p.state = p._initialState;
     complete = true;
   };
   return complete;
@@ -357,13 +363,14 @@ Controller.prototype.nextState = function(p){
 
 // Take a input map from engine.assets.inputCommands and convert to a pattern.
 function InputPattern(name, inputData, timeStamp){
-  this._defaultTimeLimit = 60000; // In miliseconds.
+  this._defaultTimeLimit = 600; // In miliseconds.
+  this._initialState = -1;
 
   this.name = name;
   this.condition = inputData["condition"] ? inputData["condition"] : "default";
   this.timeLimit = inputData["timeLimit"] ? inputData["timeLimit"] : this._defaultTimeLimit;
   this.pattern = inputData["pattern"]; // There's no check, meaning that this must be explicitly defined.
 
-  this.state = 0; // The index of the current input of the active pattern. Starts at 0.
+  this.state = this._initialState; // The index of the current input of the active pattern. Starts at 0.
   this.timer = new Timer(timeStamp, this.timeLimit);
 };

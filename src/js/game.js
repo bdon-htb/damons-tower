@@ -92,9 +92,7 @@ Game.prototype.draw = function(){
       let camera = level.camera;
       let posArray = [player.attributes["x"], player.attributes["y"]]
       let relPosArray = camera.getRelative(posArray[0], posArray[1]);
-      // For debugging purposes.
-      this.renderer.drawText(`${this.controller.patterns.get("doubleTap").state}`)
-    
+
       renderer.drawTiles(this.gameStateObject["scene"])
       this.renderer.drawSprite(player.attributes["sprite"], relPosArray[0], relPosArray[1])
   };
@@ -151,21 +149,29 @@ Game.prototype._updateLevel = function(scene){
 };
 
 Game.prototype._handlePlayerMovement = function(player){
-  let presses = this.controller.getCommands();
+  let commands = this.controller.getCommands();
 
-  // if(presses.length > 0){console.log(presses)}
+  let sprintCommands = ["doubleTap-right", "doubleTap-left", "doubleTap-up", "doubleTap-down"];
+  let startSprint = sprintCommands.some(c => commands.includes(c) === true);
 
-  let velocity = player.attributes["speed"];
+  let velocity;
+  if(startSprint === true || player["state"] === "sprinting"){
+    console.log("we are sprinting")
+    velocity = player.attributes["dashSpeed"];
+    console.log(velocity)
+    player["state"] = "sprinting";
+  } else velocity = player.attributes["speed"];
+
   let movMap = {
-    "left": ["x", -velocity],
-    "right": ["x", +velocity],
-    "up": ["y", -velocity],
-    "down": ["y", +velocity]
+    "keyDown-left": ["x", -velocity],
+    "keyDown-right": ["x", +velocity],
+    "keyDown-up": ["y", -velocity],
+    "keyDown-down": ["y", +velocity]
   };
 
-  presses.forEach(p => {
-    if(Object.keys(movMap).includes(p)){
-      let moveProperty = movMap[p];
+  commands.forEach(c => {
+    if(Object.keys(movMap).includes(c)){
+      let moveProperty = movMap[c];
       // Adjust the player's x / y coordinate accprdomg tp the movMap.
       player.attributes[moveProperty[0]] += moveProperty[1];
     }
@@ -185,6 +191,7 @@ Game.prototype._createPlayerObject = function(){
   let player = new Entity("player", null, "player", "idle", 0, 0);
   player.attributes["animations"] = new Map(); // Animations is a map of all the available animations.
   player.attributes["speed"] = 5; // Set the default player movement speed.
+  player.attributes["dashSpeed"] = player.attributes["speed"] * 2;
 
   let idleAnimations = {
     "idle_front": engine.getLoadedAsset(engine.animKey).get("player_idle_front"),

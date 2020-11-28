@@ -1,9 +1,16 @@
 {
   "inputCommands": {
-    "doubleTap": {
-      "condition": "samePrefix",
-      "timeLimit": 600,
-      "pattern": ["keyDown-", "keyUp-", "keyDown-", "keyUp-"]
+    "doubleTap-right": {
+      "pattern": ["keyDown-right", "keyUp-right", "keyDown-right"]
+    },
+    "doubleTap-left": {
+      "pattern": ["keyDown-left", "keyUp-left", "keyDown-left"]
+    },
+    "doubleTap-up": {
+      "pattern": ["keyDown-up", "keyUp-up", "keyDown-up"]
+    },
+    "doubleTap-down": {
+      "pattern": ["keyDown-down", "keyUp-down", "keyDown-down"]
     }
   }
 }

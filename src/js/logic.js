@@ -310,7 +310,6 @@ Controller.prototype.patternActive = function(inputPattern){
 };
 
 // Update the state of all InputPattern objects.
-// TODO: Implement some way to check for timelimit.
 Controller.prototype.updatePatterns = function(inputs, timeStamp){
   for(const [name, p] of this.patterns){
     Engine.prototype.updateTimer(p.timer, timeStamp); // Check for timeLimit
@@ -324,7 +323,7 @@ Controller.prototype.updatePatterns = function(inputs, timeStamp){
         let commandInputted = this.nextState(p); // Log if the command has been inputted or not while also moving to the next.
         if(commandInputted === true){
           this.commands.push(name);
-          console.log("COMMAND INPUTTED")
+          console.log(`COMMAND INPUTTED! | COMMAND: ${name}`)
           this.resetPattern(p, timeStamp);
         };
       };
@@ -335,11 +334,11 @@ Controller.prototype.updatePatterns = function(inputs, timeStamp){
 // Checks if the pattern (at its current state) includes the SINGLE input.
 // Will take into account things like condition.
 Controller.prototype.patternIncludes = function(inputPattern, input){
-  // so ugly ;-;. Basically while coding I got tired. If the pattern is inactive, check the first index instead of bricking.
+  // If the pattern is inactive, check the first index instead of bricking (it'll otherwise look for an index at -1).
   let index = (this.patternActive(inputPattern) === true) ? inputPattern.state : 0;
 
   switch (inputPattern.condition) {
-    case "samePrefix":
+    case "samePrefix": // Might retired at some point. I think making it more precise is just better.
       let prefix = input.split('-')[0];
       return inputPattern.pattern[index].startsWith(prefix); // Check if input shares the same prefix.
       break;
@@ -363,7 +362,7 @@ Controller.prototype.nextState = function(p){
 
 // Take a input map from engine.assets.inputCommands and convert to a pattern.
 function InputPattern(name, inputData, timeStamp){
-  this._defaultTimeLimit = 600; // In miliseconds.
+  this._defaultTimeLimit = 200; // In miliseconds.
   this._initialState = -1;
 
   this.name = name;

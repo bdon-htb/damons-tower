@@ -314,6 +314,19 @@ Engine.prototype.getInputDevice = function(deviceName){
   } else console.error(`Error getting input device! ${deviceName} does not exist.`);
 };
 
+// ======================
+// Timer related methods.
+// ======================
+Engine.prototype.updateTimer = function(timer, timeStamp){
+  if(timeStamp > timer.stop){timer.complete = true}
+};
+
+Engine.prototype.resetTimer = function(timer, timeStamp){
+  timer.start = timeStamp;
+  timer.stop = timeStamp + timer.length;
+  timer.complete = false;
+};
+
 // ================
 // Private methods.
 // ================
@@ -469,3 +482,16 @@ StateMachine.prototype._callTransitionMethod = function(stateName, type){
     transitionMethod();
   };
 };
+
+/**
+ * Custom timer class. Suprised I didn't make this earlier.
+ * Runs in miliseconds.
+ * Not necessarily a true timer, just has a start and stop time.
+ * It is up to whoever using them to properly check them every frame.
+*/
+function Timer(timeStamp, length){
+  this.start = timeStamp;
+  this.length = length;
+  this.stop = timeStamp + length;
+  this.complete = false;
+}

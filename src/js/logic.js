@@ -250,11 +250,28 @@ function Controller(mode="default"){
   this.commands = [] // A stack of all active commands.
 };
 
-Controller.prototype._emptyPresses = function(){
-  this.presses = [];
+Controller.prototype.hasCommands = function(){
+  return this.commands.length > 0;
+};
+
+Controller.prototype.getCommands = function(){
+  return this.commands;
+};
+
+Controller.prototype.clearCommands = function(){
+  this.commands = [];
+};
+
+// Adds commands to Controller.commands. Accepts both array and other objects.
+// If array, all the ELEMENTS are added to this.commands.
+Controller.prototype.addCommands = function(e){
+  if(e.constructor === Array){
+    this.commands = this.commands.concat(e);
+  } else this.commands.push(e);
 };
 
 // Gets all inputs from active devices (based on mode);
+// Returns an array where the first item is the actual inputs and the second is the timestamp.
 Controller.prototype.getInputs = function(events, data){
   let timeStamp = data["timeStamp"]; // Get the timeStamp of the current frame.
   let inputs = []; // Inputs detected this frame.
@@ -266,11 +283,15 @@ Controller.prototype.getInputs = function(events, data){
     inputs = inputs.concat(m.get("keyUp").map(x => "keyUp-" + x));
   };
 
-  return inputs;
+  return [inputs, timeStamp];
 };
 
+// ==============================
+// Input pattern related methods.
+// ==============================
+
 // Should only be called once on startup.
-// Create InputPatterns from the information in inputs.json
+// Create InputPatterns from the information in inputs.json and store them in Controller.
 Controller.prototype.createPatterns = function(engine){
   let patternData = engine.assets.get(engine.inputsKey); // Get the input commands from engine assets.
   for(const [name, obj] of patternData){
@@ -279,12 +300,30 @@ Controller.prototype.createPatterns = function(engine){
   };
 };
 
+Controller.prototype.resetPattern = function(inputPattern, timeStamp){
+  Engine.prototype.resetTimer(inputPattern.timer, timeStamp);
+  inputPattern.state = 0
+};
+
 // Update the state of all InputPattern objects.
-Controller.prototype.updatePatterns = function(inputs){
+// TODO: Implement some way to check for timelimit.
+Controller.prototype.updatePatterns = function(inputs, timeStamp){
+  console.log("hello?")
   for(const [name, p] of this.patterns){
+
+    Engine.prototype.updateTimer(p.timer, timeStamp); // Check for timeLimit
+    if(p.timer.complete === true){
+      this.resetPattern(p, timeStamp)
+    };
+
     inputs.forEach(i => {
       if(this.patternIncludes(p, i) === true){
-        this.nextState(p);
+        let commandInputted = this.nextState(p); // Log if the command has been inputted or not while also moving to the next.
+        if(commandInputted === true){
+          this.commands.push(name);
+          console.log("COMMAND INPUTTED")
+          this.resetPattern(p, timeStamp);
+        };
       };
     });
   };
@@ -302,8 +341,10 @@ Controller.prototype.patternIncludes = function(inputPattern, input){
       return inputPattern.pattern[inputPattern.state] === input; // Check for EXACT input.
   };
 };
+
 // Set the state of the pattern to the next.
 // If completes last input, reset.
+// Returns a bool to indicate if the command has been fully executed.
 Controller.prototype.nextState = function(p){
   let complete = false; // Boolean value to determine if the full command has been inputted.
   p.state++;
@@ -315,13 +356,14 @@ Controller.prototype.nextState = function(p){
 };
 
 // Take a input map from engine.assets.inputCommands and convert to a pattern.
-function InputPattern(name, inputData){
-  this.defaultTimeLimit = 60;
+function InputPattern(name, inputData, timeStamp){
+  this._defaultTimeLimit = 60000; // In miliseconds.
 
   this.name = name;
   this.condition = inputData["condition"] ? inputData["condition"] : "default";
-  this.timeLimit = inputData["timeLimit"] ? inputData["timeLimit"] : this.defaultTimeLimit;
+  this.timeLimit = inputData["timeLimit"] ? inputData["timeLimit"] : this._defaultTimeLimit;
   this.pattern = inputData["pattern"]; // There's no check, meaning that this must be explicitly defined.
 
   this.state = 0; // The index of the current input of the active pattern. Starts at 0.
+  this.timer = new Timer(timeStamp, this.timeLimit);
 };

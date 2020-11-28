@@ -53,13 +53,17 @@ Game.prototype.update = function(data){
     case "starting": // For loading stuff specific to the game.
       this.controller.createPatterns(this.engine);
       this.stateMachine.changeState("mainMenu")
+      break;
     case "mainMenu":
       if(events.get("inputEvents").size > 0){
         this.gameStateObject["menu"].checkClicks()};
       break;
     case "inLevel":
       let scene = this.gameStateObject["scene"];
-      this.controller.updatePresses(events, data);
+      if(this.controller.hasCommands() === true){this.controller.clearCommands()}; // Clear any leftover commands.
+      let inputData = this.controller.getInputs(events, data);
+      this.controller.addCommands(inputData[0]); // Raw input data is added to command stack.
+      this.controller.updatePatterns(inputData[0], inputData[1]); // Check for complex command inputs.
       this._updateLevel(scene);
       let level = this.gameStateObject["scene"];
       let player = this.gameStateObject["scene"].getEntity("player");
@@ -144,9 +148,9 @@ Game.prototype._updateLevel = function(scene){
 };
 
 Game.prototype._handlePlayerMovement = function(player){
-  let presses = this.controller.getPresses();
+  let presses = this.controller.getCommands();
 
-  if(presses.length > 0){console.log(presses)}
+  // if(presses.length > 0){console.log(presses)}
 
   let velocity = player.attributes["speed"];
   let movMap = {

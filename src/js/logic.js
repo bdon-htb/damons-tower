@@ -238,6 +238,7 @@ function Rect(topLeft, width, height=undefined){
  * device to communicate with the game.
  * mode is a string identifier that dictates how the controller parse
  * input events.
+ * AKA "InputPattern" Manager.
  * Modes:
  * - keyboard = mouse & keyboard.
 */
@@ -245,13 +246,8 @@ function Controller(mode="default"){
   this._allModes = ["keyboard"]; // Mostly for documentation purposes.
   this._defaultMode = this._allModes[0];
   this.mode = (mode === "default") ? this._defaultMode : mode;
-  // An array of controller presses per frame. Each recorded frame is an element in the format: [timeStamp, [inputs]]
-  this.presses = [];
-  this.commands = [];
-  this.patterns = {"tap": ["keyDown", "keyUp", "keyDown"]}
-  this.maxDelay = 100; // Number of ticks before
-  this.timeLimit = 10; // Number of ticks before flush.
-  this.counter = 0; // Internal count.
+  this.patterns = new Map();
+  this.commands = [] // A stack of all active commands.
 };
 
 Controller.prototype._emptyPresses = function(){
@@ -273,39 +269,50 @@ Controller.prototype.getInputs = function(events, data){
   return inputs;
 };
 
-  // this.presses = inputs;
-  /*
-  if(inputs.length > 0){
-    p = [timeStamp, inputs]; // log all inputs this frame with timestamp.
+// Should only be called once on startup.
+// Create InputPatterns from the information in inputs.json
+Controller.prototype.createPatterns = function(engine){
+  let patternData = engine.assets.get(engine.inputsKey); // Get the input commands from engine assets.
+  for(const [name, obj] of patternData){
+    let p = new InputPattern(name, obj);
+    this.patterns.set(name, p);
+  };
+};
 
-    if(presses.length > 0){
-      lastIndex = presses.length - 1
-      last_p = presses[lastIndex]; // Get the inputs of the last frame if it exists.
-      if((p[0] - last_p[0]) <= this.maxDelay){ // Compare the timestamps between the two frames.
-        presses[lastIndex] = p; // Replace the last stored frame.
-        return
+// Update the state of all InputPattern objects.
+Controller.prototype.updatePatterns = function(inputs){
+  for(const [name, p] of this.patterns){
+    inputs.forEach(i => {
+      if(this.patternIncludes(p, i) === true){
+        this.nextState(p);
       };
-    };
-    presses.push(p);
+    });
   };
-  */
-
-// Return an array of all inputs. Primitive and complicated inputs included.
-Controller.prototype.getPresses = function(){
-  return this.presses;
 };
 
-// Increment the internal counter and flush if the time limit is reached.
-Controller.prototype.tick = function(){
-  if(this.counter > this.timeLimit){
-    this.counter = 0;
-    this._emptyPresses();
+// Checks if the pattern (at its current state) includes the SINGLE input.
+// Will take into account things like condition.
+Controller.prototype.patternIncludes = function(inputPattern, input){
+  switch (inputPattern.condition) {
+    case "samePrefix":
+      let prefix = input.split('-')[0];
+      return inputPattern.pattern[inputPattern.state].startsWith(input); // Check if input shares the same prefix.
+      break;
+    default:
+      return inputPattern.pattern[inputPattern.state] === input; // Check for EXACT input.
   };
-  this.counter += 1;
 };
-
-//Controller.protoype.parsePresses = function(){
-//};
+// Set the state of the pattern to the next.
+// If completes last input, reset.
+Controller.prototype.nextState = function(p){
+  let complete = false; // Boolean value to determine if the full command has been inputted.
+  p.state++;
+  if(p.state >= p.pattern.length){ // If command has been inputted, reset and update bool.
+    p.state = 0;
+    complete = true;
+  };
+  return complete;
+};
 
 // Take a input map from engine.assets.inputCommands and convert to a pattern.
 function InputPattern(name, inputData){
@@ -316,5 +323,5 @@ function InputPattern(name, inputData){
   this.timeLimit = inputData["timeLimit"] ? inputData["timeLimit"] : this.defaultTimeLimit;
   this.pattern = inputData["pattern"]; // There's no check, meaning that this must be explicitly defined.
 
-  this.state = -1; // The index of the current input of the active pattern. -1 means that it's not active.
+  this.state = 0; // The index of the current input of the active pattern. Starts at 0.
 };

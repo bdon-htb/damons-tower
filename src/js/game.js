@@ -40,9 +40,6 @@ function Game(engine){
     "openOptions": this.stateMachine.changeState.bind(this.stateMachine, "options"),
     "openCredits": this.stateMachine.changeState.bind(this.stateMachine, "credits")
   };
-
-  // TODO: I'm kind of wondering if this is better suited in engine.js I could always move it I guess.
-  this.patterns = new Map(); // A map of input patterns in the game.
 };
 
 Game.prototype.update = function(data){
@@ -54,8 +51,7 @@ Game.prototype.update = function(data){
 
   switch(currentState){
     case "starting": // For loading stuff specific to the game.
-      let createPatterns = this._createPatterns.bind(this);
-      createPatterns();
+      this.controller.createPatterns(this.engine);
       this.stateMachine.changeState("mainMenu")
     case "mainMenu":
       if(events.get("inputEvents").size > 0){
@@ -63,7 +59,6 @@ Game.prototype.update = function(data){
       break;
     case "inLevel":
       let scene = this.gameStateObject["scene"];
-      this.controller.tick();
       this.controller.updatePresses(events, data);
       this._updateLevel(scene);
       let level = this.gameStateObject["scene"];
@@ -95,20 +90,6 @@ Game.prototype.draw = function(){
       let relPosArray = camera.getRelative(posArray[0], posArray[1]);
       renderer.drawTiles(this.gameStateObject["scene"])
       this.renderer.drawSprite(player.attributes["sprite"], relPosArray[0], relPosArray[1])
-  };
-};
-
-// =========================
-// Loading related methods.
-// =========================
-// requires a bind()
-Game.prototype._createPatterns = function(){
-  let engine = this.engine;
-  let patternData = engine.assets.get(engine.inputsKey); // Get the input commands from engine assets.
-  // console.log(engine.assets.get(engine.inputsKey));
-  for(const [name, obj] of patternData){
-    let p = new InputPattern(name, obj);
-    this.patterns.set(name, p);
   };
 };
 
@@ -184,6 +165,9 @@ Game.prototype._handlePlayerMovement = function(player){
   });
 };
 
+Game.prototype._updatePatterns = function(){
+
+};
 // ===============================
 // Entity Object creation methods.
 // ===============================

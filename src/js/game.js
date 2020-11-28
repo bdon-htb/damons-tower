@@ -17,6 +17,7 @@ function Game(engine){
   this.controller = new Controller();
 
   let allStates = {
+    "starting": null,
     "mainMenu": [this._loadMenu.bind(this, "mainMenu"), this._clearGameStateObject.bind(this)],
     "inLevel": [this._loadTestLevel.bind(this), this._clearGameStateObject.bind(this)],
     "options": null,
@@ -24,13 +25,13 @@ function Game(engine){
     "paused": null,
   };
 
-  this.startingState = "mainMenu"
+  this.startingState = "starting"
   this.stateMenus = {
     "mainMenu": "mainMenu"
   }; // Wtf is this?
 
   // Create components.
-  this.stateMachine = new StateMachine(this, allStates, "mainMenu");
+  this.stateMachine = new StateMachine(this, allStates, this.startingState);
   this.sceneManager = new SceneManager();
 
   // Setup callbacks.
@@ -39,6 +40,9 @@ function Game(engine){
     "openOptions": this.stateMachine.changeState.bind(this.stateMachine, "options"),
     "openCredits": this.stateMachine.changeState.bind(this.stateMachine, "credits")
   };
+
+  // TODO: I'm kind of wondering if this is better suited in engine.js I could always move it I guess.
+  this.patterns = new Map(); // A map of input patterns in the game.
 };
 
 Game.prototype.update = function(data){
@@ -49,6 +53,10 @@ Game.prototype.update = function(data){
   events.set("inputEvents", this.engine.getInputEvents());
 
   switch(currentState){
+    case "starting": // For loading stuff specific to the game.
+      let createPatterns = this._createPatterns.bind(this);
+      createPatterns();
+      this.stateMachine.changeState("mainMenu")
     case "mainMenu":
       if(events.get("inputEvents").size > 0){
         this.gameStateObject["menu"].checkClicks()};
@@ -74,6 +82,8 @@ Game.prototype.draw = function(){
   let currentState = this.stateMachine.currentState;
   let renderer = this.engine.renderer;
   switch(currentState){
+    case "starting":
+      break;
     case "mainMenu":
       renderer.drawMenu(this.gameStateObject["menu"]);
       break;
@@ -91,11 +101,15 @@ Game.prototype.draw = function(){
 // =========================
 // Loading related methods.
 // =========================
-// TODO: I need to put this somewhere so it only happens once before game starts.
-// Or I just make patterns an engine thing.
-Game.prototype._createPatterns = function(engine){
+// requires a bind()
+Game.prototype._createPatterns = function(){
+  let engine = this.engine;
   let patternData = engine.assets.get(engine.inputsKey); // Get the input commands from engine assets.
-  console.log(engine.assets.get(engine.inputsKey));
+  // console.log(engine.assets.get(engine.inputsKey));
+  for(const [name, obj] of patternData){
+    let p = new InputPattern(name, obj);
+    this.patterns.set(name, p);
+  };
 };
 
 // =========================

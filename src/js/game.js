@@ -192,16 +192,14 @@ Game.prototype._updatePatterns = function(){
 // ===============================
 
 // Create the player object.
-/**
- * LIST OF CURRENT PLAYER STATES (for documentation purposes)
- * idle, sprinting
- */
+// LIST OF CURRENT PLAYER STATES (for documentation purposes)
+// idle, sprinting
 Game.prototype._createPlayerObject = function(){
   let engine = this.engine // create alias.
   let player = new Entity("player", null, "player", "idle", 0, 0);
   player.attributes["animations"] = new Map(); // Animations is a map of all the available animations.
   player.attributes["speed"] = 5; // Set the default player movement speed.
-  player.attributes["sprintSpeed"] = player.attributes["speed"] * 3;
+  player.attributes["sprintSpeed"] = player.attributes["speed"] * 2;
 
   let idleAnimations = {
     "idle_front": engine.getLoadedAsset(engine.animKey).get("player_idle_front"),

@@ -92,7 +92,7 @@ Renderer.prototype.clear = function(){
 };
 
 // Drawining primitives. Not ideal for drawing per frame.
-Renderer.prototype.drawText = function(msg, style=this.textStyles.debug, x=0, y=0){
+Renderer.prototype.drawText = function(msg, x=0, y=0, style=this.textStyles.debug){
   let message;
   if(msg.constructor === PIXI.Text){
     message = msg;

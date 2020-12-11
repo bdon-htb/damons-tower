@@ -95,6 +95,8 @@ Game.prototype.draw = function(){
 
       renderer.drawTiles(this.gameStateObject["scene"])
       this.renderer.drawSprite(player.attributes["sprite"], relPosArray[0], relPosArray[1])
+      renderer.drawText(this.controller.patterns.get("doubleTap-right")["state"])
+      renderer.drawText(player.attributes["state"], 100);
   };
 };
 
@@ -149,18 +151,22 @@ Game.prototype._updateLevel = function(scene){
 };
 
 Game.prototype._handlePlayerMovement = function(player){
-  let commands = this.controller.getCommands();
-
+  let moveCommands = ["keyDown-left", "keyDown-right", "keyDown-up", "keyDown-down"];
   let sprintCommands = ["doubleTap-right", "doubleTap-left", "doubleTap-up", "doubleTap-down"];
+
+  let commands = this.controller.getCommands();
+  let isMoving = moveCommands.some(c => commands.includes(c) === true); // Booleans
   let startSprint = sprintCommands.some(c => commands.includes(c) === true);
 
-  let velocity;
-  if(startSprint === true || player["state"] === "sprinting"){
-    console.log("we are sprinting")
-    velocity = player.attributes["dashSpeed"];
-    console.log(velocity)
-    player["state"] = "sprinting";
-  } else velocity = player.attributes["speed"];
+  // Sprint state check.
+  if(startSprint === true && player["state"] != "sprinting"){
+    player.attributes["state"] = "sprinting";
+  } else if(player.attributes["state"] === "sprinting" && isMoving === false){
+    player.attributes["state"] = "idle";
+  };
+
+  // Set speed.
+  let velocity = (player.attributes["state"] === "sprinting") ? player.attributes["sprintSpeed"] : player.attributes["speed"];
 
   let movMap = {
     "keyDown-left": ["x", -velocity],
@@ -171,7 +177,7 @@ Game.prototype._handlePlayerMovement = function(player){
 
   commands.forEach(c => {
     if(Object.keys(movMap).includes(c)){
-      let moveProperty = movMap[c];
+      let moveProperty = movMap[c]; // This is the key / value pair in movMap.
       // Adjust the player's x / y coordinate accprdomg tp the movMap.
       player.attributes[moveProperty[0]] += moveProperty[1];
     }
@@ -186,12 +192,16 @@ Game.prototype._updatePatterns = function(){
 // ===============================
 
 // Create the player object.
+/**
+ * LIST OF CURRENT PLAYER STATES (for documentation purposes)
+ * idle, sprinting
+ */
 Game.prototype._createPlayerObject = function(){
   let engine = this.engine // create alias.
   let player = new Entity("player", null, "player", "idle", 0, 0);
   player.attributes["animations"] = new Map(); // Animations is a map of all the available animations.
   player.attributes["speed"] = 5; // Set the default player movement speed.
-  player.attributes["dashSpeed"] = player.attributes["speed"] * 2;
+  player.attributes["sprintSpeed"] = player.attributes["speed"] * 3;
 
   let idleAnimations = {
     "idle_front": engine.getLoadedAsset(engine.animKey).get("player_idle_front"),

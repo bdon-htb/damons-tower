@@ -480,10 +480,6 @@ function Animation(id, spriteSheet, animationData){
   this.counter = 0; // A counter that keeps track of the frames while the animation is active.
 };
 
-// TODO: Animation Manager; would be responsible for linking spriteSheets to animations.
-// If I really want to follow the entity system. I should move all the animation methods
-// to here. There could be thousands of animations loaded at once and they don't all
-// need their own functions to save space.
 function AnimationManager(parent){
   this.parent = parent; // Reference to the renderer.
 };

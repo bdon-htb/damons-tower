@@ -145,7 +145,7 @@ Engine.prototype.allMenusLoaded = function(){
 Engine.prototype.loadAllFonts = function(callback){
   allFonts = this.assets.get(this.fontsKey);
   allFonts = allFonts.map(font => new FontFaceObserver(font).load());
-  Promise.all(allFonts).then(callback);
+  Promise.all(allFonts).then(callback());
 };
 
 // ==========================

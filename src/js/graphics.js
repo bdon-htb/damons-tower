@@ -480,6 +480,10 @@ function Animation(id, spriteSheet, animationData){
   this.counter = 0; // A counter that keeps track of the frames while the animation is active.
 };
 
+/**
+ * Animation manager. Responsible for linking spritesheets to animations,
+ * moving to the next frame, etc.
+*/
 function AnimationManager(parent){
   this.parent = parent; // Reference to the renderer.
 };

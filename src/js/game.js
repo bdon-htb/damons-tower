@@ -26,9 +26,6 @@ function Game(engine){
   };
 
   this.startingState = "starting"
-  this.stateMenus = {
-    "mainMenu": "mainMenu"
-  }; // Wtf is this?
 
   // Create components.
   this.stateMachine = new StateMachine(this, allStates, this.startingState);

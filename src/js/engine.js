@@ -48,6 +48,7 @@ function Engine(htmlDOM){
     "loading assets",
     "loading menus",
     "loading textures",
+    "fetching fonts",
     "loading fonts",
     "error"
   ];
@@ -142,9 +143,9 @@ Engine.prototype.allMenusLoaded = function(){
 };
 
 Engine.prototype.loadAllFonts = function(callback){
-  allFonts = this.assets.get(this.fontsKey);
+  let allFonts = this.assets.get(this.fontsKey);
   allFonts = allFonts.map(font => new FontFaceObserver(font).load());
-  Promise.all(allFonts).then(callback());
+  Promise.all(allFonts).then(callback);
 };
 
 // ==========================
@@ -330,37 +331,35 @@ Engine.prototype.resetTimer = function(timer, timeStamp){
 // Private methods.
 // ================
 
+// In hindsight, I should've just bit the bullet and learned promises. Oh well :|
 Engine.prototype._runLoadingStates = function(data){
   let state = this.stateMachine.currentState;
-  // starting => loading (data) assets.
+  // starting => loading assets
   if(state === "starting"){
-    this.stateMachine.changeState("loading assets"); // Start loading the assets.
+    this.stateMachine.changeState("loading assets");
     this.loadAllAssets();
   }
-  // loading assets => loading menus.
+
+  // loading assets => fetching fonts => loading menus.
   else if(state === "loading assets" && this.allAssetsLoaded() === true){
-    this.stateMachine.changeState("loading menus");
-    this.loadAllMenus();
+    this.stateMachine.changeState("loading fonts");
+    const callback = () => {
+      this.stateMachine.changeState("loading menus")
+      this.loadAllMenus();
+    };
+    this.loadAllFonts(callback)
   }
 
-  // loading menus => loading textures.
+  // loading menus => loading textures => running
   else if(state === "loading menus" && this.allMenusLoaded() === true){
     this.stateMachine.changeState("loading textures");
-    let callback = () => {
-      this.stateMachine.changeState("loading fonts");
-    };
-    this.loadAllTextures(callback);
-  }
-
-  // loading textures => loading fonts.
-  else if(state === "loading fonts"){
-    let callback = () => {
+    const callback = () => {
       this.stateMachine.changeState("running");
       this.app.stateMachine.changeState(this.app.startingState);
-      // this.tester.init()
     };
-    this.loadAllFonts(callback);
+    this.loadAllTextures(callback);
   };
+
 };
 
 /**

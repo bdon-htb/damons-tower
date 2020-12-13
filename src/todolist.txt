@@ -4,4 +4,4 @@
 - Implement a level editor.
 - Implement procedural generation for levels.
 ===
-- Event system.
+- Event system. <-- What is this?

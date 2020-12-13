@@ -48,7 +48,6 @@ function Engine(htmlDOM){
     "loading assets",
     "loading menus",
     "loading textures",
-    "fetching fonts",
     "loading fonts",
     "error"
   ];
@@ -340,7 +339,7 @@ Engine.prototype._runLoadingStates = function(data){
     this.loadAllAssets();
   }
 
-  // loading assets => fetching fonts => loading menus.
+  // loading assets => loading fonts => loading menus.
   else if(state === "loading assets" && this.allAssetsLoaded() === true){
     this.stateMachine.changeState("loading fonts");
     const callback = () => {

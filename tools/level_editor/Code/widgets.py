@@ -53,7 +53,16 @@ class MainWindow(QMainWindow):
         self.fileMenu.addAction(exitAct)
 
     def configureEditMenu(self):
-        pass
+        undoAct = QAction('&' + 'Undo', self)
+        undoAct.triggered.connect(self.undoAction)
+        undoAct.setShortcut('Ctrl+Z')
+
+        redoAct = QAction('&' + 'Undo', self)
+        redoAct.triggered.connect(self.redoAction)
+        redoAct.setShortcut('Ctrl+Shift+Z')
+
+        self.editMenu.addAction(undoAct)
+        self.editMenu.addAction(redoAct)
 
     def configureSettingsMenu(self):
         pass
@@ -66,3 +75,9 @@ class MainWindow(QMainWindow):
 
     def saveLevel(self):
         print('Save level')
+
+    def undoAction(self):
+        print('Undo')
+
+    def redoAction(self):
+        print('Redo')

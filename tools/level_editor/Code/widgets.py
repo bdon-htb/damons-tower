@@ -3,7 +3,8 @@
 # =======================================================
 
 # PyQt imports
-from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction)
+from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
+QVBoxLayout, QHBoxLayout)
 
 # Custom imports
 from . import cfg
@@ -19,9 +20,15 @@ class MainWindow(QMainWindow):
     def initUI(self):
         self.setWindowTitle(f'{self.name} - v{self.version}')
         self.setMinimumSize(800, 600)
-        self.setupMenu()
+        self.centralWidget = QWidget()
 
-    def setupMenu(self):
+        self.setupMenuBar()
+        self.addWidgets()
+
+    # ====================
+    # MENUBAR RELATED METHODS
+    # ====================
+    def setupMenuBar(self):
         self.menubar = self.menuBar()
         self.fileMenu = self.menubar.addMenu('&' + 'File')
         self.configureFileMenu()
@@ -81,3 +88,18 @@ class MainWindow(QMainWindow):
 
     def redoAction(self):
         print('Redo')
+
+    # ======================
+    # WIDGET RELATED METHODS
+    # ======================
+    def addWidgets(self):
+        self.layout = QHBoxLayout()
+
+class Canvas(QWidget):
+    pass
+    
+class ToolBar(QWidget):
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+        self.layout = QVBoxLayout()

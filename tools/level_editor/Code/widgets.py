@@ -3,6 +3,8 @@
 # =======================================================
 
 # PyQt imports
+from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QPushButton)
 
@@ -32,10 +34,8 @@ class MainWindow(QMainWindow):
         self.canvas = Canvas()
         self.toolBar = ToolBar()
 
-        test = QPushButton('Test')
-        self.layout.addWidget(test)
         # self.layout.addWidget(self.canvas)
-        # self.layout.addWidget(self.toolBar)
+        self.layout.addWidget(self.toolBar)
 
     # ====================
     # MENUBAR RELATED METHODS
@@ -113,10 +113,18 @@ class ToolBar(QWidget):
     def __init__(self):
         super().__init__()
         self.layout = QVBoxLayout()
-        test = QLabel('Test')
-        self.layout.addWidget(test)
-        print('Added')
+        testbtn = ToolButton(cfg.icons['cursor'])
 
-class ToolButton(QWidget):
-    def __init__(self):
+        self.layout.addWidget(testbtn)
+
+        self.setLayout(self.layout)
+
+class ToolButton(QPushButton):
+    def __init__(self, iconURL):
         super().__init__()
+        self.icon = QIcon(iconURL)
+        self.iconSize = QSize(24, 24)
+
+        self.setIcon(QIcon(iconURL))
+        self.setIconSize(self.iconSize)
+        self.setStyleSheet(f"border: none; background-color: {cfg.colors['white']};")

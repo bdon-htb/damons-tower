@@ -4,7 +4,7 @@
 
 # PyQt imports
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
-QVBoxLayout, QHBoxLayout)
+QVBoxLayout, QHBoxLayout, QPushButton)
 
 # Custom imports
 from . import cfg
@@ -21,9 +21,21 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(f'{self.name} - v{self.version}')
         self.setMinimumSize(800, 600)
         self.centralWidget = QWidget()
+        self.layout = QHBoxLayout()
 
         self.setupMenuBar()
         self.addWidgets()
+        self.setCentralWidget(self.centralWidget)
+        self.centralWidget.setLayout(self.layout)
+
+    def addWidgets(self):
+        self.canvas = Canvas()
+        self.toolBar = ToolBar()
+
+        test = QPushButton('Test')
+        self.layout.addWidget(test)
+        # self.layout.addWidget(self.canvas)
+        # self.layout.addWidget(self.toolBar)
 
     # ====================
     # MENUBAR RELATED METHODS
@@ -92,14 +104,19 @@ class MainWindow(QMainWindow):
     # ======================
     # WIDGET RELATED METHODS
     # ======================
-    def addWidgets(self):
-        self.layout = QHBoxLayout()
+
 
 class Canvas(QWidget):
     pass
-    
+
 class ToolBar(QWidget):
-    def __init__(self, parent):
+    def __init__(self):
         super().__init__()
-        self.parent = parent
         self.layout = QVBoxLayout()
+        test = QLabel('Test')
+        self.layout.addWidget(test)
+        print('Added')
+
+class ToolButton(QWidget):
+    def __init__(self):
+        super().__init__()

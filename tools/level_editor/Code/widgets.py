@@ -3,7 +3,7 @@
 # =======================================================
 
 # PyQt imports
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QPainter, QPixmap, QPen
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QPushButton)
@@ -29,13 +29,6 @@ class MainWindow(QMainWindow):
         self.addWidgets()
         self.setCentralWidget(self.centralWidget)
         self.centralWidget.setLayout(self.layout)
-
-    def addWidgets(self):
-        self.canvas = Canvas()
-        self.toolBar = ToolBar()
-
-        # self.layout.addWidget(self.canvas)
-        self.layout.addWidget(self.toolBar)
 
     # ====================
     # MENUBAR RELATED METHODS
@@ -105,17 +98,45 @@ class MainWindow(QMainWindow):
     # WIDGET RELATED METHODS
     # ======================
 
+    def addWidgets(self):
+        self.canvas = Canvas(self)
+        self.toolBar = ToolBar()
+
+        self.layout.addWidget(self.canvas)
+        self.layout.addWidget(self.toolBar)
 
 class Canvas(QWidget):
-    pass
+    def __init__(self, parent):
+        super().__init__()
+        self.layout = QHBoxLayout()
+
+        test = QLabel('Test')
+        self.layout.addWidget(test)
+
+        self.setLayout(self.layout)
+
+    def paintTest(self):
+        image = QPixmap()
+        painter = QPainter()
+
 
 class ToolBar(QWidget):
     def __init__(self):
         super().__init__()
         self.layout = QVBoxLayout()
-        testbtn = ToolButton(cfg.icons['cursor'])
+        self.selectBtn = ToolButton(cfg.icons['cursor'])
+        self.fillBtn = ToolButton(cfg.icons['fill'])
+        self.drawBtn = ToolButton(cfg.icons['paint-brush'])
+        self.eraseBtn = ToolButton(cfg.icons['eraser'])
+        self.dragBtn = ToolButton(cfg.icons['drag'])
 
-        self.layout.addWidget(testbtn)
+        buttons = [
+            self.selectBtn, self.fillBtn, self.drawBtn,
+            self.eraseBtn, self.dragBtn
+        ]
+
+        for b in buttons:
+            self.layout.addWidget(b)
 
         self.setLayout(self.layout)
 

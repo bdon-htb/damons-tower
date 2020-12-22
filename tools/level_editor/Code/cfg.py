@@ -7,6 +7,8 @@ import os
 __version__ = '0.0.0'
 __name__ = 'js-roguelite Level Editor'
 
+TILESIZE = 32
+
 main_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
 code_dir = os.path.abspath(os.path.join(main_dir, 'Code'))
 assets_dir = os.path.abspath(os.path.join(main_dir, 'Assets'))
@@ -23,5 +25,6 @@ colors = {
     'grey light': '#999999',
     'grey lighter': '#EEEEEE',
     'white': '#FFFFFF',
+    'cobalt': '#0050EF',
     'dark cobalt': '#00356A'
 }

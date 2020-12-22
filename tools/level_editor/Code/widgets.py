@@ -105,14 +105,24 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(self.canvas)
         self.layout.addWidget(self.toolBar)
 
-class Canvas(QGraphicsView):
+class Canvas(QWidget):
     def __init__(self, parent):
         super().__init__()
+        self.parent = parent
         self.layout = QHBoxLayout()
-        self.text = 'Test'
+        self.painter = QPainter()
 
-        self.setStyleSheet(f"border: none; background-color: {cfg.colors['dark cobalt']};")
+        self.setStyleSheet(f"border: none; background-color: {cfg.colors['grey light']};")
+        self.setCursor(Qt.CrossCursor)
         self.setLayout(self.layout)
+
+    def paintEvent(self, event):
+        self.painter.begin(self)
+        self.painter.setPen(QColor(cfg.colors['cobalt']))
+        for y in range(self.height() // cfg.TILESIZE):
+            for x in range(self.width() // cfg.TILESIZE):
+                self.painter.drawRect(x * 32, y * 32, 32, 32)
+        self.painter.end()
 
     '''
     def paintEvent(self, event):
@@ -120,12 +130,11 @@ class Canvas(QGraphicsView):
         qp.begin(self)
         self.drawText(event, qp)
         qp.end()
-        painter = QPainter()
 
     def drawText(self, event, qp):
         qp.setPen(QColor(168, 34, 3))
         qp.setFont(QFont('Decorative', 10))
-        qp.drawText(event.rect(), Qt.AlignCenter, self.text)
+        qp.drawText(event.rect(), Qt.AlignCenter, 'hello')
     '''
 
 

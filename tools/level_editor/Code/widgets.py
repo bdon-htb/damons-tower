@@ -3,10 +3,10 @@
 # =======================================================
 
 # PyQt imports
-from PyQt5.QtGui import QIcon, QPainter, QPixmap, QPen
+from PyQt5.QtGui import QIcon, QPainter, QPixmap, QPen, QColor, QFont
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
-QVBoxLayout, QHBoxLayout, QPushButton)
+QVBoxLayout, QHBoxLayout, QPushButton, QGraphicsView)
 
 # Custom imports
 from . import cfg
@@ -105,19 +105,28 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(self.canvas)
         self.layout.addWidget(self.toolBar)
 
-class Canvas(QWidget):
+class Canvas(QGraphicsView):
     def __init__(self, parent):
         super().__init__()
         self.layout = QHBoxLayout()
+        self.text = 'Test'
 
-        test = QLabel('Test')
-        self.layout.addWidget(test)
-
+        self.setStyleSheet(f"border: none; background-color: {cfg.colors['dark cobalt']};")
         self.setLayout(self.layout)
 
-    def paintTest(self):
-        image = QPixmap()
+    '''
+    def paintEvent(self, event):
+        qp = QPainter()
+        qp.begin(self)
+        self.drawText(event, qp)
+        qp.end()
         painter = QPainter()
+
+    def drawText(self, event, qp):
+        qp.setPen(QColor(168, 34, 3))
+        qp.setFont(QFont('Decorative', 10))
+        qp.drawText(event.rect(), Qt.AlignCenter, self.text)
+    '''
 
 
 class ToolBar(QWidget):

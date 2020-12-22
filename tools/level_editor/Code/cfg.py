@@ -22,5 +22,6 @@ for file in os.scandir(icons_dir):
 colors = {
     'grey light': '#999999',
     'grey lighter': '#EEEEEE',
-    'white': '#FFFFFF'
+    'white': '#FFFFFF',
+    'dark cobalt': '#00356A'
 }

@@ -21,7 +21,7 @@ class MainWindow(QMainWindow):
 
     def initUI(self):
         self.setWindowTitle(f'{self.name} - v{self.version}')
-        self.setMinimumSize(800, 600)
+        self.setMinimumSize(1000, 600)
         self.centralWidget = QWidget()
         self.layout = QHBoxLayout()
 
@@ -118,11 +118,14 @@ class Canvas(QWidget):
 
     def paintEvent(self, event):
         self.painter.begin(self)
+        self.drawGrid()
+        self.painter.end()
+
+    def drawGrid(self):
         self.painter.setPen(QColor(cfg.colors['cobalt']))
         for y in range(self.height() // cfg.TILESIZE):
             for x in range(self.width() // cfg.TILESIZE):
                 self.painter.drawRect(x * 32, y * 32, 32, 32)
-        self.painter.end()
 
     '''
     def paintEvent(self, event):

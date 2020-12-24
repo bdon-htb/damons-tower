@@ -4,10 +4,10 @@
 
 # PyQt imports
 from PyQt5.QtGui import QIcon, QPainter, QPixmap, QPen, QColor, QFont
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, QLineF
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QPushButton, QGraphicsView, QGraphicsScene,
-QGraphicsWidget)
+QGraphicsProxyWidget)
 
 # Custom imports
 from . import cfg
@@ -119,18 +119,19 @@ class MapView(QWidget):
         self.setCursor(Qt.CrossCursor)
         self.layout.addWidget(self.view)
         self.setLayout(self.layout)
+        self.drawGrid()
 
     def paintEvent(self, event):
-        # self.drawGrid()
         pass
 
     def drawGrid(self):
-        self.painter.begin(self)
-        self.painter.setPen(QColor(cfg.colors['cobalt']))
+        qp = QPen()
         for y in range(self.height() // cfg.TILESIZE):
+            h_line = QLineF(0, y, self.width(), y)
+            self.scene.addLine(h_line, qp)
             for x in range(self.width() // cfg.TILESIZE):
-                self.painter.drawRect(x * 32, y * 32, 32, 32)
-        self.painter.end()
+                v_line = QLineF(x, 0, x, self.height())
+                self.scene.addLine(v_line, qp)
 
     '''
     def paintEvent(self, event):

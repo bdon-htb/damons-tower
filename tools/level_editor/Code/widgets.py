@@ -6,7 +6,8 @@
 from PyQt5.QtGui import QIcon, QPainter, QPixmap, QPen, QColor, QFont
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
-QVBoxLayout, QHBoxLayout, QPushButton, QGraphicsView)
+QVBoxLayout, QHBoxLayout, QPushButton, QGraphicsView, QGraphicsScene,
+QGraphicsWidget)
 
 # Custom imports
 from . import cfg
@@ -99,33 +100,37 @@ class MainWindow(QMainWindow):
     # ======================
 
     def addWidgets(self):
-        self.canvas = Canvas(self)
+        self.mapView = MapView(self)
         self.toolBar = ToolBar()
 
-        self.layout.addWidget(self.canvas)
+        self.layout.addWidget(self.mapView)
         self.layout.addWidget(self.toolBar)
 
-class Canvas(QWidget):
+class MapView(QWidget):
     def __init__(self, parent):
         super().__init__()
         self.parent = parent
+        self.scene = QGraphicsScene()
+        self.view = QGraphicsView(self.scene, self)
         self.layout = QHBoxLayout()
         self.painter = QPainter()
 
-        self.setStyleSheet(f"border: none; background-color: {cfg.colors['grey light']};")
+        # self.setStyleSheet(f"border: none; background-color: {cfg.colors['grey light']};")
         self.setCursor(Qt.CrossCursor)
+        self.layout.addWidget(self.view)
         self.setLayout(self.layout)
 
     def paintEvent(self, event):
-        self.painter.begin(self)
-        self.drawGrid()
-        self.painter.end()
+        # self.drawGrid()
+        pass
 
     def drawGrid(self):
+        self.painter.begin(self)
         self.painter.setPen(QColor(cfg.colors['cobalt']))
         for y in range(self.height() // cfg.TILESIZE):
             for x in range(self.width() // cfg.TILESIZE):
                 self.painter.drawRect(x * 32, y * 32, 32, 32)
+        self.painter.end()
 
     '''
     def paintEvent(self, event):
@@ -169,4 +174,4 @@ class ToolButton(QPushButton):
 
         self.setIcon(QIcon(iconURL))
         self.setIconSize(self.iconSize)
-        self.setStyleSheet(f"border: none; background-color: {cfg.colors['white']};")
+        # self.setStyleSheet(f"border: none; background-color: {cfg.colors['white']};")

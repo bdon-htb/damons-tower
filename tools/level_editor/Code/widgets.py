@@ -113,10 +113,9 @@ class MapView(QWidget):
     def __init__(self, parent):
         super().__init__()
         self.parent = parent
+        self.layout = QHBoxLayout()
         self.scene = QGraphicsScene()
         self.view = QGraphicsView(self.scene, self)
-        self.layout = QHBoxLayout()
-        self.painter = QPainter()
 
         # self.setStyleSheet(f"border: none; background-color: {cfg.colors['grey light']};")
         self.setCursor(Qt.CrossCursor)
@@ -136,19 +135,6 @@ class MapView(QWidget):
             for x in range(cols):
                 v_line = QLineF(x * cfg.TILESIZE, 0, x * cfg.TILESIZE, self.height())
                 self.scene.addLine(v_line, qp)
-
-    '''
-    def paintEvent(self, event):
-        qp = QPainter()
-        qp.begin(self)
-        self.drawText(event, qp)
-        qp.end()
-
-    def drawText(self, event, qp):
-        qp.setPen(QColor(168, 34, 3))
-        qp.setFont(QFont('Decorative', 10))
-        qp.drawText(event.rect(), Qt.AlignCenter, 'hello')
-    '''
 
 
 class ToolBar(QWidget):

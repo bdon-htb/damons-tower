@@ -140,6 +140,7 @@ class MapView(QWidget):
 
     def drawGrid(self):
         grid = QPixmap(self.width(), self.height())
+        grid.fill(QColor('Transparent'))
         painter = QPainter()
         painter.begin(grid)
         painter.setPen(QColor(cfg.colors['cobalt']))

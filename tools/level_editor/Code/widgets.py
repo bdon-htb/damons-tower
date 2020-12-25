@@ -4,7 +4,7 @@
 
 # PyQt imports
 from PyQt5.QtGui import QIcon, QPainter, QPixmap, QPen, QColor, QFont
-from PyQt5.QtCore import Qt, QSize, QLineF
+from PyQt5.QtCore import Qt, QSize, QLineF, QLine
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QPushButton, QGraphicsView, QGraphicsScene,
 QGraphicsProxyWidget)
@@ -125,6 +125,7 @@ class MapView(QWidget):
     def paintEvent(self, event):
         self.drawGrid()
 
+    '''
     def drawGrid(self):
         qp = QPen()
         rows = round(self.height() / cfg.TILESIZE)
@@ -135,7 +136,21 @@ class MapView(QWidget):
             for x in range(cols):
                 v_line = QLineF(x * cfg.TILESIZE, 0, x * cfg.TILESIZE, self.height())
                 self.scene.addLine(v_line, qp)
+    '''
 
+    def drawGrid(self):
+        grid = QPixmap(self.width(), self.height())
+        painter = QPainter()
+        painter.begin(grid)
+        painter.setPen(QColor(cfg.colors['cobalt']))
+        for y in range(self.height() // cfg.TILESIZE):
+            h_line = QLine(0, y * cfg.TILESIZE, self.width(), y * cfg.TILESIZE)
+            painter.drawLine(h_line)
+            for x in range(self.width() // cfg.TILESIZE):
+                v_line = QLine(x * cfg.TILESIZE, 0, x * cfg.TILESIZE, self.height())
+                painter.drawLine(v_line)
+        painter.end()
+        self.scene.addPixmap(grid)
 
 class ToolBar(QWidget):
     def __init__(self):

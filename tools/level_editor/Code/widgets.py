@@ -9,6 +9,9 @@ from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QPushButton, QGraphicsView, QGraphicsScene,
 QGraphicsProxyWidget)
 
+# Other python imports
+import math
+
 # Custom imports
 from . import cfg
 
@@ -119,18 +122,19 @@ class MapView(QWidget):
         self.setCursor(Qt.CrossCursor)
         self.layout.addWidget(self.view)
         self.setLayout(self.layout)
-        self.drawGrid()
 
     def paintEvent(self, event):
-        pass
+        self.drawGrid()
 
     def drawGrid(self):
         qp = QPen()
-        for y in range(self.height() // cfg.TILESIZE):
-            h_line = QLineF(0, y, self.width(), y)
+        rows = round(self.height() / cfg.TILESIZE)
+        cols = round(self.width() / cfg.TILESIZE)
+        for y in range(rows):
+            h_line = QLineF(0, y * cfg.TILESIZE, self.width(), y * cfg.TILESIZE)
             self.scene.addLine(h_line, qp)
-            for x in range(self.width() // cfg.TILESIZE):
-                v_line = QLineF(x, 0, x, self.height())
+            for x in range(cols):
+                v_line = QLineF(x * cfg.TILESIZE, 0, x * cfg.TILESIZE, self.height())
                 self.scene.addLine(v_line, qp)
 
     '''

@@ -35,7 +35,6 @@ class MainWindow(QMainWindow):
 
         self.setupMenuBar()
         self.statusBar = self.statusBar()
-        self.statusBar.showMessage('test')
         self.addWidgets()
         self.setCentralWidget(self.centralWidget)
         self.centralWidget.setLayout(self.layout)
@@ -134,20 +133,14 @@ class MapView(QWidget):
         self.layout = QHBoxLayout()
         self.scene = QGraphicsScene()
         self.view = QGraphicsView(self.scene, self)
-        self.view.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        self.setupView()
         self.grid = None
         self.tileSize = cfg.TILESIZE
-        
-        self.view.setMouseTracking(True)
-        self.view.mouseMoveEvent = self.mouseMoveEvent
 
         # self.setStyleSheet(f"border: none; background-color: {cfg.colors['grey light']};")
         # self.setCursor(Qt.CrossCursor)
         self.layout.addWidget(self.view)
         self.setLayout(self.layout)
-
-    def updateSceneSize(self):
-        self.scene.setSceneRect(self.scene.itemsBoundingRect())
 
     def paintEvent(self, event):
         self.clearGrid()
@@ -156,7 +149,17 @@ class MapView(QWidget):
         self.updateSceneSize()
 
     def mouseMoveEvent(self, event):
-        print(f'x: {event.x()} | y: {event.y()}')
+        pos = self.view.mapToScene(event.pos())
+        s = f'({int(pos.x())},{int(pos.y())})'
+        self.parent.statusBar.showMessage(s)
+
+    def setupView(self):
+        self.view.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        self.view.setMouseTracking(True)
+        self.view.mouseMoveEvent = self.mouseMoveEvent # Override mouse move event.
+
+    def updateSceneSize(self):
+        self.scene.setSceneRect(self.scene.itemsBoundingRect())
 
     def clearGrid(self):
         if self.grid:

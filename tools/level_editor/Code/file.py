@@ -3,7 +3,7 @@
 # ===============================================
 
 from typing import Dict
-import shutil, os
+import shutil, os, json
 
 from . import cfg
 
@@ -65,3 +65,11 @@ def update_config_file(D: Dict[str, str], filename: str) -> None:
                 newfile.write(line)
     newfile.close()
     shutil.move(temp_dir, filename)
+
+def load_json(filename: str) -> Dict:
+    f = open(filename, 'r')
+    try:
+        return json.load(f)
+    except Exception as e:
+        print(f'Error while opening {filename}\nError message: {e}')
+        return None

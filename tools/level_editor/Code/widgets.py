@@ -7,14 +7,14 @@ from PyQt5.QtGui import QIcon, QPainter, QPixmap, QPen, QColor, QFont
 from PyQt5.QtCore import Qt, QSize, QLineF, QLine
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QPushButton, QGraphicsView, QGraphicsScene,
-QGraphicsProxyWidget, QGraphicsPixmapItem)
+QGraphicsProxyWidget, QGraphicsPixmapItem, QFileDialog)
 
 # Other python imports
 import math, random
 
 # Custom imports
 from . import cfg
-from .file import load_config_file, update_config_file
+from .file import load_config_file, update_config_file, load_json
 
 SETTINGS = load_config_file(cfg.settings_file) # Currently does nothing
 print(SETTINGS)
@@ -26,6 +26,8 @@ class MainWindow(QMainWindow):
         self.name = cfg.__name__
         self.version = cfg.__version__
         self.initUI()
+
+        self.levelData = None
 
     def initUI(self):
         self.setWindowTitle(f'{self.name} - v{self.version}')
@@ -114,7 +116,13 @@ class MainWindow(QMainWindow):
         print('New level')
 
     def openLevel(self):
-        print('Open level')
+        file_tuple = QFileDialog.getOpenFileName(None, 'Open Level', cfg.main_dir, 'Level data file (*.json)')
+        file = None if not file_tuple[0] else load_json(file_tuple[0])
+        if file: # Check if filename isn't blank
+            self.loadLevel(file)
+
+    def loadLevel(self, file: dict):
+        self.levelData = file
 
     def saveLevel(self):
         print('Save level')

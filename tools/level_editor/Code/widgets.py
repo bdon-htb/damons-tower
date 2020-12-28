@@ -35,7 +35,7 @@ class MainWindow(QMainWindow):
 
         self.setupMenuBar()
         self.statusBar = self.statusBar()
-        self.statusBar.showMessage('ur gay')
+        self.statusBar.showMessage('test')
         self.addWidgets()
         self.setCentralWidget(self.centralWidget)
         self.centralWidget.setLayout(self.layout)
@@ -137,11 +137,17 @@ class MapView(QWidget):
         self.view.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.grid = None
         self.tileSize = cfg.TILESIZE
+        
+        self.view.setMouseTracking(True)
+        self.view.mouseMoveEvent = self.mouseMoveEvent
 
         # self.setStyleSheet(f"border: none; background-color: {cfg.colors['grey light']};")
-        self.setCursor(Qt.CrossCursor)
+        # self.setCursor(Qt.CrossCursor)
         self.layout.addWidget(self.view)
         self.setLayout(self.layout)
+
+    def updateSceneSize(self):
+        self.scene.setSceneRect(self.scene.itemsBoundingRect())
 
     def paintEvent(self, event):
         self.clearGrid()
@@ -149,13 +155,16 @@ class MapView(QWidget):
             self.drawGrid()
         self.updateSceneSize()
 
+    def mouseMoveEvent(self, event):
+        print(f'x: {event.x()} | y: {event.y()}')
+
     def clearGrid(self):
         if self.grid:
             self.scene.removeItem(self.grid)
             self.grid = None
 
     def drawGrid(self):
-        """ Draws a grid by assembling a series of lines in the scene.
+        """ Draws a grid by drawing a series of lines into the scene.
         Precondition: self.grid is None
         """
         grid = QPixmap(self.width(), self.height())
@@ -179,10 +188,6 @@ class MapView(QWidget):
 
         self.grid = QGraphicsPixmapItem(grid)
         self.scene.addItem(self.grid)
-
-    def updateSceneSize(self):
-        self.scene.setSceneRect(self.scene.itemsBoundingRect())
-
 
 class ToolBar(QWidget):
     def __init__(self):

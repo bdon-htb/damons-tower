@@ -30,9 +30,18 @@ class MainWindow(QMainWindow):
         self.layout = QHBoxLayout()
 
         self.setupMenuBar()
+        self.statusBar = self.statusBar()
+        self.statusBar.showMessage('ur gay')
         self.addWidgets()
         self.setCentralWidget(self.centralWidget)
         self.centralWidget.setLayout(self.layout)
+
+    def addWidgets(self):
+        self.mapView = MapView(self)
+        self.toolBar = ToolBar()
+
+        self.layout.addWidget(self.mapView)
+        self.layout.addWidget(self.toolBar)
 
     # ====================
     # MENUBAR RELATED METHODS
@@ -45,7 +54,7 @@ class MainWindow(QMainWindow):
         self.configureEditMenu()
         self.settingsMenu = self.menubar.addMenu('&' + 'Settings')
         self.configureSettingsMenu()
-        # self.menubar.setCornerWidget(QLabel(self.name))
+        self.menubar.setCornerWidget(QLabel('(level name here)'))
 
     def configureFileMenu(self):
         newAct = QAction('&' + 'New Level', self)
@@ -98,16 +107,6 @@ class MainWindow(QMainWindow):
     def redoAction(self):
         print('Redo')
 
-    # ======================
-    # WIDGET RELATED METHODS
-    # ======================
-
-    def addWidgets(self):
-        self.mapView = MapView(self)
-        self.toolBar = ToolBar()
-
-        self.layout.addWidget(self.mapView)
-        self.layout.addWidget(self.toolBar)
 
 class MapView(QWidget):
     def __init__(self, parent):
@@ -118,6 +117,7 @@ class MapView(QWidget):
         self.view = QGraphicsView(self.scene, self)
         self.view.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.grid = None
+        self.tileSize = cfg.TILESIZE
 
         # self.setStyleSheet(f"border: none; background-color: {cfg.colors['grey light']};")
         self.setCursor(Qt.CrossCursor)
@@ -128,23 +128,6 @@ class MapView(QWidget):
         self.drawGrid()
         self.updateSceneSize()
 
-    '''
-    def drawGrid(self):
-        qp = QPen()
-        rows = round(self.height() / cfg.TILESIZE)
-        cols = round(self.width() / cfg.TILESIZE)
-        for y in range(rows):
-            h_line = QLineF(0, y * cfg.TILESIZE, self.width(), y * cfg.TILESIZE)
-            self.scene.addLine(h_line, qp)
-            for x in range(cols):
-                v_line = QLineF(x * cfg.TILESIZE, 0, x * cfg.TILESIZE, self.height())
-                self.scene.addLine(v_line, qp)
-    '''
-
-    # TODO: Figure out how to draw the grid OVER the view.
-    # What's happening here is that a grid is drawn every time this event is called.
-    # However, each time it's called, a NEW grid is being made. So essentially we're getting
-    # a bunch of grids added to the scene with varying sizes that won't go away.
     def drawGrid(self):
         if self.grid:
             self.scene.removeItem(self.grid)
@@ -159,10 +142,10 @@ class MapView(QWidget):
         width = self.width()
         height = self.height()
 
-        for y in range(round(int(height) / cfg.TILESIZE)):
+        for y in range(round(height / cfg.TILESIZE)):
             h_line = QLine(0, y * cfg.TILESIZE, width, y * cfg.TILESIZE)
             painter.drawLine(h_line)
-            for x in range(round(int(width) / cfg.TILESIZE)):
+            for x in range(round(width / cfg.TILESIZE)):
                 v_line = QLine(x * cfg.TILESIZE, 0, x * cfg.TILESIZE, height)
                 painter.drawLine(v_line)
 

@@ -2,7 +2,7 @@
 # file.py contains all file manipulation methods.
 # ===============================================
 
-from typing import Dict
+from typing import Dict, Union
 import shutil, os, json
 
 from . import cfg
@@ -66,7 +66,11 @@ def update_config_file(D: Dict[str, str], filename: str) -> None:
     newfile.close()
     shutil.move(temp_dir, filename)
 
-def load_json(filename: str) -> Dict:
+def load_json(filename: str) -> Union[Dict, None]:
+    """Load a json file using python's json library.
+    If an error occurs while loading, None is returned.
+    Otherwise return a dictionary.
+    """
     f = open(filename, 'r')
     try:
         return json.load(f)

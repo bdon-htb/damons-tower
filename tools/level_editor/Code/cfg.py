@@ -32,3 +32,9 @@ colors = {
     'cobalt': '#0050EF',
     'dark cobalt': '#00356A'
 }
+
+# IMPORTANT!
+# These assume that cfg.py is in its original place in the repo. Use with caution.
+repo_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '../../..'))
+level_dir = os.path.abspath(os.path.join(repo_dir, 'src', 'data'))
+sprite_dir = os.path.abspath(os.path.join(repo_dir, 'img'))

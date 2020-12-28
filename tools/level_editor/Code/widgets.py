@@ -116,7 +116,8 @@ class MainWindow(QMainWindow):
         print('New level')
 
     def openLevel(self):
-        file_tuple = QFileDialog.getOpenFileName(None, 'Open Level', cfg.main_dir, 'Level data file (*.json)')
+        directory = cfg.level_dir if SETTINGS['inRepo'] == 'true' else cfg.main_dir
+        file_tuple = QFileDialog.getOpenFileName(None, 'Open Level', directory, 'Level data file (*.json)')
         file = None if not file_tuple[0] else load_json(file_tuple[0])
         if file: # Check if filename isn't blank
             self.loadLevel(file)
@@ -154,6 +155,7 @@ class MapView(QWidget):
         self.clearGrid()
         if self.parent.gridAct.isChecked():
             self.drawGrid()
+
         self.updateSceneSize()
 
     def mouseMoveEvent(self, event):
@@ -161,13 +163,16 @@ class MapView(QWidget):
         s = f'({int(pos.x())},{int(pos.y())})'
         self.parent.statusBar.showMessage(s)
 
+    def updateSceneSize(self):
+        self.scene.setSceneRect(self.scene.itemsBoundingRect())
+
     def setupView(self):
         self.view.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.view.setMouseTracking(True)
         self.view.mouseMoveEvent = self.mouseMoveEvent # Override mouse move event.
 
-    def updateSceneSize(self):
-        self.scene.setSceneRect(self.scene.itemsBoundingRect())
+    def clearScene(self):
+        self.scene.clear()
 
     def clearGrid(self):
         if self.grid:
@@ -199,6 +204,10 @@ class MapView(QWidget):
 
         self.grid = QGraphicsPixmapItem(grid)
         self.scene.addItem(self.grid)
+
+    def drawLevel(self):
+        pass
+
 
 class ToolBar(QWidget):
     def __init__(self):

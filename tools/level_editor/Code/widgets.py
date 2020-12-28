@@ -7,10 +7,10 @@ from PyQt5.QtGui import QIcon, QPainter, QPixmap, QPen, QColor, QFont
 from PyQt5.QtCore import Qt, QSize, QLineF, QLine
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QPushButton, QGraphicsView, QGraphicsScene,
-QGraphicsProxyWidget)
+QGraphicsProxyWidget, QGraphicsPixmapItem)
 
 # Other python imports
-import math
+import math, random
 
 # Custom imports
 from . import cfg
@@ -116,6 +116,8 @@ class MapView(QWidget):
         self.layout = QHBoxLayout()
         self.scene = QGraphicsScene()
         self.view = QGraphicsView(self.scene, self)
+        self.view.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        self._gridPool = []
 
         # self.setStyleSheet(f"border: none; background-color: {cfg.colors['grey light']};")
         self.setCursor(Qt.CrossCursor)
@@ -138,20 +140,34 @@ class MapView(QWidget):
                 self.scene.addLine(v_line, qp)
     '''
 
+    # TODO: Figure out how to draw the grid OVER the view.
+    # What's happening here is that a grid is drawn every time this event is called.
+    # However, each time it's called, a NEW grid is being made. So essentially we're getting
+    # a bunch of grids added to the scene with varying sizes that won't go away.
     def drawGrid(self):
         grid = QPixmap(self.width(), self.height())
         grid.fill(QColor('Transparent'))
+
         painter = QPainter()
         painter.begin(grid)
-        painter.setPen(QColor(cfg.colors['cobalt']))
-        for y in range(self.height() // cfg.TILESIZE):
-            h_line = QLine(0, y * cfg.TILESIZE, self.width(), y * cfg.TILESIZE)
+        color = random.choice(['red', 'blue', 'green', 'orange'])
+        # painter.setPen(QColor(cfg.colors['cobalt']))
+        painter.setPen(QColor(color))
+
+        width = self.width()
+        height = self.height()
+        print(f'w: {width} | h: {height}')
+
+        for y in range(int(height) // cfg.TILESIZE):
+            h_line = QLine(0, y * cfg.TILESIZE, width, y * cfg.TILESIZE)
             painter.drawLine(h_line)
-            for x in range(self.width() // cfg.TILESIZE):
-                v_line = QLine(x * cfg.TILESIZE, 0, x * cfg.TILESIZE, self.height())
+            for x in range(int(width) // cfg.TILESIZE):
+                v_line = QLine(x * cfg.TILESIZE, 0, x * cfg.TILESIZE, height)
                 painter.drawLine(v_line)
+
         painter.end()
         self.scene.addPixmap(grid)
+
 
 class ToolBar(QWidget):
     def __init__(self):

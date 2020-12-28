@@ -12,14 +12,18 @@ TILESIZE = 32
 main_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
 code_dir = os.path.abspath(os.path.join(main_dir, 'Code'))
 assets_dir = os.path.abspath(os.path.join(main_dir, 'Assets'))
+data_dir = os.path.abspath(os.path.join(main_dir, 'Data'))
 icons_dir = os.path.abspath(os.path.join(assets_dir, 'Icons'))
 
 icons = {}
-
+# Load all icon files.
 for file in os.scandir(icons_dir):
     if file.path.endswith('.png'):
         name = file.name[:-4] # Without extension
         icons[name] = os.path.abspath(os.path.join(icons_dir, file.name))
+
+settings_file = os.path.abspath(os.path.join(data_dir, 'settings.cfg'))
+settings_default = '0'
 
 colors = {
     'grey light': '#999999',

@@ -14,6 +14,10 @@ import math, random
 
 # Custom imports
 from . import cfg
+from .file import load_config_file, update_config_file
+
+SETTINGS = load_config_file(cfg.settings_file) # Currently does nothing
+print(SETTINGS)
 
 class MainWindow(QMainWindow):
     def __init__(self, parent):
@@ -48,12 +52,19 @@ class MainWindow(QMainWindow):
     # ====================
     def setupMenuBar(self):
         self.menubar = self.menuBar()
+
         self.fileMenu = self.menubar.addMenu('&' + 'File')
         self.configureFileMenu()
+
         self.editMenu = self.menubar.addMenu('&' + 'Edit')
         self.configureEditMenu()
+
+        self.viewMenu = self.menubar.addMenu('&' + 'View')
+        self.configureViewMenu()
+
         self.settingsMenu = self.menubar.addMenu('&' + 'Settings')
         self.configureSettingsMenu()
+
         self.menubar.setCornerWidget(QLabel('(level name here)'))
 
     def configureFileMenu(self):
@@ -88,6 +99,14 @@ class MainWindow(QMainWindow):
 
         self.editMenu.addAction(undoAct)
         self.editMenu.addAction(redoAct)
+
+    def configureViewMenu(self):
+        gridAct = QAction('&' + 'Grid', self)
+        gridAct.setCheckable(True)
+
+        self.viewMenu.addAction(gridAct)
+
+        self.gridAct = gridAct
 
     def configureSettingsMenu(self):
         pass
@@ -125,13 +144,20 @@ class MapView(QWidget):
         self.setLayout(self.layout)
 
     def paintEvent(self, event):
-        self.drawGrid()
+        self.clearGrid()
+        if self.parent.gridAct.isChecked():
+            self.drawGrid()
         self.updateSceneSize()
 
-    def drawGrid(self):
+    def clearGrid(self):
         if self.grid:
             self.scene.removeItem(self.grid)
+            self.grid = None
 
+    def drawGrid(self):
+        """ Draws a grid by assembling a series of lines in the scene.
+        Precondition: self.grid is None
+        """
         grid = QPixmap(self.width(), self.height())
         grid.fill(QColor('Transparent'))
 

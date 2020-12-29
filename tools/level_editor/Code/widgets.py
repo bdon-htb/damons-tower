@@ -4,7 +4,7 @@
 
 # PyQt imports
 from PyQt5.QtGui import QIcon, QPainter, QPixmap, QPen, QColor, QFont
-from PyQt5.QtCore import Qt, QSize, QLineF, QLine
+from PyQt5.QtCore import Qt, QSize, QLineF, QLine, QRect
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QPushButton, QGraphicsView, QGraphicsScene,
 QGraphicsProxyWidget, QGraphicsPixmapItem, QFileDialog)
@@ -27,7 +27,7 @@ class MainWindow(QMainWindow):
         self.version = cfg.__version__
         self.initUI()
 
-        self.levelData = None
+        self.level = None
 
     def initUI(self):
         self.setWindowTitle(f'{self.name} - v{self.version}')
@@ -66,7 +66,7 @@ class MainWindow(QMainWindow):
         self.settingsMenu = self.menubar.addMenu('&' + 'Settings')
         self.configureSettingsMenu()
 
-        self.menubar.setCornerWidget(QLabel('(level name here)'))
+        self.menubar.setCornerWidget(QLabel('No level opened'))
 
     def configureFileMenu(self):
         newAct = QAction('&' + 'New Level', self)
@@ -123,7 +123,9 @@ class MainWindow(QMainWindow):
             self.loadLevel(file)
 
     def loadLevel(self, file: dict):
-        self.levelData = file
+        print(file['levelData']['testLevel'])
+        self.level = LevelData(file['levelData']['testLevel'])
+        self.mapView.drawLevel(self.level)
 
     def saveLevel(self):
         print('Save level')
@@ -145,6 +147,7 @@ class MapView(QWidget):
         self.setupView()
         self.grid = None
         self.tileSize = cfg.TILESIZE
+        self.tiles = []
 
         # self.setStyleSheet(f"border: none; background-color: {cfg.colors['grey light']};")
         # self.setCursor(Qt.CrossCursor)
@@ -205,8 +208,16 @@ class MapView(QWidget):
         self.grid = QGraphicsPixmapItem(grid)
         self.scene.addItem(self.grid)
 
-    def drawLevel(self):
-        pass
+    def drawLevel(self, level):
+        tileData = level.tileData
+        for index in range(len(tileData)):
+            data = [int(n) for n in tileData[index].split('-')[:-1]]
+            slice = QRect(data[0] * cfg.TILESIZE, data[1] * cfg.TILESIZE, cfg.TILESIZE, cfg.TILESIZE)
+            tile = QPixmap(level.spriteURL).copy(slice)
+            self.tiles.append(tile)
+            pos = level.getTilePos(index, self.tileSize)
+            print(pos)
+            self.scene.addPixmap(tile).setPos(pos[1], pos[0])
 
 
 class ToolBar(QWidget):
@@ -246,3 +257,26 @@ class LevelData:
         self.width = file['width']
         self.height = file['height']
         self.tileData = file['tileData']
+
+        self.spriteURL = cfg.get_assetURL(cfg.sprite_dir, self.spriteSheet, '.png')
+        print(self.spriteURL)
+
+    def getTilePos(self, index: int, tileSize: int) -> tuple:
+        """Get the true position of a particular tile.
+        """
+        pos = self.get2DFrom1D(index, self.width)
+        x = pos[0]
+        y = pos[1]
+        return (x * tileSize, y * tileSize)
+
+    def get2DFrom1D(self, index: int, array_width: int) -> tuple:
+        """Convert the index of a one-dimensional array to
+        an 'x' and 'y' value that would correspond to the array's
+        2d counterpart.
+
+        This is a direct translation from js-roguelite's
+        convertIndexToCoords() in engine.js
+        """
+        x = math.floor(index / array_width)
+        y = index % array_width
+        return (x, y)

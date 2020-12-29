@@ -37,4 +37,16 @@ colors = {
 # These assume that cfg.py is in its original place in the repo. Use with caution.
 repo_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '../../..'))
 level_dir = os.path.abspath(os.path.join(repo_dir, 'src', 'data'))
-sprite_dir = os.path.abspath(os.path.join(repo_dir, 'img'))
+sprite_dir = os.path.abspath(os.path.join(repo_dir, 'src', 'img'))
+
+def get_assetURL(parent_dir, filename, ext=None) -> str:
+    """Just a shorthand for combining paths to keep things
+    clean.
+
+    ext is an optional parameter, it is assumed that the filename
+    contains the file extension. If it does not then make sure to
+    explicitly define it with ext.
+    """
+    if ext:
+        filename += ext
+    return os.path.abspath(os.path.join(parent_dir, filename))

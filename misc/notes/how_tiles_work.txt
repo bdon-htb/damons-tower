@@ -1,0 +1,4 @@
+Each element in tileData's array is structured like: [x-y-ID] where
+- x and y are the location of the tile's sprite in the tileMap's spriteSheet (based on array-like index)
+- ID is the ID of the tile. The game will look at this to determine things like collidability and other
+  properties.

@@ -101,14 +101,14 @@ function TileMap(width, height, tiledata){
 TileMap.prototype.tileIsCollidable = function(tileIndex){
   this._checkIsValidIndex(tileIndex);
 
-  let tile = this.tiles[tileIndex];
+  let tile = this.tiles[tileIndex].split('-');
   let result;
 
-  switch(tile[0]){
-    case "0":
+  switch(tile[2]){
+    case "WA":
       result = true;
       break;
-    case "1":
+    case "FL":
       result = false;
       break;
     default:
@@ -121,16 +121,16 @@ TileMap.prototype.tileIsCollidable = function(tileIndex){
 // Return an array containing the tile's sprite indexes in the spritesheet.
 TileMap.prototype.getSpriteIndex = function(tileIndex){
   this._checkIsValidIndex(tileIndex);
-  let tile = this.tiles[tileIndex];
+  let tile = this.tiles[tileIndex].split('-');
   // [index_X, index_Y]
-  let indexArray = [Number(tile[1]), Number(tile[2])];
+  let indexArray = [Number(tile[0]), Number(tile[1])];
   return indexArray;
 };
 
 TileMap.prototype.getTileID = function(tileIndex){
   this._checkIsValidIndex(tileIndex);
   let tile = this.tiles[tileIndex];
-  let id = tile.split("-")[1];
+  let id = tile.split("-")[2];
   return id;
 };
 

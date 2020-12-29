@@ -238,3 +238,11 @@ class ToolButton(QPushButton):
         self.setIcon(QIcon(iconURL))
         self.setIconSize(self.iconSize)
         # self.setStyleSheet(f"border: none; background-color: {cfg.colors['white']};")
+
+class LevelData:
+    def __init__(self, file: dict):
+        self.name = file['name']
+        self.spriteSheet = file['spriteSheet']
+        self.width = file['width']
+        self.height = file['height']
+        self.tileData = file['tileData']

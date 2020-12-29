@@ -7,7 +7,7 @@ from PyQt5.QtGui import QIcon, QPainter, QPixmap, QPen, QColor, QFont
 from PyQt5.QtCore import Qt, QSize, QLineF, QLine, QRect
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QPushButton, QGraphicsView, QGraphicsScene,
-QGraphicsProxyWidget, QGraphicsPixmapItem, QFileDialog)
+QGraphicsProxyWidget, QGraphicsPixmapItem, QFileDialog, QFrame, QListView)
 
 # Other python imports
 import math, random
@@ -66,7 +66,8 @@ class MainWindow(QMainWindow):
         self.settingsMenu = self.menubar.addMenu('&' + 'Settings')
         self.configureSettingsMenu()
 
-        self.menubar.setCornerWidget(QLabel('No level opened'))
+        self.levelNameLabel = QLabel('No level opened') # Corner widget.
+        self.menubar.setCornerWidget(self.levelNameLabel)
 
     def configureFileMenu(self):
         newAct = QAction('&' + 'New Level', self)
@@ -118,13 +119,15 @@ class MainWindow(QMainWindow):
     def openLevel(self):
         directory = cfg.level_dir if SETTINGS['inRepo'] == 'true' else cfg.main_dir
         file_tuple = QFileDialog.getOpenFileName(None, 'Open Level', directory, 'Level data file (*.json)')
-        file = None if not file_tuple[0] else load_json(file_tuple[0])
+        file = load_json(file_tuple[0]) if file_tuple[0] else None
         if file: # Check if filename isn't blank
             self.loadLevel(file)
 
     def loadLevel(self, file: dict):
         print(file['levelData']['testLevel'])
+        # TODO: Make this more elaborate. perhaps bring up a menu to ask to select a specific level.
         self.level = LevelData(file['levelData']['testLevel'])
+        self.levelNameLabel.setText(self.level.name)
         self.mapView.drawLevel(self.level)
 
     def saveLevel(self):
@@ -209,6 +212,9 @@ class MapView(QWidget):
         self.scene.addItem(self.grid)
 
     def drawLevel(self, level):
+        """ Draws in the tiles of a level. Should only be called once
+        everytime the level is updated.
+        """
         tileData = level.tileData
         for index in range(len(tileData)):
             data = [int(n) for n in tileData[index].split('-')[:-1]]
@@ -216,7 +222,6 @@ class MapView(QWidget):
             tile = QPixmap(level.spriteURL).copy(slice)
             self.tiles.append(tile)
             pos = level.getTilePos(index, self.tileSize)
-            print(pos)
             self.scene.addPixmap(tile).setPos(pos[1], pos[0])
 
 
@@ -224,11 +229,18 @@ class ToolBar(QWidget):
     def __init__(self):
         super().__init__()
         self.layout = QVBoxLayout()
+
         self.selectBtn = ToolButton(cfg.icons['cursor'])
         self.fillBtn = ToolButton(cfg.icons['fill'])
         self.drawBtn = ToolButton(cfg.icons['paint-brush'])
         self.eraseBtn = ToolButton(cfg.icons['eraser'])
         self.dragBtn = ToolButton(cfg.icons['drag'])
+
+        self.separator = QFrame()
+        self.separator.setFrameShape(QFrame.HLine)
+        self.separator.setLineWidth(2)
+
+        self.tileMenu = TileMenu()
 
         buttons = [
             self.selectBtn, self.fillBtn, self.drawBtn,
@@ -238,6 +250,8 @@ class ToolBar(QWidget):
         for b in buttons:
             self.layout.addWidget(b)
 
+        self.layout.addWidget(self.separator)
+        self.layout.addWidget(self.tileMenu)
         self.setLayout(self.layout)
 
 class ToolButton(QPushButton):
@@ -250,6 +264,12 @@ class ToolButton(QPushButton):
         self.setIconSize(self.iconSize)
         # self.setStyleSheet(f"border: none; background-color: {cfg.colors['white']};")
 
+class TileMenu(QListView):
+    pass
+
+class Tile(QPushButton):
+    pass
+    
 class LevelData:
     def __init__(self, file: dict):
         self.name = file['name']

@@ -6,8 +6,9 @@
 from PyQt5.QtGui import QIcon, QPainter, QPixmap, QPen, QColor, QFont
 from PyQt5.QtCore import Qt, QSize, QLineF, QLine, QRect
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
-QVBoxLayout, QHBoxLayout, QPushButton, QGraphicsView, QGraphicsScene,
-QGraphicsProxyWidget, QGraphicsPixmapItem, QFileDialog, QFrame, QListView)
+QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene,
+QGraphicsProxyWidget, QGraphicsPixmapItem, QFileDialog, QFrame, QListView,
+QScrollArea)
 
 # Other python imports
 import math, random
@@ -189,15 +190,15 @@ class MapView(QWidget):
         """ Draws a grid by drawing a series of lines into the scene.
         Precondition: self.grid is None
         """
-        grid = QPixmap(self.width(), self.height())
+        width = self.view.viewport().width()
+        height = self.view.viewport().height()
+
+        grid = QPixmap(width, height)
         grid.fill(QColor('Transparent'))
 
         painter = QPainter()
         painter.begin(grid)
         painter.setPen(QColor(cfg.colors['cobalt']))
-
-        width = self.width()
-        height = self.height()
 
         for y in range(round(height / cfg.TILESIZE)):
             h_line = QLine(0, y * cfg.TILESIZE, width, y * cfg.TILESIZE)
@@ -264,12 +265,19 @@ class ToolButton(QPushButton):
         self.setIconSize(self.iconSize)
         # self.setStyleSheet(f"border: none; background-color: {cfg.colors['white']};")
 
-class TileMenu(QListView):
-    pass
+class TileMenu(QScrollArea):
+    def __init__(self):
+        super().__init__()
+        self.layout = QGridLayout()
+        self.layout.addWidget(QLabel('test'))
+        self.layout.addWidget(QLabel('test'))
+        self.layout.addWidget(QLabel('test'))
+        self.layout.addWidget(QLabel('test'))
+        self.setLayout(self.layout)
 
 class Tile(QPushButton):
     pass
-    
+
 class LevelData:
     def __init__(self, file: dict):
         self.name = file['name']

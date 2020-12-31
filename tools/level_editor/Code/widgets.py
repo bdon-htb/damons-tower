@@ -130,6 +130,7 @@ class MainWindow(QMainWindow):
         self.level = LevelData(file['levelData']['testLevel'])
         self.levelNameLabel.setText(self.level.name)
         self.mapView.drawLevel(self.level)
+        self.toolBar.tileMenu.loadTiles(self.level.spriteURL)
 
     def saveLevel(self):
         print('Save level')
@@ -269,14 +270,53 @@ class TileMenu(QScrollArea):
     def __init__(self):
         super().__init__()
         self.layout = QGridLayout()
-        self.layout.addWidget(QLabel('test'))
-        self.layout.addWidget(QLabel('test'))
-        self.layout.addWidget(QLabel('test'))
-        self.layout.addWidget(QLabel('test'))
+        self.cols = 5
+        self._lastRow = 0
+        self._lastCol = 0
+        self.tiles = []
         self.setLayout(self.layout)
 
+    def loadTiles(self, spriteSheetURL):
+        """Load the tiles of a spriteSheet into the tileMenu.
+        Precondition: Assumes each 32x32 square in the sheet is occupied
+        and that 32 divides the area of the spriteSheet evenly.
+        """
+        spriteSheet = QPixmap(spriteSheetURL)
+        col = 0
+        row = 0
+        for y in range(0, spriteSheet.height(), cfg.TILESIZE):
+            for x in range(0, spriteSheet.width(), cfg.TILESIZE):
+                slice = QRect(x, y, cfg.TILESIZE, cfg.TILESIZE)
+                tileSprite = spriteSheet.copy(slice)
+                tile = Tile(tileSprite)
+                self.addTile(tile)
+                col += 1
+
+    def addTile(self, tile):
+        if self._lastCol > self.cols:
+            self._lastRow += 1 # Move on to next row.
+            self._lastCol = 0 # Go back to first column
+
+        print('row: ', self._lastRow)
+        print('col: ', self._lastCol)
+
+        self.layout.addWidget(tile, self._lastRow, self._lastCol)
+        self._lastCol += 1
+        self.tiles.append(tile)
+
+    def clearTiles(self):
+        for t in self.tiles:
+            self.layout.removeWidget(t)
+        self.tiles.clear()
+
 class Tile(QPushButton):
-    pass
+    def __init__(self, pixmap):
+        super().__init__()
+        self.icon = QIcon(pixmap)
+        self.iconSize = QSize(32, 32)
+
+        self.setIcon(QIcon(pixmap))
+        self.setIconSize(self.iconSize)
 
 class LevelData:
     def __init__(self, file: dict):
@@ -287,7 +327,6 @@ class LevelData:
         self.tileData = file['tileData']
 
         self.spriteURL = cfg.get_assetURL(cfg.sprite_dir, self.spriteSheet, '.png')
-        print(self.spriteURL)
 
     def getTilePos(self, index: int, tileSize: int) -> tuple:
         """Get the true position of a particular tile.

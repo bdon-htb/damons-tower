@@ -8,7 +8,7 @@ from PyQt5.QtCore import Qt, QSize, QLineF, QLine, QRect
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene,
 QGraphicsProxyWidget, QGraphicsPixmapItem, QFileDialog, QFrame, QListView,
-QScrollArea)
+QScrollArea, QButtonGroup)
 
 # Other python imports
 import math, random
@@ -45,6 +45,9 @@ class MainWindow(QMainWindow):
 
         self.initUI() # Should be done last always!
 
+    # =================
+    # ESSENTIAL METHODS
+    # =================
     def initUI(self):
         self.setWindowTitle(f'{self.name} - v{self.version}')
         self.setMinimumSize(1000, 600)
@@ -56,6 +59,13 @@ class MainWindow(QMainWindow):
         self.addWidgets()
         self.setCentralWidget(self.centralWidget)
         self.centralWidget.setLayout(self.layout)
+
+    def addWidgets(self):
+        self.mapView = MapView(self)
+        self.toolBar = ToolBar(self)
+
+        self.layout.addWidget(self.mapView)
+        self.layout.addWidget(self.toolBar)
 
     # ====================
     # MENUBAR RELATED METHODS
@@ -113,6 +123,7 @@ class MainWindow(QMainWindow):
 
     def configureViewMenu(self):
         gridAct = QAction('&' + 'Grid', self)
+        gridAct.triggered.connect(self.repaint) # Force a repaint of the window immediately after press.
         gridAct.setCheckable(True)
 
         self.viewMenu.addAction(gridAct)
@@ -121,13 +132,6 @@ class MainWindow(QMainWindow):
 
     def configureSettingsMenu(self):
         pass
-
-    def addWidgets(self):
-        self.mapView = MapView(self)
-        self.toolBar = ToolBar(self)
-
-        self.layout.addWidget(self.mapView)
-        self.layout.addWidget(self.toolBar)
 
     def newLevel(self):
         print('New level')
@@ -249,7 +253,11 @@ class ToolBar(QWidget):
         self.allCursorModes = parent.allCursorModes
         self.layout = QVBoxLayout()
 
+        self.buttonGroup = QButtonGroup()
+        self.buttonGroup.buttonClicked.connect(self.changeCursorMode)
+
         self.selectBtn = ToolButton(cfg.icons['cursor'], self.allCursorModes[0])
+        self.selectBtn.setChecked(True)
         self.fillBtn = ToolButton(cfg.icons['fill'], self.allCursorModes[1])
         self.drawBtn = ToolButton(cfg.icons['paint-brush'], self.allCursorModes[2])
         self.eraseBtn = ToolButton(cfg.icons['eraser'], self.allCursorModes[3])
@@ -261,17 +269,27 @@ class ToolBar(QWidget):
 
         self.tileMenu = TileMenu()
 
-        buttons = [
+        btns = [
             self.selectBtn, self.fillBtn, self.drawBtn,
             self.eraseBtn, self.dragBtn
         ]
 
-        for b in buttons:
+        for b in btns:
+            self.buttonGroup.addButton(b)
             self.layout.addWidget(b)
 
         self.layout.addWidget(self.separator)
         self.layout.addWidget(self.tileMenu)
         self.setLayout(self.layout)
+
+    def getCheckedButton(self):
+        return self.buttonGroup.checkedButton()
+
+    def changeCursorMode(self):
+        btn = self.getCheckedButton()
+        if btn.name in self.allCursorModes:
+            self.parent.cursorMode = btn.name
+            print(self.parent.cursorMode)
 
 class ToolButton(QPushButton):
     def __init__(self, iconURL, name):
@@ -283,6 +301,7 @@ class ToolButton(QPushButton):
         self.setIcon(QIcon(iconURL))
         self.setIconSize(self.iconSize)
         self.setToolTip(name.title() + ' Tool')
+        self.setCheckable(True)
         # self.setStyleSheet(f"border: none; background-color: {cfg.colors['white']};")
 
 class TileMenu(QScrollArea):

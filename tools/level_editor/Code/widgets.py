@@ -32,9 +32,18 @@ class MainWindow(QMainWindow):
         self.parent = parent
         self.name = cfg.__name__
         self.version = cfg.__version__
-        self.initUI()
 
         self.level = None
+        self.allCursorModes = [
+            'select',
+            'fill',
+            'draw',
+            'erase',
+            'drag'
+        ]
+        self.cursorMode = self.allCursorModes[0]
+
+        self.initUI() # Should be done last always!
 
     def initUI(self):
         self.setWindowTitle(f'{self.name} - v{self.version}')
@@ -47,13 +56,6 @@ class MainWindow(QMainWindow):
         self.addWidgets()
         self.setCentralWidget(self.centralWidget)
         self.centralWidget.setLayout(self.layout)
-
-    def addWidgets(self):
-        self.mapView = MapView(self)
-        self.toolBar = ToolBar()
-
-        self.layout.addWidget(self.mapView)
-        self.layout.addWidget(self.toolBar)
 
     # ====================
     # MENUBAR RELATED METHODS
@@ -119,6 +121,13 @@ class MainWindow(QMainWindow):
 
     def configureSettingsMenu(self):
         pass
+
+    def addWidgets(self):
+        self.mapView = MapView(self)
+        self.toolBar = ToolBar(self)
+
+        self.layout.addWidget(self.mapView)
+        self.layout.addWidget(self.toolBar)
 
     def newLevel(self):
         print('New level')
@@ -234,15 +243,17 @@ class MapView(QWidget):
 
 
 class ToolBar(QWidget):
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__()
+        self.parent = parent
+        self.allCursorModes = parent.allCursorModes
         self.layout = QVBoxLayout()
 
-        self.selectBtn = ToolButton(cfg.icons['cursor'])
-        self.fillBtn = ToolButton(cfg.icons['fill'])
-        self.drawBtn = ToolButton(cfg.icons['paint-brush'])
-        self.eraseBtn = ToolButton(cfg.icons['eraser'])
-        self.dragBtn = ToolButton(cfg.icons['drag'])
+        self.selectBtn = ToolButton(cfg.icons['cursor'], self.allCursorModes[0])
+        self.fillBtn = ToolButton(cfg.icons['fill'], self.allCursorModes[1])
+        self.drawBtn = ToolButton(cfg.icons['paint-brush'], self.allCursorModes[2])
+        self.eraseBtn = ToolButton(cfg.icons['eraser'], self.allCursorModes[3])
+        self.dragBtn = ToolButton(cfg.icons['drag'], self.allCursorModes[4])
 
         self.separator = QFrame()
         self.separator.setFrameShape(QFrame.HLine)
@@ -263,13 +274,15 @@ class ToolBar(QWidget):
         self.setLayout(self.layout)
 
 class ToolButton(QPushButton):
-    def __init__(self, iconURL):
+    def __init__(self, iconURL, name):
         super().__init__()
         self.icon = QIcon(iconURL)
         self.iconSize = QSize(24, 24)
+        self.name = name
 
         self.setIcon(QIcon(iconURL))
         self.setIconSize(self.iconSize)
+        self.setToolTip(name.title() + ' Tool')
         # self.setStyleSheet(f"border: none; background-color: {cfg.colors['white']};")
 
 class TileMenu(QScrollArea):

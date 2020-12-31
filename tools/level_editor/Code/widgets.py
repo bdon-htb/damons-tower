@@ -20,6 +20,12 @@ from .file import load_config_file, update_config_file, load_json
 SETTINGS = load_config_file(cfg.settings_file) # Currently does nothing
 print(SETTINGS)
 
+def is_level(d: dict) -> bool:
+    """Simply checks that the highest key is 'levelData'
+    For preventing the loading of non-level data .json files.
+    """
+    return list(d.keys())[0] == 'levelData'
+
 class MainWindow(QMainWindow):
     def __init__(self, parent):
         super().__init__()
@@ -121,7 +127,7 @@ class MainWindow(QMainWindow):
         directory = cfg.level_dir if SETTINGS['inRepo'] == 'true' else cfg.main_dir
         file_tuple = QFileDialog.getOpenFileName(None, 'Open Level', directory, 'Level data file (*.json)')
         file = load_json(file_tuple[0]) if file_tuple[0] else None
-        if file: # Check if filename isn't blank
+        if file and is_level(file): # Check if filename isn't blank
             self.loadLevel(file)
 
     def loadLevel(self, file: dict):
@@ -296,9 +302,6 @@ class TileMenu(QScrollArea):
         if self._lastCol > self.cols:
             self._lastRow += 1 # Move on to next row.
             self._lastCol = 0 # Go back to first column
-
-        print('row: ', self._lastRow)
-        print('col: ', self._lastCol)
 
         self.layout.addWidget(tile, self._lastRow, self._lastCol)
         self._lastCol += 1

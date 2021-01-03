@@ -207,7 +207,7 @@ class MapView(QWidget):
 
     def clearGrid(self):
         if self.grid:
-            self.scene.removeItem(grid)
+            self.scene.removeItem(self.grid)
             self.grid = None
 
     def clearCheckerGrid(self):

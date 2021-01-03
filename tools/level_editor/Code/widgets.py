@@ -3,7 +3,7 @@
 # =======================================================
 
 # PyQt imports
-from PyQt5.QtGui import QIcon, QPainter, QPixmap, QPen, QColor, QFont
+from PyQt5.QtGui import QIcon, QPainter, QPixmap, QPen, QColor, QFont, QBrush
 from PyQt5.QtCore import Qt, QSize, QLineF, QLine, QRect
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene,
@@ -42,6 +42,7 @@ class MainWindow(QMainWindow):
             'drag'
         ]
         self.cursorMode = self.allCursorModes[0]
+        self.tileSize = cfg.TILESIZE
 
         self.initUI() # Should be done last always!
 
@@ -160,7 +161,6 @@ class MainWindow(QMainWindow):
     def redoAction(self):
         print('Redo')
 
-
 class MapView(QWidget):
     def __init__(self, parent):
         super().__init__()
@@ -170,7 +170,8 @@ class MapView(QWidget):
         self.view = QGraphicsView(self.scene, self)
         self.setupView()
         self.grid = None
-        self.tileSize = cfg.TILESIZE
+        self.bg = None
+        self.bgTileSize = 16
         self.tiles = []
 
         # self.setStyleSheet(f"border: none; background-color: {cfg.colors['grey light']};")
@@ -179,7 +180,10 @@ class MapView(QWidget):
         self.setLayout(self.layout)
 
     def paintEvent(self, event):
-        self.clearGrid()
+        self.clearGrid(self.bg)
+        self.drawTransparencyGrid()
+
+        self.clearGrid(self.grid)
         if self.parent.gridAct.isChecked():
             self.drawGrid()
 
@@ -201,10 +205,50 @@ class MapView(QWidget):
     def clearScene(self):
         self.scene.clear()
 
-    def clearGrid(self):
-        if self.grid:
-            self.scene.removeItem(self.grid)
-            self.grid = None
+    def clearGrid(self, grid):
+        if grid:
+            self.scene.removeItem(grid)
+            grid = None
+
+    def drawTransparencyGrid(self):
+        """ Draws a pattern of grey and white squares into the scene.
+        """
+        width = self.view.viewport().width()
+        height = self.view.viewport().height()
+
+        grid = QPixmap(width, height)
+        grid.fill(QColor('Transparent'))
+
+        painter = QPainter()
+        painter.begin(grid)
+        tileSize = self.bgTileSize
+
+        yrange = math.ceil(height / tileSize)
+        xrange = math.ceil(width / tileSize)
+        for y in range(yrange):
+            for x in range(xrange):
+                if (x + y) % 2 == 0: # Make every other square light grey.
+                    color = QColor(cfg.colors['grey light'])
+                else:
+                    color = QColor(cfg.colors['grey lighter'])
+
+                painter.setPen(color)
+                painter.setBrush(QBrush(color, Qt.SolidPattern))
+                if (x == xrange) and (xrange * tileSize) - width != 0:
+                    tileWidth = (xrange * tileSize) - width
+                else:
+                    tileWidth = tileSize
+
+                if (y == yrange) and (yrange * tileSize) - height != 0:
+                    tileHeight = (yrange * tileSize) - height
+                else:
+                    tileHeight = tileSize
+                painter.drawRect(x * tileSize, y * tileSize, tileWidth, tileHeight)
+
+        painter.end()
+
+        self.bg = QGraphicsPixmapItem(grid)
+        self.scene.addItem(self.bg)
 
     def drawGrid(self):
         """ Draws a grid by drawing a series of lines into the scene.
@@ -219,12 +263,13 @@ class MapView(QWidget):
         painter = QPainter()
         painter.begin(grid)
         painter.setPen(QColor(cfg.colors['cobalt']))
+        tileSize = self.parent.tileSize
 
-        for y in range(round(height / cfg.TILESIZE)):
-            h_line = QLine(0, y * cfg.TILESIZE, width, y * cfg.TILESIZE)
+        for y in range(round(height / tileSize)):
+            h_line = QLine(0, y * tileSize, width, y * tileSize)
             painter.drawLine(h_line)
-            for x in range(round(width / cfg.TILESIZE)):
-                v_line = QLine(x * cfg.TILESIZE, 0, x * cfg.TILESIZE, height)
+            for x in range(round(width / tileSize)):
+                v_line = QLine(x * tileSize, 0, x * tileSize, height)
                 painter.drawLine(v_line)
 
         painter.end()
@@ -237,12 +282,13 @@ class MapView(QWidget):
         everytime the level is updated.
         """
         tileData = level.tileData
+        tileSize = self.parent.tileSize
         for index in range(len(tileData)):
             data = [int(n) for n in tileData[index].split('-')[:-1]]
-            slice = QRect(data[0] * cfg.TILESIZE, data[1] * cfg.TILESIZE, cfg.TILESIZE, cfg.TILESIZE)
+            slice = QRect(data[0] * tileSize, data[1] * tileSize, tileSize, tileSize)
             tile = QPixmap(level.spriteURL).copy(slice)
             self.tiles.append(tile)
-            pos = level.getTilePos(index, self.tileSize)
+            pos = level.getTilePos(index, tileSize)
             self.scene.addPixmap(tile).setPos(pos[1], pos[0])
 
 
@@ -289,7 +335,9 @@ class ToolBar(QWidget):
         btn = self.getCheckedButton()
         if btn.name in self.allCursorModes:
             self.parent.cursorMode = btn.name
-            print(self.parent.cursorMode)
+
+    def selectButton(self, name):
+        pass
 
 class ToolButton(QPushButton):
     def __init__(self, iconURL, name):

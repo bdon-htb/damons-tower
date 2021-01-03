@@ -170,7 +170,7 @@ class MapView(QWidget):
         self.view = QGraphicsView(self.scene, self)
         self.setupView()
         self.grid = None
-        self.bg = None
+        self.checkerGrid = None # checkerboard grid. Used to represent transparency.
         self.bgTileSize = 16
         self.tiles = []
 
@@ -180,10 +180,10 @@ class MapView(QWidget):
         self.setLayout(self.layout)
 
     def paintEvent(self, event):
-        self.clearGrid(self.bg)
-        self.drawTransparencyGrid()
+        self.clearCheckerGrid()
+        self.drawCheckerGrid()
 
-        self.clearGrid(self.grid)
+        self.clearGrid()
         if self.parent.gridAct.isChecked():
             self.drawGrid()
 
@@ -205,12 +205,17 @@ class MapView(QWidget):
     def clearScene(self):
         self.scene.clear()
 
-    def clearGrid(self, grid):
-        if grid:
+    def clearGrid(self):
+        if self.grid:
             self.scene.removeItem(grid)
-            grid = None
+            self.grid = None
 
-    def drawTransparencyGrid(self):
+    def clearCheckerGrid(self):
+        if self.checkerGrid:
+            self.scene.removeItem(self.checkerGrid)
+            self.checkerGrid = None
+
+    def drawCheckerGrid(self):
         """ Draws a pattern of grey and white squares into the scene.
         """
         width = self.view.viewport().width()
@@ -247,8 +252,8 @@ class MapView(QWidget):
 
         painter.end()
 
-        self.bg = QGraphicsPixmapItem(grid)
-        self.scene.addItem(self.bg)
+        self.checkerGrid = QGraphicsPixmapItem(grid)
+        self.scene.addItem(self.checkerGrid)
 
     def drawGrid(self):
         """ Draws a grid by drawing a series of lines into the scene.

@@ -161,7 +161,138 @@ class MainWindow(QMainWindow):
     def redoAction(self):
         print('Redo')
 
-class MapView(QWidget):
+'''
+Electric boogaloo
+'''
+class MapView(QGraphicsView):
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+        self.grid = None # Foreground grid item.
+        self.checkerGrid = None # Background grid item.
+        self.checkerTileSize = 16
+        self.setScene(QGraphicsScene())
+        self.setupView()
+
+    # =================
+    # OVERRIDEN METHODS
+    # =================
+    def drawBackground(self, painter, rect):
+        self.clearCheckerGrid()
+        self.drawCheckerGrid(painter)
+
+    def drawForeground(self, painter, rect):
+        self.clearGrid()
+        if self.parent.gridAct.isChecked():
+            self.drawGrid(painter)
+
+        self.updateSceneSize() # Call this once everything is drawn.
+
+    def mouseMoveEvent(self, event):
+        pos = self.mapToScene(event.pos())
+        s = f'({int(pos.x())},{int(pos.y())})'
+        self.parent.statusBar.showMessage(s)
+
+    # ==============
+    # CUSTOM METHODS
+    # ==============
+    def setupView(self):
+        # self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
+        self.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        self.setMouseTracking(True)
+
+    def updateSceneSize(self):
+        self.scene().setSceneRect(self.scene().itemsBoundingRect())
+
+    def drawCheckerGrid(self, painter):
+        """ Draws a pattern of grey and white squares into the scene.
+        Used to represent transparency in the background.
+        """
+        width = self.viewport().width()
+        height = self.viewport().height()
+
+        grid = QPixmap(width, height)
+        grid.fill(QColor('Transparent'))
+
+        # painter.begin(grid)
+        tileSize = self.checkerTileSize
+
+        yrange = math.ceil(height / tileSize)
+        xrange = math.ceil(width / tileSize)
+        for y in range(yrange):
+            for x in range(xrange):
+                if (x + y) % 2 == 0: # Make every other square light grey.
+                    color = QColor(cfg.colors['grey light'])
+                else:
+                    color = QColor(cfg.colors['grey lighter'])
+
+                painter.setPen(color)
+                painter.setBrush(QBrush(color, Qt.SolidPattern))
+                if (x == xrange) and (xrange * tileSize) - width != 0:
+                    tileWidth = (xrange * tileSize) - width
+                else:
+                    tileWidth = tileSize
+
+                if (y == yrange) and (yrange * tileSize) - height != 0:
+                    tileHeight = (yrange * tileSize) - height
+                else:
+                    tileHeight = tileSize
+                painter.drawRect(x * tileSize, y * tileSize, tileWidth, tileHeight)
+
+        # painter.end()
+
+        self.checkerGrid = QGraphicsPixmapItem(grid)
+        self.scene().addItem(self.checkerGrid)
+
+    def clearCheckerGrid(self):
+        if self.checkerGrid:
+            self.scene().removeItem(self.checkerGrid)
+            self.checkerGrid = None
+
+    def drawGrid(self, painter):
+        """ Draws a grid by drawing a series of lines into the scene.
+        Precondition: self.grid is None
+        """
+        width = self.viewport().width()
+        height = self.viewport().height()
+
+        grid = QPixmap(width, height)
+        grid.fill(QColor('Transparent'))
+
+        painter.setPen(QColor(cfg.colors['cobalt']))
+        tileSize = self.parent.tileSize
+
+        for y in range(round(height / tileSize)):
+            h_line = QLine(0, y * tileSize, width, y * tileSize)
+            painter.drawLine(h_line)
+            for x in range(round(width / tileSize)):
+                v_line = QLine(x * tileSize, 0, x * tileSize, height)
+                painter.drawLine(v_line)
+
+        self.grid = QGraphicsPixmapItem(grid)
+        self.scene().addItem(self.grid)
+
+    def clearGrid(self):
+        if self.grid:
+            self.scene().removeItem(self.grid)
+            self.grid = None
+
+    def drawLevel(self, level):
+        """ Draws in the tiles of a level. Should only be called once
+        everytime the level is updated.
+        """
+        tileData = level.tileData
+        tileSize = self.parent.tileSize
+        for index in range(len(tileData)):
+            data = [int(n) for n in tileData[index].split('-')[:-1]]
+            slice = QRect(data[0] * tileSize, data[1] * tileSize, tileSize, tileSize)
+            tile = QPixmap(level.spriteURL).copy(slice)
+            self.tiles.append(tile)
+            pos = level.getTilePos(index, tileSize)
+            self.scene.addPixmap(tile).setPos(pos[1], pos[0])
+            
+'''
+class MapViewOld(QWidget):
     def __init__(self, parent):
         super().__init__()
         self.parent = parent
@@ -295,7 +426,7 @@ class MapView(QWidget):
             self.tiles.append(tile)
             pos = level.getTilePos(index, tileSize)
             self.scene.addPixmap(tile).setPos(pos[1], pos[0])
-
+'''
 
 class ToolBar(QWidget):
     def __init__(self, parent):

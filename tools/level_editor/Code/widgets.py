@@ -421,7 +421,7 @@ class ToolBar(QWidget):
     def changeCursorMode(self):
         btn = self.getCheckedButton()
         if btn.name in self.allCursorModes:
-            self.parent.cursorMode = btn.name
+            self.parent.changeCursorMode(btn.name)
 
     def selectButton(self, name):
         pass

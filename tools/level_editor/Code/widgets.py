@@ -177,6 +177,8 @@ class MainWindow(QMainWindow):
         file_tuple = QFileDialog.getOpenFileName(None, 'Open Level', directory, 'Level data file (*.json)')
         file = load_json(file_tuple[0]) if file_tuple[0] else None
         if file and is_level(file): # Check if filename isn't blank
+            if self.level:
+                self.clearLevel()
             self.loadLevel(file)
 
     def loadLevel(self, file: dict):
@@ -216,6 +218,10 @@ class MainWindow(QMainWindow):
             self.cursorMode = new_mode
             self.mapView.updateScene()
 
+    def clearLevel(self):
+        self.toolBar.tileMenu.clearTiles()
+        self.level = None
+
     # =============
     # MISC. METHODS
     # =============
@@ -231,7 +237,7 @@ class MapView(QGraphicsView):
         super().__init__()
         self.parent = parent
         self.checkerTileSize = 16
-        self.mousePos = (0, 0)
+        self.mousePos = None
         self.bg_color = cfg.colors['mauve']
         self.setScene(QGraphicsScene())
         self.setupView()
@@ -248,7 +254,7 @@ class MapView(QGraphicsView):
         if self.parent.gridAct.isChecked() and self.parent.level:
             self.drawGrid(painter)
 
-        if self.parent.cursorMode == 'select':
+        if self.parent.cursorMode == 'select' and self.mousePos:
             self.drawSelectOutline(painter)
 
         self.updateSceneSize() # Call this once everything is drawn.
@@ -258,6 +264,10 @@ class MapView(QGraphicsView):
         s = f'({int(pos.x())},{int(pos.y())})'
         self.parent.statusComponents['mousePos'].setText(s)
         self.mousePos = (pos.x(), pos.y())
+        self.updateScene()
+
+    def leaveEvent(self, event):
+        self.mousePos = None
         self.updateScene()
 
     # ==============
@@ -460,6 +470,7 @@ class TileMenu(QScrollArea):
         return self.selectedTile
 
     def selectTile(self, tile):
+        # Basically these if statements allow NO tiles to be selected at a time.
         if tile.isChecked() and self.selectedTile == tile:
             self.buttonGroup.setExclusive(False)
             tile.setChecked(False)
@@ -469,8 +480,6 @@ class TileMenu(QScrollArea):
                 self.buttonGroup.setExclusive(True)
             tile.setChecked(True)
             self.selectedTile = tile
-
-        print(self.selectedTile)
 
     def loadTiles(self, spriteSheetURL):
         """Load the tiles of a spriteSheet into the tileMenu.
@@ -499,10 +508,9 @@ class TileMenu(QScrollArea):
 
         self._lastCol += 1
 
+# TODO: pain.
     def clearTiles(self):
-        for t in self.allTiles:
-            self.layout.removeWidget(t)
-        self.allTiles.clear()
+        pass
 
 class TileButton(QPushButton):
     def __init__(self, pixmap):

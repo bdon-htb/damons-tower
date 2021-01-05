@@ -2,7 +2,7 @@
   "levelData": {
     "testLevel": {
       "name": "long_level_test",
-      "spriteSheet": "testDungeon",
+      "spriteSheet": "red_square",
       "width": 12,
       "height": 31,
       "tileData": [

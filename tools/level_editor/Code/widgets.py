@@ -232,9 +232,9 @@ class MapView(QGraphicsView):
         self.parent = parent
         self.checkerTileSize = 16
         self.mousePos = (0, 0)
+        self.bg_color = cfg.colors['mauve']
         self.setScene(QGraphicsScene())
         self.setupView()
-        self.setupScene()
 
     # =================
     # OVERRIDEN METHODS
@@ -267,11 +267,6 @@ class MapView(QGraphicsView):
         self.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.setMouseTracking(True)
 
-    def setupScene(self):
-        bg_color = cfg.colors['mauve']
-        # self.scene().setBackgroundBrush(QBrush(QColor(bg_color), Qt.SolidPattern))
-        self.setBackgroundBrush(Qt.black)
-
     def updateScene(self):
         self.scene().update()
 
@@ -298,7 +293,7 @@ class MapView(QGraphicsView):
         width = max(self.viewport().width(), mapSize[0])
         height = max(self.viewport().height(), mapSize[1])
 
-        color = QColor(cfg.colors['mauve'])
+        color = QColor(self.bg_color)
 
         painter.setPen(color)
         painter.setBrush(QBrush(color, Qt.SolidPattern))

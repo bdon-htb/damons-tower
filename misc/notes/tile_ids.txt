@@ -1,0 +1,5 @@
+Note that tile ids do not have to be a fixed size. 2 characters is preferred though.
+
+WA - WALL
+FL - FLOOR
+00 - NULL / EMPTY TILE

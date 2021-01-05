@@ -44,7 +44,7 @@ class MainWindow(QMainWindow):
             'erase',
             'drag'
         ]
-        self.cursorMode = self.allCursorModes[0]
+        self.cursorMode = 'select'
         self.tileSize = cfg.TILESIZE
 
         self.initUI() # Should be done last always!
@@ -182,12 +182,22 @@ class MainWindow(QMainWindow):
         print('Redo')
 
     # =============
-    # MISC. ACTIONS
+    # WIDGET-RELATED METHODS
     # =============
     def repaintMapView(self):
         """ Precondition: self.mapView is already loaded.
         """
         self.mapView.scene().update()
+
+    # =============
+    # MISC. METHODS
+    # =============
+    def getMapSize(self):
+        """ Return the dimensions of the level / map in pixels.
+        Precondition: level is not None
+        """
+        level = self.level
+        return (level.width * cfg.TILESIZE, level.height * cfg.TILESIZE)
 
 class MapView(QGraphicsView):
     def __init__(self, parent):
@@ -197,16 +207,22 @@ class MapView(QGraphicsView):
         self.mousePos = (0, 0)
         self.setScene(QGraphicsScene())
         self.setupView()
+        self.setupScene()
 
     # =================
     # OVERRIDEN METHODS
     # =================
     def drawBackground(self, painter, rect):
-        self.drawCheckerGrid(painter)
+        self.drawSceneBackground(painter)
+        if self.parent.level:
+            self.drawCheckerGrid(painter)
 
     def drawForeground(self, painter, rect):
-        if self.parent.gridAct.isChecked():
+        if self.parent.gridAct.isChecked() and self.parent.level:
             self.drawGrid(painter)
+
+        if self.parent.cursorMode == 'select':
+            self.drawSelectOutline(painter)
 
         self.updateSceneSize() # Call this once everything is drawn.
 
@@ -214,16 +230,20 @@ class MapView(QGraphicsView):
         pos = self.mapToScene(event.pos())
         s = f'({int(pos.x())},{int(pos.y())})'
         self.parent.statusComponents['mousePos'].setText(s)
-
-        self.mousePos = pos
+        self.mousePos = (pos.x(), pos.y())
+        self.scene().update()
 
     # ==============
     # CUSTOM METHODS
     # ==============
     def setupView(self):
-        # self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
         self.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.setMouseTracking(True)
+
+    def setupScene(self):
+        bg_color = cfg.colors['mauve']
+        # self.scene().setBackgroundBrush(QBrush(QColor(bg_color), Qt.SolidPattern))
+        self.setBackgroundBrush(Qt.black)
 
     def updateSceneSize(self):
         self.scene().setSceneRect(self.scene().itemsBoundingRect())
@@ -237,6 +257,22 @@ class MapView(QGraphicsView):
         y = pos_y - (pos_y % tileSize)
         return (x, y)
 
+    def drawSceneBackground(self, painter):
+        """ Draw the background of the view / scene.
+        """
+        if self.parent.level:
+            mapSize = self.parent.getMapSize()
+        else:
+            mapSize = (0, 0)
+
+        width = max(self.viewport().width(), mapSize[0])
+        height = max(self.viewport().height(), mapSize[1])
+
+        color = QColor(cfg.colors['mauve'])
+
+        painter.setPen(color)
+        painter.setBrush(QBrush(color, Qt.SolidPattern))
+        painter.drawRect(0, 0, width, height)
 
     def drawSelectOutline(self, painter):
         """ Draws a rectangular outline of the nearest grid square.
@@ -245,15 +281,20 @@ class MapView(QGraphicsView):
         topLeft = self.getNearestTopLeft(self.mousePos[0], self.mousePos[1])
         tileSize = self.parent.tileSize
 
-        outline = QPixmap(tileSize, tileSize)
-        painter.setPen(QColor(cfg.colors['black']))
+        painter.setPen(QColor(cfg.colors['light teal']))
+        painter.drawRect(topLeft[0], topLeft[1], tileSize, tileSize)
 
     def drawCheckerGrid(self, painter):
         """ Draws a pattern of grey and white squares into the scene.
         Used to represent transparency in the background.
+
+        Precondition: self.parent.level is not None
         """
-        width = self.viewport().width()
-        height = self.viewport().height()
+        mapSize = self.parent.getMapSize()
+        width, height = mapSize[0], mapSize[1]
+
+        # width = self.viewport().width()
+        # height = self.viewport().height()
 
         tileSize = self.checkerTileSize
 
@@ -282,18 +323,21 @@ class MapView(QGraphicsView):
 
     def drawGrid(self, painter):
         """ Draws a grid by drawing a series of lines into the scene.
-        Precondition: self.grid is None
+        Precondition: self.grid is None and self.parent.level is not NOne
         """
-        width = self.viewport().width()
-        height = self.viewport().height()
+        mapSize = self.parent.getMapSize()
+        width, height = mapSize[0], mapSize[1]
+
+        # width = self.viewport().width()
+        # height = self.viewport().height()
 
         painter.setPen(QColor(cfg.colors['cobalt']))
         tileSize = self.parent.tileSize
 
-        for y in range(round(height / tileSize)):
+        for y in range(round(height / tileSize) + 1):
             h_line = QLine(0, y * tileSize, width, y * tileSize)
             painter.drawLine(h_line)
-            for x in range(round(width / tileSize)):
+            for x in range(round(width / tileSize) + 1):
                 v_line = QLine(x * tileSize, 0, x * tileSize, height)
                 painter.drawLine(v_line)
 
@@ -308,7 +352,7 @@ class MapView(QGraphicsView):
             slice = QRect(data[0] * tileSize, data[1] * tileSize, tileSize, tileSize)
             tile = QPixmap(level.spriteURL).copy(slice)
             pos = level.getTilePos(index, tileSize)
-            self.scene().addPixmap(tile).setPos(pos[1], pos[0])
+            self.scene().addPixmap(tile).setPos(pos[0], pos[1])
 
 class ToolBar(QWidget):
     def __init__(self, parent):
@@ -448,8 +492,8 @@ class LevelData:
         This is a direct translation from js-roguelite's
         convertIndexToCoords() in engine.js
         """
-        x = math.floor(index / array_width)
-        y = index % array_width
+        x = index % array_width
+        y = math.floor(index / array_width)
         return (x, y)
 
 # ========================

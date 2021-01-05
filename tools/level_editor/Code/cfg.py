@@ -31,7 +31,9 @@ colors = {
     'white': '#FFFFFF',
     'black': '#000000',
     'cobalt': '#0050EF',
-    'dark cobalt': '#00356A'
+    'dark cobalt': '#00356A',
+    'mauve': '#76608A',
+    'light teal': '#45FFFD'
 }
 
 # IMPORTANT!

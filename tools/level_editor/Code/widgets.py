@@ -441,7 +441,6 @@ class ToolButton(QPushButton):
             toolTip += f' ({shortcut.capitalize()})'
         self.setToolTip(toolTip)
         self.setCheckable(True)
-        # self.setStyleSheet(f"border: none; background-color: {cfg.colors['white']};")
 
 class TileMenu(QScrollArea):
     def __init__(self):
@@ -450,8 +449,28 @@ class TileMenu(QScrollArea):
         self.cols = 5
         self._lastRow = 0
         self._lastCol = 0
-        self.tiles = []
+
+        self.allTiles = [] # Keeps reference of all tiles for deletion.
+        self.buttonGroup = QButtonGroup()
+        self.buttonGroup.buttonClicked.connect(self.selectTile)
+        self.selectedTile = None # Currently selected tile button.
         self.setLayout(self.layout)
+
+    def getSelectedTile(self):
+        return self.selectedTile
+
+    def selectTile(self, tile):
+        if tile.isChecked() and self.selectedTile == tile:
+            self.buttonGroup.setExclusive(False)
+            tile.setChecked(False)
+            self.selectedTile = None
+        else:
+            if not self.buttonGroup.exclusive():
+                self.buttonGroup.setExclusive(True)
+            tile.setChecked(True)
+            self.selectedTile = tile
+
+        print(self.selectedTile)
 
     def loadTiles(self, spriteSheetURL):
         """Load the tiles of a spriteSheet into the tileMenu.
@@ -465,7 +484,7 @@ class TileMenu(QScrollArea):
             for x in range(0, spriteSheet.width(), cfg.TILESIZE):
                 slice = QRect(x, y, cfg.TILESIZE, cfg.TILESIZE)
                 tileSprite = spriteSheet.copy(slice)
-                tile = Tile(tileSprite)
+                tile = TileButton(tileSprite)
                 self.addTile(tile)
                 col += 1
 
@@ -475,15 +494,17 @@ class TileMenu(QScrollArea):
             self._lastCol = 0 # Go back to first column
 
         self.layout.addWidget(tile, self._lastRow, self._lastCol)
+        self.buttonGroup.addButton(tile)
+        self.allTiles.append(tile)
+
         self._lastCol += 1
-        self.tiles.append(tile)
 
     def clearTiles(self):
-        for t in self.tiles:
+        for t in self.allTiles:
             self.layout.removeWidget(t)
-        self.tiles.clear()
+        self.allTiles.clear()
 
-class Tile(QPushButton):
+class TileButton(QPushButton):
     def __init__(self, pixmap):
         super().__init__()
         self.icon = QIcon(pixmap)
@@ -491,6 +512,7 @@ class Tile(QPushButton):
 
         self.setIcon(QIcon(pixmap))
         self.setIconSize(self.iconSize)
+        self.setCheckable(True)
 
 # ==================
 # NON-WIDGET CLASSES

@@ -26,6 +26,7 @@ settings_file = os.path.abspath(os.path.join(data_dir, 'settings.cfg'))
 settings_default = '0'
 
 colors = {
+    'grey dark': '#222222',
     'grey light': '#999999',
     'grey lighter': '#EEEEEE',
     'white': '#FFFFFF',

@@ -44,10 +44,28 @@ class MainWindow(QMainWindow):
             'erase',
             'drag'
         ]
+
+        self.cursorShortcuts = {
+            'm': 'select',
+            'g': 'fill',
+            'b': 'draw',
+            'e': 'erase',
+            'd': 'drag'
+        }
+
         self.cursorMode = 'select'
         self.tileSize = cfg.TILESIZE
 
         self.initUI() # Should be done last always!
+
+    # =================
+    # OVERRIDEN METHODS
+    # =================
+    def keyPressEvent(self, event):
+        shortcutKey = event.text().lower()
+        if shortcutKey in self.cursorShortcuts:
+            new_mode = self.cursorShortcuts[shortcutKey]
+            self.changeCursorMode(new_mode)
 
     # =================
     # ESSENTIAL METHODS
@@ -187,7 +205,16 @@ class MainWindow(QMainWindow):
     def repaintMapView(self):
         """ Precondition: self.mapView is already loaded.
         """
-        self.mapView.scene().update()
+        self.mapView.updateScene()
+
+    def changeCursorMode(self, new_mode):
+        """ Change self.cursorMode and check the corresponding button
+        in self.toolBar
+        """
+        if new_mode in self.allCursorModes:
+            self.toolBar.buttons[new_mode].setChecked(True)
+            self.cursorMode = new_mode
+            self.mapView.updateScene()
 
     # =============
     # MISC. METHODS
@@ -231,7 +258,7 @@ class MapView(QGraphicsView):
         s = f'({int(pos.x())},{int(pos.y())})'
         self.parent.statusComponents['mousePos'].setText(s)
         self.mousePos = (pos.x(), pos.y())
-        self.scene().update()
+        self.updateScene()
 
     # ==============
     # CUSTOM METHODS
@@ -244,6 +271,9 @@ class MapView(QGraphicsView):
         bg_color = cfg.colors['mauve']
         # self.scene().setBackgroundBrush(QBrush(QColor(bg_color), Qt.SolidPattern))
         self.setBackgroundBrush(Qt.black)
+
+    def updateScene(self):
+        self.scene().update()
 
     def updateSceneSize(self):
         self.scene().setSceneRect(self.scene().itemsBoundingRect())
@@ -346,6 +376,7 @@ class MapView(QGraphicsView):
             slice = QRect(data[0] * tileSize, data[1] * tileSize, tileSize, tileSize)
             tile = QPixmap(level.spriteURL).copy(slice)
             pos = level.getTilePos(index, tileSize)
+
             # For some reason the pixmap was originally off 1 pixel. Probably has something to
             # do with the scene being nested in the view? Band-aid fix.
             self.scene().addPixmap(tile).setPos(pos[0] + 1, pos[1] + 1)
@@ -360,12 +391,13 @@ class ToolBar(QWidget):
         self.buttonGroup = QButtonGroup()
         self.buttonGroup.buttonClicked.connect(self.changeCursorMode)
 
-        self.selectBtn = ToolButton(cfg.icons['cursor'], self.allCursorModes[0])
+        invShortcuts = {name: shortcut for shortcut, name in parent.cursorShortcuts.items()}
+        self.selectBtn = ToolButton(cfg.icons['cursor'], 'select', invShortcuts['select'])
         self.selectBtn.setChecked(True)
-        self.fillBtn = ToolButton(cfg.icons['fill'], self.allCursorModes[1])
-        self.drawBtn = ToolButton(cfg.icons['paint-brush'], self.allCursorModes[2])
-        self.eraseBtn = ToolButton(cfg.icons['eraser'], self.allCursorModes[3])
-        self.dragBtn = ToolButton(cfg.icons['drag'], self.allCursorModes[4])
+        self.fillBtn = ToolButton(cfg.icons['fill'], 'fill', invShortcuts['fill'])
+        self.drawBtn = ToolButton(cfg.icons['paint-brush'], 'draw', invShortcuts['draw'])
+        self.eraseBtn = ToolButton(cfg.icons['eraser'], 'erase', invShortcuts['erase'])
+        self.dragBtn = ToolButton(cfg.icons['drag'], 'drag', invShortcuts['drag'])
 
         self.separator = QFrame()
         self.separator.setFrameShape(QFrame.HLine)
@@ -378,7 +410,9 @@ class ToolBar(QWidget):
             self.eraseBtn, self.dragBtn
         ]
 
+        self.buttons = {} # button reference.
         for b in btns:
+            self.buttons[b.name] = b
             self.buttonGroup.addButton(b)
             self.layout.addWidget(b)
 
@@ -398,7 +432,7 @@ class ToolBar(QWidget):
         pass
 
 class ToolButton(QPushButton):
-    def __init__(self, iconURL, name):
+    def __init__(self, iconURL, name, shortcut=None):
         super().__init__()
         self.icon = QIcon(iconURL)
         self.iconSize = QSize(24, 24)
@@ -406,7 +440,11 @@ class ToolButton(QPushButton):
 
         self.setIcon(QIcon(iconURL))
         self.setIconSize(self.iconSize)
-        self.setToolTip(name.title() + ' Tool')
+
+        toolTip = name.title() + ' Tool'
+        if shortcut:
+            toolTip += f' ({shortcut.capitalize()})'
+        self.setToolTip(toolTip)
         self.setCheckable(True)
         # self.setStyleSheet(f"border: none; background-color: {cfg.colors['white']};")
 

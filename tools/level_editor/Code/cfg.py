@@ -29,6 +29,7 @@ colors = {
     'grey light': '#999999',
     'grey lighter': '#EEEEEE',
     'white': '#FFFFFF',
+    'black': '#000000',
     'cobalt': '#0050EF',
     'dark cobalt': '#00356A'
 }

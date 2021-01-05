@@ -26,6 +26,9 @@ def is_level(d: dict) -> bool:
     """
     return list(d.keys())[0] == 'levelData'
 
+# =========================
+# FUNCTIONAL WIDGET CLASSES
+# =========================
 class MainWindow(QMainWindow):
     def __init__(self, parent):
         super().__init__()
@@ -56,8 +59,8 @@ class MainWindow(QMainWindow):
         self.layout = QHBoxLayout()
 
         self.setupMenuBar()
-        self.statusBar = self.statusBar()
-        self.addWidgets()
+        self.setupStatusBar()
+        self.addWidgets() # Important: must be before menubar sets up.
         self.setCentralWidget(self.centralWidget)
         self.centralWidget.setLayout(self.layout)
 
@@ -67,6 +70,21 @@ class MainWindow(QMainWindow):
 
         self.layout.addWidget(self.mapView)
         self.layout.addWidget(self.toolBar)
+
+    def setupStatusBar(self):
+        self.statusBar = self.statusBar()
+        self.statusComponents = {
+            'levelName': QLabel('No level open'),
+            'levelSize': QLabel('0x0'),
+            'mousePos': QLabel('(0, 0)'),
+            'zoom': QLabel('100%')
+        }
+
+        last_component = list(self.statusComponents.keys())[-1]
+        for component in self.statusComponents:
+            self.statusBar.addPermanentWidget(self.statusComponents[component])
+            if component != last_component:
+                self.statusBar.addPermanentWidget(VLine())
 
     # ====================
     # MENUBAR RELATED METHODS
@@ -85,9 +103,6 @@ class MainWindow(QMainWindow):
 
         self.settingsMenu = self.menubar.addMenu('&' + 'Settings')
         self.configureSettingsMenu()
-
-        self.levelNameLabel = QLabel('No level opened') # Corner widget.
-        self.menubar.setCornerWidget(self.levelNameLabel)
 
     def configureFileMenu(self):
         newAct = QAction('&' + 'New Level', self)
@@ -124,9 +139,8 @@ class MainWindow(QMainWindow):
 
     def configureViewMenu(self):
         gridAct = QAction('&' + 'Grid', self)
-        gridAct.triggered.connect(self.repaint) # Force a repaint of the window immediately after press.
         gridAct.setCheckable(True)
-
+        gridAct.toggled.connect(self.repaintMapView) # Force a repaint of the window immediately after press.
         self.viewMenu.addAction(gridAct)
 
         self.gridAct = gridAct
@@ -134,6 +148,9 @@ class MainWindow(QMainWindow):
     def configureSettingsMenu(self):
         pass
 
+    # ====================
+    # FILE RELATED METHODS
+    # ====================
     def newLevel(self):
         print('New level')
 
@@ -148,29 +165,36 @@ class MainWindow(QMainWindow):
         print(file['levelData']['testLevel'])
         # TODO: Make this more elaborate. perhaps bring up a menu to ask to select a specific level.
         self.level = LevelData(file['levelData']['testLevel'])
-        self.levelNameLabel.setText(self.level.name)
+        self.statusComponents['levelName'].setText(self.level.name)
         self.mapView.drawLevel(self.level)
         self.toolBar.tileMenu.loadTiles(self.level.spriteURL)
 
     def saveLevel(self):
         print('Save level')
 
+    # ====================
+    # EDIT RELATED METHODS
+    # ====================
     def undoAction(self):
         print('Undo')
 
     def redoAction(self):
         print('Redo')
 
-'''
-Electric boogaloo
-'''
+    # =============
+    # MISC. ACTIONS
+    # =============
+    def repaintMapView(self):
+        """ Precondition: self.mapView is already loaded.
+        """
+        self.mapView.scene().update()
+
 class MapView(QGraphicsView):
     def __init__(self, parent):
         super().__init__()
         self.parent = parent
-        self.grid = None # Foreground grid item.
-        self.checkerGrid = None # Background grid item.
         self.checkerTileSize = 16
+        self.mousePos = (0, 0)
         self.setScene(QGraphicsScene())
         self.setupView()
 
@@ -178,11 +202,9 @@ class MapView(QGraphicsView):
     # OVERRIDEN METHODS
     # =================
     def drawBackground(self, painter, rect):
-        self.clearCheckerGrid()
         self.drawCheckerGrid(painter)
 
     def drawForeground(self, painter, rect):
-        self.clearGrid()
         if self.parent.gridAct.isChecked():
             self.drawGrid(painter)
 
@@ -191,7 +213,9 @@ class MapView(QGraphicsView):
     def mouseMoveEvent(self, event):
         pos = self.mapToScene(event.pos())
         s = f'({int(pos.x())},{int(pos.y())})'
-        self.parent.statusBar.showMessage(s)
+        self.parent.statusComponents['mousePos'].setText(s)
+
+        self.mousePos = pos
 
     # ==============
     # CUSTOM METHODS
@@ -204,6 +228,26 @@ class MapView(QGraphicsView):
     def updateSceneSize(self):
         self.scene().setSceneRect(self.scene().itemsBoundingRect())
 
+    def getNearestTopLeft(self, pos_x, pos_y) -> tuple:
+        """ Return the top left coordinates of the nearest grid square relative to
+        pos_x and pos_y
+        """
+        tileSize = self.parent.tileSize
+        x = pos_x - (pos_x % tileSize)
+        y = pos_y - (pos_y % tileSize)
+        return (x, y)
+
+
+    def drawSelectOutline(self, painter):
+        """ Draws a rectangular outline of the nearest grid square.
+        Used to indicate the grid square the cursor is currently hovering over.
+        """
+        topLeft = self.getNearestTopLeft(self.mousePos[0], self.mousePos[1])
+        tileSize = self.parent.tileSize
+
+        outline = QPixmap(tileSize, tileSize)
+        painter.setPen(QColor(cfg.colors['black']))
+
     def drawCheckerGrid(self, painter):
         """ Draws a pattern of grey and white squares into the scene.
         Used to represent transparency in the background.
@@ -211,10 +255,6 @@ class MapView(QGraphicsView):
         width = self.viewport().width()
         height = self.viewport().height()
 
-        grid = QPixmap(width, height)
-        grid.fill(QColor('Transparent'))
-
-        # painter.begin(grid)
         tileSize = self.checkerTileSize
 
         yrange = math.ceil(height / tileSize)
@@ -239,15 +279,6 @@ class MapView(QGraphicsView):
                     tileHeight = tileSize
                 painter.drawRect(x * tileSize, y * tileSize, tileWidth, tileHeight)
 
-        # painter.end()
-
-        self.checkerGrid = QGraphicsPixmapItem(grid)
-        self.scene().addItem(self.checkerGrid)
-
-    def clearCheckerGrid(self):
-        if self.checkerGrid:
-            self.scene().removeItem(self.checkerGrid)
-            self.checkerGrid = None
 
     def drawGrid(self, painter):
         """ Draws a grid by drawing a series of lines into the scene.
@@ -256,9 +287,6 @@ class MapView(QGraphicsView):
         width = self.viewport().width()
         height = self.viewport().height()
 
-        grid = QPixmap(width, height)
-        grid.fill(QColor('Transparent'))
-
         painter.setPen(QColor(cfg.colors['cobalt']))
         tileSize = self.parent.tileSize
 
@@ -268,14 +296,6 @@ class MapView(QGraphicsView):
             for x in range(round(width / tileSize)):
                 v_line = QLine(x * tileSize, 0, x * tileSize, height)
                 painter.drawLine(v_line)
-
-        self.grid = QGraphicsPixmapItem(grid)
-        self.scene().addItem(self.grid)
-
-    def clearGrid(self):
-        if self.grid:
-            self.scene().removeItem(self.grid)
-            self.grid = None
 
     def drawLevel(self, level):
         """ Draws in the tiles of a level. Should only be called once
@@ -287,146 +307,8 @@ class MapView(QGraphicsView):
             data = [int(n) for n in tileData[index].split('-')[:-1]]
             slice = QRect(data[0] * tileSize, data[1] * tileSize, tileSize, tileSize)
             tile = QPixmap(level.spriteURL).copy(slice)
-            self.tiles.append(tile)
             pos = level.getTilePos(index, tileSize)
-            self.scene.addPixmap(tile).setPos(pos[1], pos[0])
-            
-'''
-class MapViewOld(QWidget):
-    def __init__(self, parent):
-        super().__init__()
-        self.parent = parent
-        self.layout = QHBoxLayout()
-        self.scene = QGraphicsScene()
-        self.view = QGraphicsView(self.scene, self)
-        self.setupView()
-        self.grid = None
-        self.checkerGrid = None # checkerboard grid. Used to represent transparency.
-        self.bgTileSize = 16
-        self.tiles = []
-
-        # self.setStyleSheet(f"border: none; background-color: {cfg.colors['grey light']};")
-        # self.setCursor(Qt.CrossCursor)
-        self.layout.addWidget(self.view)
-        self.setLayout(self.layout)
-
-    def paintEvent(self, event):
-        self.clearCheckerGrid()
-        self.drawCheckerGrid()
-
-        self.clearGrid()
-        if self.parent.gridAct.isChecked():
-            self.drawGrid()
-
-        self.updateSceneSize()
-
-    def mouseMoveEvent(self, event):
-        pos = self.view.mapToScene(event.pos())
-        s = f'({int(pos.x())},{int(pos.y())})'
-        self.parent.statusBar.showMessage(s)
-
-    def updateSceneSize(self):
-        self.scene.setSceneRect(self.scene.itemsBoundingRect())
-
-    def setupView(self):
-        self.view.setAlignment(Qt.AlignTop | Qt.AlignLeft)
-        self.view.setMouseTracking(True)
-        self.view.mouseMoveEvent = self.mouseMoveEvent # Override mouse move event.
-
-    def clearScene(self):
-        self.scene.clear()
-
-    def clearGrid(self):
-        if self.grid:
-            self.scene.removeItem(self.grid)
-            self.grid = None
-
-    def clearCheckerGrid(self):
-        if self.checkerGrid:
-            self.scene.removeItem(self.checkerGrid)
-            self.checkerGrid = None
-
-    def drawCheckerGrid(self):
-        """ Draws a pattern of grey and white squares into the scene.
-        """
-        width = self.view.viewport().width()
-        height = self.view.viewport().height()
-
-        grid = QPixmap(width, height)
-        grid.fill(QColor('Transparent'))
-
-        painter = QPainter()
-        painter.begin(grid)
-        tileSize = self.bgTileSize
-
-        yrange = math.ceil(height / tileSize)
-        xrange = math.ceil(width / tileSize)
-        for y in range(yrange):
-            for x in range(xrange):
-                if (x + y) % 2 == 0: # Make every other square light grey.
-                    color = QColor(cfg.colors['grey light'])
-                else:
-                    color = QColor(cfg.colors['grey lighter'])
-
-                painter.setPen(color)
-                painter.setBrush(QBrush(color, Qt.SolidPattern))
-                if (x == xrange) and (xrange * tileSize) - width != 0:
-                    tileWidth = (xrange * tileSize) - width
-                else:
-                    tileWidth = tileSize
-
-                if (y == yrange) and (yrange * tileSize) - height != 0:
-                    tileHeight = (yrange * tileSize) - height
-                else:
-                    tileHeight = tileSize
-                painter.drawRect(x * tileSize, y * tileSize, tileWidth, tileHeight)
-
-        painter.end()
-
-        self.checkerGrid = QGraphicsPixmapItem(grid)
-        self.scene.addItem(self.checkerGrid)
-
-    def drawGrid(self):
-        """ Draws a grid by drawing a series of lines into the scene.
-        Precondition: self.grid is None
-        """
-        width = self.view.viewport().width()
-        height = self.view.viewport().height()
-
-        grid = QPixmap(width, height)
-        grid.fill(QColor('Transparent'))
-
-        painter = QPainter()
-        painter.begin(grid)
-        painter.setPen(QColor(cfg.colors['cobalt']))
-        tileSize = self.parent.tileSize
-
-        for y in range(round(height / tileSize)):
-            h_line = QLine(0, y * tileSize, width, y * tileSize)
-            painter.drawLine(h_line)
-            for x in range(round(width / tileSize)):
-                v_line = QLine(x * tileSize, 0, x * tileSize, height)
-                painter.drawLine(v_line)
-
-        painter.end()
-
-        self.grid = QGraphicsPixmapItem(grid)
-        self.scene.addItem(self.grid)
-
-    def drawLevel(self, level):
-        """ Draws in the tiles of a level. Should only be called once
-        everytime the level is updated.
-        """
-        tileData = level.tileData
-        tileSize = self.parent.tileSize
-        for index in range(len(tileData)):
-            data = [int(n) for n in tileData[index].split('-')[:-1]]
-            slice = QRect(data[0] * tileSize, data[1] * tileSize, tileSize, tileSize)
-            tile = QPixmap(level.spriteURL).copy(slice)
-            self.tiles.append(tile)
-            pos = level.getTilePos(index, tileSize)
-            self.scene.addPixmap(tile).setPos(pos[1], pos[0])
-'''
+            self.scene().addPixmap(tile).setPos(pos[1], pos[0])
 
 class ToolBar(QWidget):
     def __init__(self, parent):
@@ -537,6 +419,9 @@ class Tile(QPushButton):
         self.setIcon(QIcon(pixmap))
         self.setIconSize(self.iconSize)
 
+# ==================
+# NON-WIDGET CLASSES
+# ==================
 class LevelData:
     def __init__(self, file: dict):
         self.name = file['name']
@@ -566,3 +451,15 @@ class LevelData:
         x = math.floor(index / array_width)
         y = index % array_width
         return (x, y)
+
+# ========================
+# AESTHETIC WIDGET CLASSES
+# ========================
+# TODO: Make this less ugly. Maybe add a horizontal frame too.
+class VLine(QFrame):
+    """a simple VLine, like the one you get from designer
+    Thanks stack overflow.
+    """
+    def __init__(self):
+        super(VLine, self).__init__()
+        self.setFrameShape(self.VLine|self.Sunken)

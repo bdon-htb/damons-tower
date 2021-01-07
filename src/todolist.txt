@@ -1,7 +1,0 @@
-[Tasks are in no particular order]
-
-=== Level System.
-- Implement a level editor.
-- Implement procedural generation for levels.
-===
-- Event system. <-- What is this?

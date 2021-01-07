@@ -460,7 +460,6 @@ class TileMenu(QScrollArea):
         self._lastRow = 0
         self._lastCol = 0
 
-        self.allTiles = [] # Keeps reference of all tiles for deletion.
         self.buttonGroup = QButtonGroup()
         self.buttonGroup.buttonClicked.connect(self.selectTile)
         self.selectedTile = None # Currently selected tile button.
@@ -504,13 +503,15 @@ class TileMenu(QScrollArea):
 
         self.layout.addWidget(tile, self._lastRow, self._lastCol)
         self.buttonGroup.addButton(tile)
-        self.allTiles.append(tile)
 
         self._lastCol += 1
 
-# TODO: pain.
     def clearTiles(self):
-        pass
+        # TODO: Get this to work
+        self.layout.deleteLater()
+        self.buttonGroup.deleteLater()
+        self.layout = QGridLayout()
+        self.buttonGroup = QButtonGroup()
 
 class TileButton(QPushButton):
     def __init__(self, pixmap):

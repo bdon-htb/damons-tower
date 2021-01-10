@@ -155,6 +155,10 @@ Renderer.prototype.drawTiles = function(scene){
   let tileSprite;
   let newPosArray;
   for (let index = 0; index < tilesArray.length; index++){
+    if(tileMap.tileIsEmpty(index) === true){
+      continue;
+    };
+
     coords = tileMap.convertPos(index); // Convert -> 2d;
     pos_X = coords[0] * spriteSheet.spriteSize * this.parent.scale;
     pos_Y = coords[1] * spriteSheet.spriteSize * this.parent.scale;

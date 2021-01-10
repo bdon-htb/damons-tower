@@ -86,6 +86,7 @@ SceneManager.prototype.clearHistory = function(){
  * Custom tilemap object. Contains a 1D array of tile information,
  * the map's dimensions, and essential methods.
  * this class does NOT contain any graphics or other level information.
+ * Currently supported tile ids are listed in tile_ids.txt
  * Example tile data:
  * [
    "000-FL", "000-FL", "000-FL",
@@ -96,6 +97,10 @@ function TileMap(width, height, tiledata){
   this.width = width,
   this.height = height,
   this.tiles = tiledata;
+};
+
+TileMap.prototype.tileIsEmpty = function(tileIndex){
+  return (this.tiles[tileIndex].split('-')[2] === '00');
 };
 
 TileMap.prototype.tileIsCollidable = function(tileIndex){

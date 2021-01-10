@@ -46,6 +46,9 @@ Game.prototype.update = function(data){
   let inputs = this.engine.getInputEvents();
   events.set("inputEvents", this.engine.getInputEvents());
 
+  // TODO: Make sure to remove this later.
+  this.fps = data.fps
+
   switch(currentState){
     case "starting": // For loading stuff specific to the game.
       this.controller.createPatterns(this.engine, data["timeStamp"]);
@@ -94,6 +97,7 @@ Game.prototype.draw = function(){
       this.renderer.drawSprite(player.attributes["sprite"], relPosArray[0], relPosArray[1])
       renderer.drawText(this.controller.patterns.get("doubleTap-right")["state"])
       renderer.drawText(player.attributes["state"], 100);
+      renderer.drawText(this.fps, 740)
   };
 };
 

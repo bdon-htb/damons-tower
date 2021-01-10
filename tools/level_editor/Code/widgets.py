@@ -507,11 +507,15 @@ class TileMenu(QScrollArea):
         self._lastCol += 1
 
     def clearTiles(self):
-        # TODO: Get this to work
-        self.layout.deleteLater()
-        self.buttonGroup.deleteLater()
-        self.layout = QGridLayout()
-        self.buttonGroup = QButtonGroup()
+        self.selectedTile = None
+        self._lastRow = 0
+        self._lastCol = 0
+
+        # Thank you stack overflow! this helped: https://stackoverflow.com/questions/4528347/clear-all-widgets-in-a-layout-in-pyqt
+        for i in reversed(range(self.layout.count())):
+            widget = self.layout.itemAt(i).widget()
+            self.buttonGroup.removeButton(widget)
+            widget.setParent(None)
 
 class TileButton(QPushButton):
     def __init__(self, pixmap):

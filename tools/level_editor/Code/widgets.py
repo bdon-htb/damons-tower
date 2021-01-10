@@ -239,6 +239,7 @@ class MapView(QGraphicsView):
         self.checkerTileSize = 16
         self.mousePos = None
         self.bg_color = cfg.colors['mauve']
+        self._emptyTileID = '00'
         self.setScene(QGraphicsScene())
         self.setupView()
 
@@ -378,13 +379,15 @@ class MapView(QGraphicsView):
         tileSize = self.parent.tileSize
         for index in range(len(tileData)):
             data = [int(n) for n in tileData[index].split('-')[:-1]]
-            slice = QRect(data[0] * tileSize, data[1] * tileSize, tileSize, tileSize)
-            tile = QPixmap(level.spriteURL).copy(slice)
-            pos = level.getTilePos(index, tileSize)
+            id = tileData[index].split('-')[-1]
+            if id != self._emptyTileID:
+                slice = QRect(data[0] * tileSize, data[1] * tileSize, tileSize, tileSize)
+                tile = QPixmap(level.spriteURL).copy(slice)
+                pos = level.getTilePos(index, tileSize)
 
-            # For some reason the pixmap was originally off 1 pixel. Probably has something to
-            # do with the scene being nested in the view? Band-aid fix.
-            self.scene().addPixmap(tile).setPos(pos[0] + 1, pos[1] + 1)
+                # For some reason the pixmap was originally off 1 pixel. Probably has something to
+                # do with the scene being nested in the view? Band-aid fix.
+                self.scene().addPixmap(tile).setPos(pos[0] + 1, pos[1] + 1)
 
 class ToolBar(QWidget):
     def __init__(self, parent):

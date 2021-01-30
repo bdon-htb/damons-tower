@@ -498,7 +498,7 @@ AnimationManager.prototype.setFrame = function(animation, index){
 };
 
 AnimationManager.prototype.setDefaultFrame = function(animation){
-  this.setFrame(animation, 0)
+  this.setFrame(animation, 0);
 };
 
 // Play this function every frame the animation is active.

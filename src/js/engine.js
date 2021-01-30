@@ -11,6 +11,7 @@
 */
 function Engine(htmlDOM){
   this.context = htmlDOM
+  this.FPS = 60; // Intended fps.
   this.windowWidth = 960;
   this.windowHeight = 640;
   // Should be a whole number; determines sprite render size.

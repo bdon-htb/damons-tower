@@ -4,8 +4,8 @@
 */
 
 /**
- * Simple entity object. for the purpose of this game this will be the base
- * of the player, enemy, items, doors, switches, etc.
+ * Simple entity object. The base of all other entities.
+ * For player, enemy, items, doors, switches, etc.
 */
 function Entity(id, sprite, type, state, x, y){
   this.id = id;
@@ -21,13 +21,15 @@ function Entity(id, sprite, type, state, x, y){
 
 /**
  * Player entity object.
- * Implemented player states: [idle, sprinting]
 */
 function PlayerEntity(engine, gameObject){
   Entity.call(this, "player", null, "player", "idle", 0, 0);
+  this._allStates = ["idle", "walking", "sprinting"];
+  this._allDirections = ["up", "down", "left", "right"];
   this.attributes["animations"] = new Map(); // Animations is a map of all the available animations.
   this.attributes["speed"] = 5; // Set the default player movement speed.
   this.attributes["sprintSpeed"] = this.attributes["speed"] * 2;
+  this.attributes["direction"] = "down";
 
   let idleAnimations = {
     "idle_front": engine.getLoadedAsset(engine.animKey).get("player_idle_front"),

@@ -11,7 +11,14 @@ function Game(engine){
   // Create aliases for engine components.
   this.renderer = engine.renderer;
   this.animationManager = this.renderer.animationManager;
-  this.gameStateObject = {};
+  this.gameStateObject = {
+    "events": null, // A map of game events. Currently unused.
+    "frameData": null, // An object containing main loop data.
+    "scene": null // Current scene.
+  };
+
+  // An empty copy of the gameStateObject for refreshing purposes.
+  this._emptyGSO = Object.assign({}, this.gameStateObject);
 
   // Create game components.
   this.controller = new Controller();
@@ -30,6 +37,7 @@ function Game(engine){
   // Create components.
   this.stateMachine = new StateMachine(this, allStates, this.startingState);
   this.sceneManager = new SceneManager();
+  this.physicsManager = new PhysicsManager(this.engine);
 
   // Setup callbacks.
   this.callbacks = {
@@ -40,14 +48,12 @@ function Game(engine){
 };
 
 Game.prototype.update = function(data){
+  this._updateFrameData(data);
+  this._refreshEvents(); // Init / re-init the game events.
   let currentState = this.stateMachine.currentState;
-  this.gameStateObject["events"] = new Map(); // Init / re-init the game events.
   let events = this.gameStateObject["events"] // Create an alias.
   let inputs = this.engine.getInputEvents();
   events.set("inputEvents", this.engine.getInputEvents());
-
-  // TODO: Make sure to remove this later.
-  this.fps = data.fps
 
   switch(currentState){
     case "starting": // For loading stuff specific to the game.
@@ -90,14 +96,18 @@ Game.prototype.draw = function(){
       let level = this.gameStateObject["scene"];
       let player = this.gameStateObject["scene"].getEntity("player");
       let camera = level.camera;
-      let posArray = [player.attributes["x"], player.attributes["y"]]
+      let posArray = [player.attributes["x"], player.attributes["y"]];
       let relPosArray = camera.getRelative(posArray[0], posArray[1]);
 
-      renderer.drawTiles(this.gameStateObject["scene"])
-      this.renderer.drawSprite(player.attributes["sprite"], relPosArray[0], relPosArray[1])
-      renderer.drawText(this.controller.patterns.get("doubleTap-right")["state"])
-      renderer.drawText(player.attributes["sprite"], 100);
-      renderer.drawText(this.fps, 740)
+      renderer.drawTiles(this.gameStateObject["scene"]);
+      this.renderer.drawSprite(player.attributes["sprite"], relPosArray[0], relPosArray[1]);
+      renderer.drawText(this.controller.patterns.get("doubleTap-right")["state"]);
+      renderer.drawText(player.attributes["state"], 100);
+
+      if (this.gameStateObject["frameData"] !== null) {
+        fps = this.gameStateObject["frameData"]["fps"];
+        renderer.drawText(fps, 740);
+      };
   };
 };
 
@@ -105,7 +115,7 @@ Game.prototype.draw = function(){
 // State transition methods.
 // =========================
 Game.prototype._clearGameStateObject = function(){
-  this.gameStateObject = {};
+  this.gameStateObject = Object.assign({}, this._emptyGSO);
 };
 
 Game.prototype._loadMenu = function(menuName){
@@ -139,10 +149,9 @@ Game.prototype._loadTestLevel = function(){
   camera.center(posArray[0], posArray[1], player.attributes["sprite"].height);
 };
 
-// ===============
-// Update methods.
-// ===============
-
+// =======================
+// Gemeral update methods.
+// =======================
 Game.prototype._updateLevel = function(scene){
   let events = this.gameStateObject["events"]
   if(scene.entities.has("player") === true){
@@ -151,6 +160,24 @@ Game.prototype._updateLevel = function(scene){
   };
 };
 
+// ===============================
+// gameStateObject update methods.
+// ===============================
+Game.prototype._updateFrameData = function(data){
+  this.gameStateObject["frameData"] = data;
+};
+
+Game.prototype._refreshEvents = function(new_events){
+  this.gameStateObject["events"] = new Map();
+};
+
+Game.prototype._updateEvents = function(){
+  this.gameStateObject["events"] = new_events;
+};
+
+// =====================
+// Game related methods.
+// =====================
 Game.prototype._handlePlayerMovement = function(player){
   let moveCommands = ["keyDown-left", "keyDown-right", "keyDown-up", "keyDown-down"];
   let sprintCommands = ["doubleTap-right", "doubleTap-left", "doubleTap-up", "doubleTap-down"];
@@ -179,7 +206,7 @@ Game.prototype._handlePlayerMovement = function(player){
   commands.forEach(c => {
     if(Object.keys(movMap).includes(c)){
       let moveProperty = movMap[c]; // This is the key / value pair in movMap.
-      // Adjust the player's x / y coordinate accprdomg tp the movMap.
+      // Adjust the player's x / y coordinate according to the movMap.
       player.attributes[moveProperty[0]] += moveProperty[1];
     }
   });

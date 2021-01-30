@@ -13,7 +13,7 @@ function Game(engine){
   this.animationManager = this.renderer.animationManager;
   this.gameStateObject = {
     "events": null, // A map of game events. Currently unused.
-    "frameData": null, // An object containing main loop data.
+    "frameData": null, // The main loop data.
     "scene": null // Current scene.
   };
 
@@ -47,7 +47,7 @@ function Game(engine){
   };
 };
 
-Game.prototype.update = function(data){
+Game.prototype.update = function(){
   this._updateFrameData(data);
   this._refreshEvents(); // Init / re-init the game events.
   let currentState = this.stateMachine.currentState;
@@ -104,10 +104,8 @@ Game.prototype.draw = function(){
       renderer.drawText(this.controller.patterns.get("doubleTap-right")["state"]);
       renderer.drawText(player.attributes["state"], 100);
 
-      if (this.gameStateObject["frameData"] !== null) {
-        fps = this.gameStateObject["frameData"]["fps"];
-        renderer.drawText(fps, 740);
-      };
+      fps = this.engine.frameData["fps"];
+      renderer.drawText(fps, 740);
   };
 };
 
@@ -187,6 +185,8 @@ Game.prototype._updatePlayer = function(player){
 };
 
 Game.prototype._handlePlayerMovement = function(player){
+  let physicsManager = this.physicsManager;
+  let frameData = this.gameStateObject["frameData"];
   let moveCommands = ["keyDown-left", "keyDown-right", "keyDown-up", "keyDown-down"];
   let sprintCommands = ["doubleTap-right", "doubleTap-left", "doubleTap-up", "doubleTap-down"];
 
@@ -227,8 +227,9 @@ Game.prototype._handlePlayerMovement = function(player){
   commands.forEach(c => {
     if(Object.keys(movMap).includes(c)){
       let moveProperty = movMap[c]; // This is the key / value pair in movMap.
+      coord = moveProperty[0]
+      velocity = physicsManager.calculateVelocity(frameData)
       // Adjust the player's x / y coordinate according to the movMap.
-      // moveProperty[0] is the position, [1] is the displacement.
       player.attributes[moveProperty[0]] += moveProperty[1];
     }
 

@@ -42,6 +42,13 @@ function Engine(htmlDOM){
   this.menuLocation = this.dataLocation + "/" + "menus";
   this.fontLocation = "fonts";
 
+  this.frameData = {
+    "timeStamp": null,
+    "oldTimeStamp": null,
+    "timeDelta": null,
+    "fps": null
+  }
+
   // Array of all the engine's states.
   let allStates = [
     "starting",
@@ -74,16 +81,16 @@ Engine.prototype.draw = function(data){
 Engine.prototype.update = function(data){
   this.inputManager.captureInputs();
   // this.tester.testUpdate(data);
-  this.app.update(data);
+  this.app.update();
 };
 
-// This will obviously have to be more elaborate when the actual game is being made.
 Engine.prototype.run = function(data){
+  this.frameData = Object.assign({}, data);
   let state = this.stateMachine.currentState;
   if(state === "running"){
-    this.update(data);
-    this.draw(data);
-  } else this._runLoadingStates(data) // If the engine is not running, then it must be loading something.
+    this.update();
+    this.draw();
+  } else this._runLoadingStates() // If the engine is not running, then it must be loading something.
 };
 
 // ==============================
@@ -332,7 +339,7 @@ Engine.prototype.resetTimer = function(timer, timeStamp){
 // ================
 
 // In hindsight, I should've just bit the bullet and learned promises. Oh well :|
-Engine.prototype._runLoadingStates = function(data){
+Engine.prototype._runLoadingStates = function(){
   let state = this.stateMachine.currentState;
   // starting => loading assets
   if(state === "starting"){

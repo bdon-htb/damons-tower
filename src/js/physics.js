@@ -4,9 +4,10 @@
 */
 
 function PhysicsManager(engine){
+  this.engine = engine; // Keep a persistant reference to the engine.
   this.FPS = engine.FPS;
 };
 
-PhysicsManager.prototype.calculateVelocity = function(velocity, timeDelta){
-  return velocity * (1/this.FPS) * timeDelta;
+PhysicsManager.prototype.calculateVelocity = function(velocity){
+  return velocity * (1/this.engine.frameData["fps"]) * this.FPS;
 };

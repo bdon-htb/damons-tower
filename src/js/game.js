@@ -186,14 +186,20 @@ Game.prototype._handlePlayerMovement = function(player){
   let isMoving = moveCommands.some(c => commands.includes(c) === true); // Booleans
   let startSprint = sprintCommands.some(c => commands.includes(c) === true);
 
-  // Sprint state check.
-  if(startSprint === true && player["state"] != "sprinting"){
+  // Start sprinting.
+  if(startSprint === true){
     player.attributes["state"] = "sprinting";
-  } else if(player.attributes["state"] === "sprinting" && isMoving === false){
+  } // Walk.
+  else if(isMoving === true && player.attributes["state"] !== "sprinting"){
+    player.attributes["state"] = "walking";
+  } // Keep sprinting.
+  else if(isMoving === true && player.attributes["state"] === "sprinting"){
+    player.attributes["state"] = "sprinting";
+  } // Player is not moving at all.
+  else {
     player.attributes["state"] = "idle";
   };
 
-  // Set speed.
   let velocity = (player.attributes["state"] === "sprinting") ? player.attributes["sprintSpeed"] : player.attributes["speed"];
 
   let movMap = {
@@ -202,6 +208,7 @@ Game.prototype._handlePlayerMovement = function(player){
     "keyDown-up": ["y", -velocity],
     "keyDown-down": ["y", +velocity]
   };
+
 
   commands.forEach(c => {
     if(Object.keys(movMap).includes(c)){

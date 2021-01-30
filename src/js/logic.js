@@ -24,8 +24,17 @@ function Entity(id, sprite, type, state, x, y){
 */
 function PlayerEntity(engine, gameObject){
   Entity.call(this, "player", null, "player", "idle", 0, 0);
-  this._allStates = ["idle", "walking", "sprinting"];
-  this._allDirections = ["up", "down", "left", "right"];
+  this._allStates = [
+    "idle",
+    "walking",
+    "sprinting"
+  ];
+  this._allDirections = [
+    "up",
+    "down",
+    "left",
+    "right"
+  ];
   this.attributes["animations"] = new Map(); // Animations is a map of all the available animations.
   this.attributes["speed"] = 5; // Set the default player movement speed.
   this.attributes["sprintSpeed"] = this.attributes["speed"] * 2;

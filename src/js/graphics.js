@@ -509,13 +509,16 @@ AnimationManager.prototype.nextFrame = function(animation){
 
   // If animation completes the period for one frame...
   if(goToNextFrame === true){
-    if(animation.frameIndex + 1 < animation.frames.length){ // If there are still frames in the animation...
+    // If there are still frames in the animation...
+    if(animation.frameIndex + 1 < animation.frames.length){
       this.setFrame(animation, animation.frameIndex + 1); // Set to the next frame.
     }
-    else if(animation.frameIndex + 1 >= animation.frames.length && this.loops === false){// If the animation is complete and it DOESN'T loop
-      this.active = false; // Deactivate
+    // If the animation is complete and it DOESN'T loop
+    else if(animation.frameIndex + 1 >= animation.frames.length && this.loops === false){
+      this.deactivateAnimation(animation);
     }
-    else { // Else; if the animation is complete and the animation DOES loop.
+    // Else; if the animation is complete and the animation DOES loop.
+    else {
       this.setDefaultFrame(animation); // Cycle back to start if done animation.
     };
   };
@@ -530,6 +533,11 @@ AnimationManager.prototype.getSprite = function(animation){
 
 AnimationManager.prototype.activateAnimation = function(animation){
   animation.active = true;
+};
+
+AnimationManager.prototype.deactivateAnimation = function(animation){
+  animation.active = false;
+  this.setDefaultFrame(animation);
 };
 
 AnimationManager.prototype._incrementCounter = function(animation){

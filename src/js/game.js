@@ -77,8 +77,8 @@ Game.prototype.update = function(data){
       let posArray = [player.attributes["x"], player.attributes["y"]]
       camera.center(posArray[0], posArray[1], player.attributes["sprite"].height);
       let relPosArray = camera.getRelative(posArray[0], posArray[1]);
-      this.animationManager.nextFrame(player.attributes["currentAnimation"]);
       player.attributes["sprite"] = this.animationManager.getSprite(player.attributes["currentAnimation"]);
+      this.animationManager.nextFrame(player.attributes["currentAnimation"]);
       break;
   };
 };
@@ -156,7 +156,7 @@ Game.prototype._updateLevel = function(scene){
   let events = this.gameStateObject["events"]
   if(scene.entities.has("player") === true){
     let player = scene.getEntity("player");
-    this._handlePlayerMovement(player);
+    this._updatePlayer(player);
   };
 };
 
@@ -176,8 +176,16 @@ Game.prototype._updateEvents = function(){
 };
 
 // =====================
-// Game related methods.
+// Player related methods.
 // =====================
+Game.prototype._updatePlayer = function(player){
+  let handleMove = this._handlePlayerMovement.bind(this);
+  let updateAnim = this._updatePlayerAnimation.bind(this);
+
+  handleMove(player);
+  updateAnim(player);
+};
+
 Game.prototype._handlePlayerMovement = function(player){
   let moveCommands = ["keyDown-left", "keyDown-right", "keyDown-up", "keyDown-down"];
   let sprintCommands = ["doubleTap-right", "doubleTap-left", "doubleTap-up", "doubleTap-down"];
@@ -209,12 +217,60 @@ Game.prototype._handlePlayerMovement = function(player){
     "keyDown-down": ["y", +velocity]
   };
 
+  let dirMap = {
+    "keyDown-left": "left",
+    "keyDown-right": "right",
+    "keyDown-up": "up",
+    "keyDown-down": "down"
+  };
 
   commands.forEach(c => {
     if(Object.keys(movMap).includes(c)){
       let moveProperty = movMap[c]; // This is the key / value pair in movMap.
       // Adjust the player's x / y coordinate according to the movMap.
+      // moveProperty[0] is the position, [1] is the displacement.
       player.attributes[moveProperty[0]] += moveProperty[1];
     }
+
+    if(Object.keys(dirMap).includes(c)){ // Update direction.
+      player.attributes["direction"] = dirMap[c];
+    }
   });
+};
+
+Game.prototype._updatePlayerAnimation = function(player){
+  // Can set aliases here because we we're just checking their values.
+  let playerState = player.attributes["state"];
+  let playerDirection = player.attributes["direction"];
+  let allAnims = player.attributes["animations"];
+  let animMap;
+  switch (playerState){
+    case "walking":
+    case "sprinting":
+      animMap = {
+        "up": allAnims.get("walk_back"),
+        "down": allAnims.get("walk_front"),
+        "left": allAnims.get("walk_left"),
+        "right": allAnims.get("walk_right")
+      };
+      break;
+    default: // Let's treat idle as default.
+      animMap = {
+        "up": allAnims.get("idle_back"),
+        "down": allAnims.get("idle_front"),
+        "left": allAnims.get("idle_left"),
+        "right": allAnims.get("idle_right")
+      };
+  };
+
+  let oldAnimation = player.attributes["currentAnimation"];
+  let newAnimation = animMap[playerDirection];
+
+  // If there's a change in animation...
+  if(oldAnimation !== newAnimation){
+    // Switch to new animation.
+    this.animationManager.deactivateAnimation(oldAnimation);
+    this.animationManager.activateAnimation(newAnimation);
+    player.attributes["currentAnimation"] = newAnimation;
+  };
 };

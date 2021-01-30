@@ -96,7 +96,7 @@ Game.prototype.draw = function(){
       renderer.drawTiles(this.gameStateObject["scene"])
       this.renderer.drawSprite(player.attributes["sprite"], relPosArray[0], relPosArray[1])
       renderer.drawText(this.controller.patterns.get("doubleTap-right")["state"])
-      renderer.drawText(player.attributes["state"], 100);
+      renderer.drawText(player.attributes["sprite"], 100);
       renderer.drawText(this.fps, 740)
   };
 };
@@ -131,7 +131,7 @@ Game.prototype._loadTestLevel = function(){
   let levelData = this.engine.getLoadedAsset(this.engine.levelKey).get("testLevel");
   this._loadLevel(levelData);
   let level = this.gameStateObject["scene"];
-  let player = this._createPlayerObject();
+  let player = new PlayerEntity(this.engine, this);
   level.addEntity(player);
   this.sceneManager.setScene(level);
   let camera = level.camera;
@@ -183,49 +183,4 @@ Game.prototype._handlePlayerMovement = function(player){
       player.attributes[moveProperty[0]] += moveProperty[1];
     }
   });
-};
-
-Game.prototype._updatePatterns = function(){
-
-};
-// ===============================
-// Entity Object creation methods.
-// ===============================
-
-// Create the player object.
-// LIST OF CURRENT PLAYER STATES (for documentation purposes)
-// idle, sprinting
-Game.prototype._createPlayerObject = function(){
-  let engine = this.engine // create alias.
-  let player = new Entity("player", null, "player", "idle", 0, 0);
-  player.attributes["animations"] = new Map(); // Animations is a map of all the available animations.
-  player.attributes["speed"] = 5; // Set the default player movement speed.
-  player.attributes["sprintSpeed"] = player.attributes["speed"] * 2;
-
-  let idleAnimations = {
-    "idle_front": engine.getLoadedAsset(engine.animKey).get("player_idle_front"),
-    "idle_back": engine.getLoadedAsset(engine.animKey).get("player_idle_back"),
-    "idle_left": engine.getLoadedAsset(engine.animKey).get("player_idle_left"),
-    "idle_right": engine.getLoadedAsset(engine.animKey).get("player_idle_right")
-  };
-
-  let allAnimations = [idleAnimations];
-
-  // Add all of the animations in allAnimations to the player's attribute "animations".
-  allAnimations.forEach(object => {
-    let spriteSheet;
-    let animation;
-    for(let [key, value] of Object.entries(object)){
-      spriteSheet = this.renderer.getSheetFromId(value["spriteSheet"]);
-      animation = new Animation(key, spriteSheet, value);
-      player.attributes["animations"].set(key, animation)
-    }
-  });
-
-  // Set the default sprite.
-  let defaultAnimation = player.attributes["animations"].get("idle_front");
-  this.animationManager.activateAnimation(defaultAnimation);
-  player.attributes["currentAnimation"] = defaultAnimation;
-  player.attributes["sprite"] = this.animationManager.getSprite(defaultAnimation);
-  return player
 };

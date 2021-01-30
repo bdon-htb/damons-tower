@@ -227,10 +227,10 @@ Game.prototype._handlePlayerMovement = function(player){
   commands.forEach(c => {
     if(Object.keys(movMap).includes(c)){
       let moveProperty = movMap[c]; // This is the key / value pair in movMap.
-      coord = moveProperty[0]
-      velocity = physicsManager.calculateVelocity(frameData)
+      coordinate = moveProperty[0];
+      displacement = physicsManager.calculateVelocity(moveProperty[1])
       // Adjust the player's x / y coordinate according to the movMap.
-      player.attributes[moveProperty[0]] += moveProperty[1];
+      player.attributes[coordinate] += displacement;
     }
 
     if(Object.keys(dirMap).includes(c)){ // Update direction.

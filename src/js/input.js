@@ -93,17 +93,28 @@ function Keyboard(){
     left:"a", // A
     right:"d" // D
   };
+
   InputDevice.call(this, "keyboard", defaultKeys);
+  this.orderedKeyDown = []; // An array that keeps track of key presses in order.
 };
 
-// The difference between the keyboard and other input devices (currently),
-// is that the keyboard returns a map for keyDown and keyUp.
-// I wouldn't be surprised if I eventually just transition everything to a map.
+Keyboard.prototype.updateKeyOrder = function(key, value){
+  item = `keyDown-${key}`; // Construct input command.
+  index = this.orderedKeyDown.indexOf(item)
+  if(index > -1){
+    this.orderedKeyDown.splice(index, 1); // Remove item from array if it's already in it.
+  };
+
+  if(value === true){
+    this.orderedKeyDown.push(item);
+  };
+};
+
 Keyboard.prototype.captureInputs = function(){
   // Side note: the reason why I didn't just output an array here is to keep the data neat for checking.
-  inputs = new Map()
-
-  inputs.set("keyDown", InputDevice.prototype.captureInputs(this.keyDown));
+  let inputs = new Map()
+  // inputs.set("keyDown", InputDevice.prototype.captureInputs(this.keyDown));
+  inputs.set("keyDown", this.orderedKeyDown);
   inputs.set("keyUp", InputDevice.prototype.captureInputs(this.keyUp));
 
   if(inputs.get("keyDown").length === 0 && inputs.get("keyUp").length === 0){
@@ -128,21 +139,27 @@ Keyboard.prototype.removeListeners = function(element){
 };
 
 // Sets the value of the specified boolean keyObject. i.e. keyDown or keyUp.
-Keyboard.prototype.keyHandler = function(event, keyObject, value){
+// type can either be "keyDown" or "keyUp"
+Keyboard.prototype.keyHandler = function(event, type, value){
   let keyCode = event.key;
+  let updateFunc = this.updateKeyOrder.bind(this)
+  let keyObject = (type === "keyDown") ? this.keyDown : this.keyUp; // Assumes keyUp otherwise.
   for (const [key, code] of Object.entries(this.keys)){
-    if(keyCode == code){keyObject[key] = value};
+    if(keyCode == code){
+      keyObject[key] = value;
+      if(type === "keyDown"){updateFunc(key, value)};
+    };
   };
 };
 
 Keyboard.prototype.keyDownHandler = function(event){
-  this.keyHandler(event, this.keyDown, true);
-  this.keyHandler(event, this.keyUp, false);
+  this.keyHandler(event, "keyDown", true); // log keyDown
+  this.keyHandler(event, "keyUp", false); // reset equivalent keyUp
 };
 
 Keyboard.prototype.keyUpHandler = function(event){
-  this.keyHandler(event, this.keyUp, true);
-  this.keyHandler(event, this.keyDown, false);
+  this.keyHandler(event, "keyUp", true); // log keyUp
+  this.keyHandler(event, "keyDown", false); // reset equivalent keyUp
 };
 
 Keyboard.prototype.setToDefaultKeys = InputDevice.prototype.setToDefaultKeys.bind(this)

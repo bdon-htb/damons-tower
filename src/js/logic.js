@@ -339,7 +339,8 @@ Controller.prototype.getInputs = function(events, data){
   if(this.mode === "keyboard" && events.get("inputEvents").has("keyboard")){
     let m = events.get("inputEvents").get("keyboard"); // This is a map.
     // Essentially flatten the map. Prepend descriptive words for each input.
-    inputs = inputs.concat(m.get("keyDown").map(x => "keyDown-" + x));
+    // inputs = inputs.concat(m.get("keyDown").map(x => "keyDown-" + x));
+    inputs = inputs.concat(m.get("keyDown")); // get keys from orderedKeyDown already formatted
     inputs = inputs.concat(m.get("keyUp").map(x => "keyUp-" + x));
   };
 

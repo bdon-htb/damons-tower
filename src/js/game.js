@@ -210,33 +210,25 @@ Game.prototype._handlePlayerMovement = function(player){
 
   let velocity = (player.attributes["state"] === "sprinting") ? player.attributes["sprintSpeed"] : player.attributes["speed"];
 
+  // Format: {"commandName": [coordinate, displacement, oppositeCommand, direction]}
   let movMap = {
-    "keyDown-left": ["x", -velocity],
-    "keyDown-right": ["x", +velocity],
-    "keyDown-up": ["y", -velocity],
-    "keyDown-down": ["y", +velocity]
+    "keyDown-left": ["x", -velocity, "keyDown-right", "left"],
+    "keyDown-right": ["x", +velocity, "keyDown-left", "right"],
+    "keyDown-up": ["y", -velocity, "keyDown-down", "up"],
+    "keyDown-down": ["y", +velocity, "keyDown-up", "down"]
   };
 
-  let dirMap = {
-    "keyDown-left": "left",
-    "keyDown-right": "right",
-    "keyDown-up": "up",
-    "keyDown-down": "down"
-  };
+  for(var i = 0; i < commands.length; i++){
+    c = commands[i];
 
-  commands.forEach(c => {
-    if(Object.keys(movMap).includes(c)){
-      let moveProperty = movMap[c]; // This is the key / value pair in movMap.
-      coordinate = moveProperty[0];
-      displacement = physicsManager.calculateVelocity(moveProperty[1])
-      // Adjust the player's x / y coordinate according to the movMap.
+    // Prioritize the last move input and move if one is detected. This should prevent standstill by pressing opposite keys.
+    if(Object.keys(movMap).includes(c) === true && commands.slice(i, commands.length).includes(movMap[c][2]) === false){
+      coordinate = movMap[c][0]
+      displacement = physicsManager.calculateVelocity(movMap[c][1]);
       player.attributes[coordinate] += displacement;
-    }
-
-    if(Object.keys(dirMap).includes(c)){ // Update direction.
-      player.attributes["direction"] = dirMap[c];
-    }
-  });
+      player.attributes["direction"] = movMap[c][3]
+    };
+  };
 };
 
 Game.prototype._updatePlayerAnimation = function(player){

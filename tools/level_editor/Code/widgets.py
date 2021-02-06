@@ -546,8 +546,8 @@ class LevelMenuBar(QWidget):
         self.layout = QVBoxLayout()
 
         self.levelSelectBtn = QComboBox()
-        self.levelSelectBtn.addItem("Test1")
-        self.levelSelectBtn.addItem("Test2")
+        self.levelSelectBtn.addItem("No level loaded")
+        self.levelSelectBtn.setEnabled(False)
         self.layout.addWidget(self.levelSelectBtn)
         self.setLayout(self.layout)
 

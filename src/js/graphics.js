@@ -155,6 +155,10 @@ Renderer.prototype.drawTiles = function(scene){
   let tileSprite;
   let newPosArray;
   for (let index = 0; index < tilesArray.length; index++){
+    if(tileMap.tileIsEmpty(index) === true){
+      continue;
+    };
+
     coords = tileMap.convertPos(index); // Convert -> 2d;
     pos_X = coords[0] * spriteSheet.spriteSize * this.parent.scale;
     pos_Y = coords[1] * spriteSheet.spriteSize * this.parent.scale;
@@ -494,7 +498,7 @@ AnimationManager.prototype.setFrame = function(animation, index){
 };
 
 AnimationManager.prototype.setDefaultFrame = function(animation){
-  this.setFrame(animation, 0)
+  this.setFrame(animation, 0);
 };
 
 // Play this function every frame the animation is active.
@@ -505,13 +509,16 @@ AnimationManager.prototype.nextFrame = function(animation){
 
   // If animation completes the period for one frame...
   if(goToNextFrame === true){
-    if(animation.frameIndex + 1 < animation.frames.length){ // If there are still frames in the animation...
+    // If there are still frames in the animation...
+    if(animation.frameIndex + 1 < animation.frames.length){
       this.setFrame(animation, animation.frameIndex + 1); // Set to the next frame.
     }
-    else if(animation.frameIndex + 1 >= animation.frames.length && this.loops === false){// If the animation is complete and it DOESN'T loop
-      this.active = false; // Deactivate
+    // If the animation is complete and it DOESN'T loop
+    else if(animation.frameIndex + 1 >= animation.frames.length && this.loops === false){
+      this.deactivateAnimation(animation);
     }
-    else { // Else; if the animation is complete and the animation DOES loop.
+    // Else; if the animation is complete and the animation DOES loop.
+    else {
       this.setDefaultFrame(animation); // Cycle back to start if done animation.
     };
   };
@@ -526,6 +533,11 @@ AnimationManager.prototype.getSprite = function(animation){
 
 AnimationManager.prototype.activateAnimation = function(animation){
   animation.active = true;
+};
+
+AnimationManager.prototype.deactivateAnimation = function(animation){
+  animation.active = false;
+  this.setDefaultFrame(animation);
 };
 
 AnimationManager.prototype._incrementCounter = function(animation){

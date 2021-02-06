@@ -12,6 +12,12 @@
       "height": 128,
       "spriteSize": 32},
 
+    "player_walk": {
+      "name": "player_walk.png",
+      "width": 256,
+      "height": 128,
+      "spriteSize": 32},
+
     "testDungeon": {
       "name": "testDungeon.png",
       "width": 32,

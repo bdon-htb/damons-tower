@@ -21,7 +21,7 @@ SETTINGS = load_config_file(cfg.settings_file) # Currently does nothing
 print(SETTINGS)
 
 def is_level(d: dict) -> bool:
-    """Simply checks that the highest key is 'levelData'
+    """Simply checks that the first key is 'levelData'
     For preventing the loading of non-level data .json files.
     """
     return list(d.keys())[0] == 'levelData'
@@ -239,6 +239,7 @@ class MapView(QGraphicsView):
         self.checkerTileSize = 16
         self.mousePos = None
         self.bg_color = cfg.colors['mauve']
+        self._emptyTileID = '00'
         self.setScene(QGraphicsScene())
         self.setupView()
 
@@ -378,13 +379,15 @@ class MapView(QGraphicsView):
         tileSize = self.parent.tileSize
         for index in range(len(tileData)):
             data = [int(n) for n in tileData[index].split('-')[:-1]]
-            slice = QRect(data[0] * tileSize, data[1] * tileSize, tileSize, tileSize)
-            tile = QPixmap(level.spriteURL).copy(slice)
-            pos = level.getTilePos(index, tileSize)
+            id = tileData[index].split('-')[-1]
+            if id != self._emptyTileID:
+                slice = QRect(data[0] * tileSize, data[1] * tileSize, tileSize, tileSize)
+                tile = QPixmap(level.spriteURL).copy(slice)
+                pos = level.getTilePos(index, tileSize)
 
-            # For some reason the pixmap was originally off 1 pixel. Probably has something to
-            # do with the scene being nested in the view? Band-aid fix.
-            self.scene().addPixmap(tile).setPos(pos[0] + 1, pos[1] + 1)
+                # For some reason the pixmap was originally off 1 pixel. Probably has something to
+                # do with the scene being nested in the view? Band-aid fix.
+                self.scene().addPixmap(tile).setPos(pos[0] + 1, pos[1] + 1)
 
 class ToolBar(QWidget):
     def __init__(self, parent):
@@ -460,7 +463,6 @@ class TileMenu(QScrollArea):
         self._lastRow = 0
         self._lastCol = 0
 
-        self.allTiles = [] # Keeps reference of all tiles for deletion.
         self.buttonGroup = QButtonGroup()
         self.buttonGroup.buttonClicked.connect(self.selectTile)
         self.selectedTile = None # Currently selected tile button.
@@ -504,13 +506,19 @@ class TileMenu(QScrollArea):
 
         self.layout.addWidget(tile, self._lastRow, self._lastCol)
         self.buttonGroup.addButton(tile)
-        self.allTiles.append(tile)
 
         self._lastCol += 1
 
-# TODO: pain.
     def clearTiles(self):
-        pass
+        self.selectedTile = None
+        self._lastRow = 0
+        self._lastCol = 0
+
+        # Thank you stack overflow! this helped: https://stackoverflow.com/questions/4528347/clear-all-widgets-in-a-layout-in-pyqt
+        for i in reversed(range(self.layout.count())):
+            widget = self.layout.itemAt(i).widget()
+            self.buttonGroup.removeButton(widget)
+            widget.setParent(None)
 
 class TileButton(QPushButton):
     def __init__(self, pixmap):

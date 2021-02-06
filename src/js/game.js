@@ -11,7 +11,14 @@ function Game(engine){
   // Create aliases for engine components.
   this.renderer = engine.renderer;
   this.animationManager = this.renderer.animationManager;
-  this.gameStateObject = {};
+  this.gameStateObject = {
+    "events": null, // A map of game events. Currently unused.
+    "frameData": null, // The main loop data.
+    "scene": null // Current scene.
+  };
+
+  // An empty copy of the gameStateObject for refreshing purposes.
+  this._emptyGSO = Object.assign({}, this.gameStateObject);
 
   // Create game components.
   this.controller = new Controller();
@@ -30,6 +37,7 @@ function Game(engine){
   // Create components.
   this.stateMachine = new StateMachine(this, allStates, this.startingState);
   this.sceneManager = new SceneManager();
+  this.physicsManager = new PhysicsManager(this.engine);
 
   // Setup callbacks.
   this.callbacks = {
@@ -39,9 +47,10 @@ function Game(engine){
   };
 };
 
-Game.prototype.update = function(data){
+Game.prototype.update = function(){
+  this._updateFrameData(data);
+  this._refreshEvents(); // Init / re-init the game events.
   let currentState = this.stateMachine.currentState;
-  this.gameStateObject["events"] = new Map(); // Init / re-init the game events.
   let events = this.gameStateObject["events"] // Create an alias.
   let inputs = this.engine.getInputEvents();
   events.set("inputEvents", this.engine.getInputEvents());
@@ -68,8 +77,8 @@ Game.prototype.update = function(data){
       let posArray = [player.attributes["x"], player.attributes["y"]]
       camera.center(posArray[0], posArray[1], player.attributes["sprite"].height);
       let relPosArray = camera.getRelative(posArray[0], posArray[1]);
-      this.animationManager.nextFrame(player.attributes["currentAnimation"]);
       player.attributes["sprite"] = this.animationManager.getSprite(player.attributes["currentAnimation"]);
+      this.animationManager.nextFrame(player.attributes["currentAnimation"]);
       break;
   };
 };
@@ -87,13 +96,16 @@ Game.prototype.draw = function(){
       let level = this.gameStateObject["scene"];
       let player = this.gameStateObject["scene"].getEntity("player");
       let camera = level.camera;
-      let posArray = [player.attributes["x"], player.attributes["y"]]
+      let posArray = [player.attributes["x"], player.attributes["y"]];
       let relPosArray = camera.getRelative(posArray[0], posArray[1]);
 
-      renderer.drawTiles(this.gameStateObject["scene"])
-      this.renderer.drawSprite(player.attributes["sprite"], relPosArray[0], relPosArray[1])
-      renderer.drawText(this.controller.patterns.get("doubleTap-right")["state"])
+      renderer.drawTiles(this.gameStateObject["scene"]);
+      this.renderer.drawSprite(player.attributes["sprite"], relPosArray[0], relPosArray[1]);
+      renderer.drawText(this.controller.patterns.get("doubleTap-right")["state"]);
       renderer.drawText(player.attributes["state"], 100);
+
+      fps = this.engine.frameData["fps"];
+      renderer.drawText(fps, 740);
   };
 };
 
@@ -101,7 +113,7 @@ Game.prototype.draw = function(){
 // State transition methods.
 // =========================
 Game.prototype._clearGameStateObject = function(){
-  this.gameStateObject = {};
+  this.gameStateObject = Object.assign({}, this._emptyGSO);
 };
 
 Game.prototype._loadMenu = function(menuName){
@@ -127,7 +139,7 @@ Game.prototype._loadTestLevel = function(){
   let levelData = this.engine.getLoadedAsset(this.engine.levelKey).get("testLevel");
   this._loadLevel(levelData);
   let level = this.gameStateObject["scene"];
-  let player = this._createPlayerObject();
+  let player = new PlayerEntity(this.engine, this);
   level.addEntity(player);
   this.sceneManager.setScene(level);
   let camera = level.camera;
@@ -135,19 +147,46 @@ Game.prototype._loadTestLevel = function(){
   camera.center(posArray[0], posArray[1], player.attributes["sprite"].height);
 };
 
-// ===============
-// Update methods.
-// ===============
-
+// =======================
+// Gemeral update methods.
+// =======================
 Game.prototype._updateLevel = function(scene){
   let events = this.gameStateObject["events"]
   if(scene.entities.has("player") === true){
     let player = scene.getEntity("player");
-    this._handlePlayerMovement(player);
+    this._updatePlayer(player);
   };
 };
 
+// ===============================
+// gameStateObject update methods.
+// ===============================
+Game.prototype._updateFrameData = function(data){
+  this.gameStateObject["frameData"] = data;
+};
+
+Game.prototype._refreshEvents = function(new_events){
+  this.gameStateObject["events"] = new Map();
+};
+
+Game.prototype._updateEvents = function(){
+  this.gameStateObject["events"] = new_events;
+};
+
+// =====================
+// Player related methods.
+// =====================
+Game.prototype._updatePlayer = function(player){
+  let handleMove = this._handlePlayerMovement.bind(this);
+  let updateAnim = this._updatePlayerAnimation.bind(this);
+
+  handleMove(player);
+  updateAnim(player);
+};
+
 Game.prototype._handlePlayerMovement = function(player){
+  let physicsManager = this.physicsManager;
+  let frameData = this.gameStateObject["frameData"];
   let moveCommands = ["keyDown-left", "keyDown-right", "keyDown-up", "keyDown-down"];
   let sprintCommands = ["doubleTap-right", "doubleTap-left", "doubleTap-up", "doubleTap-down"];
 
@@ -155,73 +194,76 @@ Game.prototype._handlePlayerMovement = function(player){
   let isMoving = moveCommands.some(c => commands.includes(c) === true); // Booleans
   let startSprint = sprintCommands.some(c => commands.includes(c) === true);
 
-  // Sprint state check.
-  if(startSprint === true && player["state"] != "sprinting"){
+  // Start sprinting.
+  if(startSprint === true){
     player.attributes["state"] = "sprinting";
-  } else if(player.attributes["state"] === "sprinting" && isMoving === false){
+  } // Walk.
+  else if(isMoving === true && player.attributes["state"] !== "sprinting"){
+    player.attributes["state"] = "walking";
+  } // Keep sprinting.
+  else if(isMoving === true && player.attributes["state"] === "sprinting"){
+    player.attributes["state"] = "sprinting";
+  } // Player is not moving at all.
+  else {
     player.attributes["state"] = "idle";
   };
 
-  // Set speed.
   let velocity = (player.attributes["state"] === "sprinting") ? player.attributes["sprintSpeed"] : player.attributes["speed"];
 
+  // Format: {"commandName": [coordinate, displacement, oppositeCommand, direction]}
   let movMap = {
-    "keyDown-left": ["x", -velocity],
-    "keyDown-right": ["x", +velocity],
-    "keyDown-up": ["y", -velocity],
-    "keyDown-down": ["y", +velocity]
+    "keyDown-left": ["x", -velocity, "keyDown-right", "left"],
+    "keyDown-right": ["x", +velocity, "keyDown-left", "right"],
+    "keyDown-up": ["y", -velocity, "keyDown-down", "up"],
+    "keyDown-down": ["y", +velocity, "keyDown-up", "down"]
   };
 
-  commands.forEach(c => {
-    if(Object.keys(movMap).includes(c)){
-      let moveProperty = movMap[c]; // This is the key / value pair in movMap.
-      // Adjust the player's x / y coordinate accprdomg tp the movMap.
-      player.attributes[moveProperty[0]] += moveProperty[1];
-    }
-  });
+  for(var i = 0; i < commands.length; i++){
+    c = commands[i];
+
+    // Prioritize the last move input and move if one is detected. This should prevent standstill by pressing opposite keys.
+    if(Object.keys(movMap).includes(c) === true && commands.slice(i, commands.length).includes(movMap[c][2]) === false){
+      coordinate = movMap[c][0]
+      displacement = physicsManager.calculateVelocity(movMap[c][1]);
+      player.attributes[coordinate] += displacement;
+      player.attributes["direction"] = movMap[c][3]
+    };
+  };
 };
 
-Game.prototype._updatePatterns = function(){
-
-};
-// ===============================
-// Entity Object creation methods.
-// ===============================
-
-// Create the player object.
-// LIST OF CURRENT PLAYER STATES (for documentation purposes)
-// idle, sprinting
-Game.prototype._createPlayerObject = function(){
-  let engine = this.engine // create alias.
-  let player = new Entity("player", null, "player", "idle", 0, 0);
-  player.attributes["animations"] = new Map(); // Animations is a map of all the available animations.
-  player.attributes["speed"] = 5; // Set the default player movement speed.
-  player.attributes["sprintSpeed"] = player.attributes["speed"] * 2;
-
-  let idleAnimations = {
-    "idle_front": engine.getLoadedAsset(engine.animKey).get("player_idle_front"),
-    "idle_back": engine.getLoadedAsset(engine.animKey).get("player_idle_back"),
-    "idle_left": engine.getLoadedAsset(engine.animKey).get("player_idle_left"),
-    "idle_right": engine.getLoadedAsset(engine.animKey).get("player_idle_right")
+Game.prototype._updatePlayerAnimation = function(player){
+  // Can set aliases here because we we're just checking their values.
+  let playerState = player.attributes["state"];
+  let playerDirection = player.attributes["direction"];
+  let allAnims = player.attributes["animations"];
+  let animMap;
+  switch (playerState){
+    case "walking":
+    case "sprinting":
+      animMap = {
+        "up": allAnims.get("walk_back"),
+        "down": allAnims.get("walk_front"),
+        "left": allAnims.get("walk_left"),
+        "right": allAnims.get("walk_right")
+      };
+      break;
+    default: // Let's treat idle as default.
+      animMap = {
+        "up": allAnims.get("idle_back"),
+        "down": allAnims.get("idle_front"),
+        "left": allAnims.get("idle_left"),
+        "right": allAnims.get("idle_right")
+      };
   };
 
-  let allAnimations = [idleAnimations];
+  let oldAnimation = player.attributes["currentAnimation"];
+  let newAnimation = animMap[playerDirection];
 
-  // Add all of the animations in allAnimations to the player's attribute "animations".
-  allAnimations.forEach(object => {
-    let spriteSheet;
-    let animation;
-    for(let [key, value] of Object.entries(object)){
-      spriteSheet = this.renderer.getSheetFromId(value["spriteSheet"]);
-      animation = new Animation(key, spriteSheet, value);
-      player.attributes["animations"].set(key, animation)
-    }
-  });
-
-  // Set the default sprite.
-  let defaultAnimation = player.attributes["animations"].get("idle_front");
-  this.animationManager.activateAnimation(defaultAnimation);
-  player.attributes["currentAnimation"] = defaultAnimation;
-  player.attributes["sprite"] = this.animationManager.getSprite(defaultAnimation);
-  return player
+  // If there's a change in animation...
+  if(oldAnimation !== newAnimation){
+    // Switch to new animation.
+    this.animationManager.deactivateAnimation(oldAnimation);
+    this.animationManager.activateAnimation(newAnimation);
+    player.attributes["currentAnimation"] = newAnimation;
+  };
 };

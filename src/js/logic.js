@@ -4,8 +4,8 @@
 */
 
 /**
- * Simple entity object. for the purpose of this game this will be the base
- * of the player, enemy, items, doors, switches, etc.
+ * Simple entity object. The base of all other entities.
+ * For player, enemy, items, doors, switches, etc.
 */
 function Entity(id, sprite, type, state, x, y){
   this.id = id;
@@ -17,6 +17,61 @@ function Entity(id, sprite, type, state, x, y){
     "x": x,
     "y": y
   };
+};
+
+/**
+ * Player entity object.
+ * gameObject is NOT the gameStateObject. it is an instance of the Game class.
+*/
+function PlayerEntity(engine, gameObject){
+  Entity.call(this, "player", null, "player", "idle", 0, 0);
+  this._allStates = [
+    "idle",
+    "walking",
+    "sprinting"
+  ];
+  this._allDirections = [
+    "up",
+    "down",
+    "left",
+    "right"
+  ];
+  this.attributes["animations"] = new Map(); // Animations is a map of all the available animations.
+  this.attributes["speed"] = 6; // Set the default player movement speed.
+  this.attributes["sprintSpeed"] = this.attributes["speed"] * 2;
+  this.attributes["direction"] = "down";
+
+  let idleAnimations = {
+    "idle_front": engine.getLoadedAsset(engine.animKey).get("player_idle_front"),
+    "idle_back": engine.getLoadedAsset(engine.animKey).get("player_idle_back"),
+    "idle_left": engine.getLoadedAsset(engine.animKey).get("player_idle_left"),
+    "idle_right": engine.getLoadedAsset(engine.animKey).get("player_idle_right")
+  };
+
+  let walkAnimations = {
+    "walk_front": engine.getLoadedAsset(engine.animKey).get("player_walk_front"),
+    "walk_back": engine.getLoadedAsset(engine.animKey).get("player_walk_back"),
+    "walk_left": engine.getLoadedAsset(engine.animKey).get("player_walk_left"),
+    "walk_right": engine.getLoadedAsset(engine.animKey).get("player_walk_right")
+  };
+
+  let allAnimations = [idleAnimations, walkAnimations];
+
+  // Add all of the animations in allAnimations to the player's attribute "animations".
+  allAnimations.forEach(object => {
+    let spriteSheet;
+    let animation;
+    for(let [key, value] of Object.entries(object)){
+      spriteSheet = engine.renderer.getSheetFromId(value["spriteSheet"]);
+      animation = new Animation(key, spriteSheet, value);
+      this.attributes["animations"].set(key, animation)}
+  });
+
+  // Set the default sprite.
+  let defaultAnimation = this.attributes["animations"].get("idle_front");
+  gameObject.animationManager.activateAnimation(defaultAnimation);
+  this.attributes["currentAnimation"] = defaultAnimation;
+  this.attributes["sprite"] = gameObject.animationManager.getSprite(defaultAnimation);
 };
 
 /**
@@ -86,6 +141,7 @@ SceneManager.prototype.clearHistory = function(){
  * Custom tilemap object. Contains a 1D array of tile information,
  * the map's dimensions, and essential methods.
  * this class does NOT contain any graphics or other level information.
+ * Currently supported tile ids are listed in tile_ids.txt
  * Example tile data:
  * [
    "000-FL", "000-FL", "000-FL",
@@ -96,6 +152,10 @@ function TileMap(width, height, tiledata){
   this.width = width,
   this.height = height,
   this.tiles = tiledata;
+};
+
+TileMap.prototype.tileIsEmpty = function(tileIndex){
+  return (this.tiles[tileIndex].split('-')[2] === '00');
 };
 
 TileMap.prototype.tileIsCollidable = function(tileIndex){
@@ -279,7 +339,8 @@ Controller.prototype.getInputs = function(events, data){
   if(this.mode === "keyboard" && events.get("inputEvents").has("keyboard")){
     let m = events.get("inputEvents").get("keyboard"); // This is a map.
     // Essentially flatten the map. Prepend descriptive words for each input.
-    inputs = inputs.concat(m.get("keyDown").map(x => "keyDown-" + x));
+    // inputs = inputs.concat(m.get("keyDown").map(x => "keyDown-" + x));
+    inputs = inputs.concat(m.get("keyDown")); // get keys from orderedKeyDown already formatted
     inputs = inputs.concat(m.get("keyUp").map(x => "keyUp-" + x));
   };
 

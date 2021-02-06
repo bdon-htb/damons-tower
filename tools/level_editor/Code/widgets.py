@@ -81,6 +81,11 @@ class MainWindow(QMainWindow):
         self.addWidgets() # Important: must be before menubar sets up.
         self.setCentralWidget(self.centralWidget)
         self.centralWidget.setLayout(self.layout)
+        # self.loadStyleSheet()
+
+    def loadStyleSheet(self):
+        qss = open(cfg.stylesheet_file, 'r')
+        self.parent.setStyleSheet(qss.read())
 
     def addWidgets(self):
         self.levelMenu = LevelMenuBar(self)

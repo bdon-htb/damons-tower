@@ -23,6 +23,7 @@ for file in os.scandir(icons_dir):
         icons[name] = os.path.abspath(os.path.join(icons_dir, file.name))
 
 settings_file = os.path.abspath(os.path.join(data_dir, 'settings.cfg'))
+stylesheet_file = os.path.abspath(os.path.join(data_dir, 'stylesheet.qss'))
 settings_default = '0'
 
 colors = {

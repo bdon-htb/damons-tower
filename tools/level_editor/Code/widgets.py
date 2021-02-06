@@ -8,7 +8,7 @@ from PyQt5.QtCore import Qt, QSize, QLineF, QLine, QRect
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene,
 QGraphicsProxyWidget, QGraphicsPixmapItem, QFileDialog, QFrame, QListView,
-QScrollArea, QButtonGroup)
+QScrollArea, QButtonGroup, QComboBox)
 
 # Other python imports
 import math, random
@@ -74,7 +74,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(f'{self.name} - v{self.version}')
         self.setMinimumSize(1000, 600)
         self.centralWidget = QWidget()
-        self.layout = QHBoxLayout()
+        self.layout = QGridLayout()
 
         self.setupMenuBar()
         self.setupStatusBar()
@@ -83,11 +83,13 @@ class MainWindow(QMainWindow):
         self.centralWidget.setLayout(self.layout)
 
     def addWidgets(self):
+        self.levelMenu = LevelMenuBar(self)
         self.mapView = MapView(self)
         self.toolBar = ToolBar(self)
 
-        self.layout.addWidget(self.mapView)
-        self.layout.addWidget(self.toolBar)
+        self.layout.addWidget(self.levelMenu, 0, 0, 1, 2) # Span both cols.
+        self.layout.addWidget(self.mapView, 1, 0)
+        self.layout.addWidget(self.toolBar, 1, 1)
 
     def setupStatusBar(self):
         self.statusBar = self.statusBar()
@@ -267,6 +269,10 @@ class MapView(QGraphicsView):
         self.mousePos = (pos.x(), pos.y())
         self.updateScene()
 
+    def mousePressEvent(self, event):
+        print('Press detected!')
+        print(self.parent.level)
+
     def leaveEvent(self, event):
         self.mousePos = None
         self.updateScene()
@@ -293,6 +299,9 @@ class MapView(QGraphicsView):
         y = pos_y - (pos_y % tileSize)
         return (x, y)
 
+    # =====================
+    # SCENE DRAWING METHODS
+    # =====================
     def drawSceneBackground(self, painter):
         """ Draw the background of the view / scene.
         """
@@ -529,6 +538,18 @@ class TileButton(QPushButton):
         self.setIcon(QIcon(pixmap))
         self.setIconSize(self.iconSize)
         self.setCheckable(True)
+
+class LevelMenuBar(QWidget):
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+        self.layout = QVBoxLayout()
+
+        self.levelSelectBtn = QComboBox()
+        self.levelSelectBtn.addItem("Test1")
+        self.levelSelectBtn.addItem("Test2")
+        self.layout.addWidget(self.levelSelectBtn)
+        self.setLayout(self.layout)
 
 # ==================
 # NON-WIDGET CLASSES

@@ -36,7 +36,7 @@ class MainWindow(QMainWindow):
         self.name = cfg.__name__
         self.version = cfg.__version__
 
-        self.level = None
+        self.levelData = None
         self.allCursorModes = [
             'select',
             'fill',
@@ -54,8 +54,6 @@ class MainWindow(QMainWindow):
         }
 
         self.cursorMode = 'select'
-        self.tileSize = cfg.TILESIZE
-
         self.initUI() # Should be done last always!
 
     # =================
@@ -82,10 +80,6 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.centralWidget)
         self.centralWidget.setLayout(self.layout)
         # self.loadStyleSheet()
-
-    def loadStyleSheet(self):
-        qss = open(cfg.stylesheet_file, 'r')
-        self.parent.setStyleSheet(qss.read())
 
     def addWidgets(self):
         self.levelMenu = LevelMenuBar(self)
@@ -176,6 +170,10 @@ class MainWindow(QMainWindow):
     # ====================
     # FILE RELATED METHODS
     # ====================
+    def loadStyleSheet(self):
+        qss = open(cfg.stylesheet_file, 'r')
+        self.parent.setStyleSheet(qss.read())
+
     def newLevel(self):
         print('New level')
 
@@ -184,17 +182,18 @@ class MainWindow(QMainWindow):
         file_tuple = QFileDialog.getOpenFileName(None, 'Open Level', directory, 'Level data file (*.json)')
         file = load_json(file_tuple[0]) if file_tuple[0] else None
         if file and is_level(file): # Check if filename isn't blank
-            if self.level:
+            if self.levelData:
                 self.clearLevel()
             self.loadLevel(file)
 
     def loadLevel(self, file: dict):
         print(file['levelData']['testLevel'])
         # TODO: Make this more elaborate. perhaps bring up a menu to ask to select a specific level.
-        self.level = LevelData(file['levelData']['testLevel'])
-        self.statusComponents['levelName'].setText(self.level.name)
-        self.mapView.drawLevel(self.level)
-        self.toolBar.tileMenu.loadTiles(self.level.spriteURL)
+        self.levelData = LevelData(file)
+        self.statusComponents['levelName'].setText(self.levelData.currentLevel)
+        self.levelMenu.toggleLevelSelect()
+        self.mapView.drawLevel(self.levelData)
+        self.toolBar.tileMenu.loadTiles(self.levelData.getSpriteURL())
 
     def saveLevel(self):
         print('Save level')
@@ -227,7 +226,7 @@ class MainWindow(QMainWindow):
 
     def clearLevel(self):
         self.toolBar.tileMenu.clearTiles()
-        self.level = None
+        self.levelData = None
 
     # =============
     # MISC. METHODS
@@ -236,14 +235,14 @@ class MainWindow(QMainWindow):
         """ Return the dimensions of the level / map in pixels.
         Precondition: level is not None
         """
-        level = self.level
-        return (level.width * cfg.TILESIZE, level.height * cfg.TILESIZE)
+        return self.levelData.getMapSize()
 
 class MapView(QGraphicsView):
     def __init__(self, parent):
         super().__init__()
         self.parent = parent
         self.checkerTileSize = 16
+        self.tileSize = cfg.TILESIZE
         self.mousePos = None
         self.bg_color = cfg.colors['mauve']
         self._emptyTileID = '00'
@@ -255,7 +254,7 @@ class MapView(QGraphicsView):
     # =================
     def drawBackground(self, painter, rect):
         self.drawSceneBackground(painter)
-        if self.parent.level:
+        if self.parent.levelData:
             self.drawCheckerGrid(painter)
 
     def drawForeground(self, painter, rect):
@@ -299,7 +298,7 @@ class MapView(QGraphicsView):
         """ Return the top left coordinates of the nearest grid square relative to
         pos_x and pos_y
         """
-        tileSize = self.parent.tileSize
+        tileSize = self.tileSize
         x = pos_x - (pos_x % tileSize)
         y = pos_y - (pos_y % tileSize)
         return (x, y)
@@ -310,7 +309,7 @@ class MapView(QGraphicsView):
     def drawSceneBackground(self, painter):
         """ Draw the background of the view / scene.
         """
-        if self.parent.level:
+        if self.parent.levelData:
             mapSize = self.parent.getMapSize()
         else:
             mapSize = (0, 0)
@@ -329,7 +328,7 @@ class MapView(QGraphicsView):
         Used to indicate the grid square the cursor is currently hovering over.
         """
         topLeft = self.getNearestTopLeft(self.mousePos[0], self.mousePos[1])
-        tileSize = self.parent.tileSize
+        tileSize = self.tileSize
 
         painter.setPen(QColor(cfg.colors['light teal']))
         painter.drawRect(topLeft[0], topLeft[1], tileSize, tileSize)
@@ -376,7 +375,7 @@ class MapView(QGraphicsView):
         width, height = mapSize[0], mapSize[1]
 
         painter.setPen(QColor(cfg.colors['cobalt']))
-        tileSize = self.parent.tileSize
+        tileSize = self.tileSize
 
         for y in range(round(height / tileSize) + 1):
             h_line = QLine(0, y * tileSize, width, y * tileSize)
@@ -389,14 +388,14 @@ class MapView(QGraphicsView):
         """ Draws in the tiles of a level. Should only be called once
         everytime the level is updated.
         """
-        tileData = level.tileData
-        tileSize = self.parent.tileSize
+        tileData = level.getTileData()
+        tileSize = self.tileSize
         for index in range(len(tileData)):
             data = [int(n) for n in tileData[index].split('-')[:-1]]
             id = tileData[index].split('-')[-1]
             if id != self._emptyTileID:
                 slice = QRect(data[0] * tileSize, data[1] * tileSize, tileSize, tileSize)
-                tile = QPixmap(level.spriteURL).copy(slice)
+                tile = QPixmap(level.getSpriteURL()).copy(slice)
                 pos = level.getTilePos(index, tileSize)
 
                 # For some reason the pixmap was originally off 1 pixel. Probably has something to
@@ -556,23 +555,40 @@ class LevelMenuBar(QWidget):
         self.layout.addWidget(self.levelSelectBtn)
         self.setLayout(self.layout)
 
+    def toggleLevelSelect(self):
+        value = self.levelSelectBtn.isEnabled()
+        self.levelSelectBtn.setEnabled(not value)
+
 # ==================
 # NON-WIDGET CLASSES
 # ==================
 class LevelData:
     def __init__(self, file: dict):
-        self.name = file['name']
-        self.spriteSheet = file['spriteSheet']
-        self.width = file['width']
-        self.height = file['height']
-        self.tileData = file['tileData']
+        self.levelJson = file
+        self.currentLevel = list(file["levelData"].keys())[0] # This is the name of the fist level in dictionary.
 
-        self.spriteURL = cfg.get_assetURL(cfg.sprite_dir, self.spriteSheet, '.png')
-
-    def getTilePos(self, index: int, tileSize: int) -> tuple:
-        """Get the true position of a particular tile.
+    def _getDefaultName(self, levelName) -> str:
+        """Return self.currentLevel if levelName is None otherwise
+        return levelName as it already is.
         """
-        pos = self.get2DFrom1D(index, self.width)
+        if levelName is None:
+            return self.currentLevel
+        return levelName
+
+    def getMapSize(self, levelName=None) -> tuple:
+        """ Return the dimensions of the level / map in pixels.
+        """
+        levelName = self._getDefaultName(levelName)
+        width = self.getLevel(levelName)["width"]
+        height = self.getLevel(levelName)["height"]
+        return (width * cfg.TILESIZE, height * cfg.TILESIZE)
+
+    def getTilePos(self, index: int, tileSize: int, levelName=None) -> tuple:
+        """Return the true position of a particular tile.
+        """
+        levelName = self._getDefaultName(levelName)
+        width = self.getLevel(levelName)["width"]
+        pos = self.get2DFrom1D(index, width)
         x = pos[0]
         y = pos[1]
         return (x * tileSize, y * tileSize)
@@ -588,6 +604,25 @@ class LevelData:
         x = index % array_width
         y = math.floor(index / array_width)
         return (x, y)
+
+    def getLevelJson(self) -> str:
+        return self.levelJson
+
+    def getLevel(self, levelName: str) -> dict:
+        """Return the dictionary of a particular level in levelData
+        """
+        return self.levelJson["levelData"][levelName]
+
+    def getSpriteURL(self, levelName=None) -> str:
+        """Return the url of the specified level's spritesheet
+        """
+        levelName = self._getDefaultName(levelName)
+        spriteSheet = self.getLevel(levelName)["spriteSheet"]
+        return cfg.get_assetURL(cfg.sprite_dir, spriteSheet, '.png')
+
+    def getTileData(self, levelName=None) -> list:
+        levelName = self._getDefaultName(levelName)
+        return self.getLevel(levelName)["tileData"]
 
 # ========================
 # AESTHETIC WIDGET CLASSES

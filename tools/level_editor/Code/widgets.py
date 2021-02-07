@@ -130,11 +130,11 @@ class MainWindow(QMainWindow):
         newAct.setShortcut('Ctrl+N')
 
         openAct = QAction('&' + 'Open Level', self)
-        openAct.triggered.connect(self.openLevel)
+        openAct.triggered.connect(self.openLevelData)
         openAct.setShortcut('Ctrl+O')
 
         saveAct = QAction('&' + 'Save', self)
-        saveAct.triggered.connect(self.saveLevel)
+        saveAct.triggered.connect(self.saveLevelData)
         saveAct.setShortcut('Ctrl+S')
 
         exitAct = QAction('&' + 'Exit', self)
@@ -178,26 +178,32 @@ class MainWindow(QMainWindow):
     def newLevel(self):
         print('New level')
 
-    def openLevel(self):
+    def openLevelData(self):
         directory = cfg.level_dir if SETTINGS['inRepo'] == 'true' else cfg.main_dir
         file_tuple = QFileDialog.getOpenFileName(None, 'Open Level', directory, 'Level data file (*.json)')
         file = load_json(file_tuple[0]) if file_tuple[0] else None
         if file and is_level(file): # Check if filename isn't blank
             if self.levelData:
                 self.clearLevel()
-            self.loadLevel(file)
+            self.loadLevelData(file)
 
-    def loadLevel(self, file: dict):
+    def loadLevelData(self, file: dict):
+        """Load the entire level data file.
+        """
         print(file['levelData']['testLevel'])
-        # TODO: Make this more elaborate. perhaps bring up a menu to ask to select a specific level.
         self.levelData = LevelData(file)
-        self.statusComponents['levelName'].setText(self.levelData.currentLevel)
+        self.loadLevel(self.levelData.currentLevel)
         self.levelMenu.enableLevelSelect()
         self.levelMenu.updateLevelSelect(self.levelData.getLevelNames())
+
+    def loadLevel(self, levelName: str):
+        """Load in specified level from level data file.
+        """
+        self.statusComponents['levelName'].setText(levelName)
         self.mapView.drawLevel(self.levelData)
         self.toolBar.tileMenu.loadTiles(self.levelData.getSpriteURL())
 
-    def saveLevel(self):
+    def saveLevelData(self):
         print('Save level')
 
     # ====================
@@ -289,6 +295,11 @@ class MapView(QGraphicsView):
     def setupView(self):
         self.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.setMouseTracking(True)
+
+    def clearScene(self, forceUpdate=True):
+        self.scene().clear()
+        if forceUpdate:
+            self.updateScene()
 
     def updateScene(self):
         self.scene().update()
@@ -552,6 +563,7 @@ class LevelMenuBar(QWidget):
         self.layout = QHBoxLayout()
 
         self.levelSelectBtn = QComboBox()
+        self.levelSelectBtn.changeEvent = self.levelChangeEvent
         self.defaultLevelSelect()
         self.layout.addWidget(self.levelSelectBtn)
         self.setLayout(self.layout)
@@ -575,6 +587,15 @@ class LevelMenuBar(QWidget):
         self.levelSelectBtn.clear()
         for o in options:
             self.levelSelectBtn.addItem(o)
+
+    # TODO: Implement
+    def levelChangeEvent(self, event):
+        print(self.levelSelectBtn.currentIndex())
+        selected = self.levelSelectBtn.itemData(self.levelSelectBtn.currentIndex())
+        if self.isEnabled() and self.parent.levelData and selected:
+            self.parent.levelData.setCurrentLevel(selected)
+            print(selected)
+            self.parent.loadLevel(selected)
 
 # ==================
 # NON-WIDGET CLASSES
@@ -645,6 +666,9 @@ class LevelData:
     def getTileData(self, levelName=None) -> list:
         levelName = self._getDefaultName(levelName)
         return self.getLevel(levelName)["tileData"]
+
+    def setCurrentLevel(self, levelName):
+        self.currentLevel = levelName
 
 # ========================
 # AESTHETIC WIDGET CLASSES

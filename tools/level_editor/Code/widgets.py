@@ -12,6 +12,7 @@ QScrollArea, QButtonGroup, QComboBox)
 
 # Other python imports
 import math, random
+from typing import Tuple
 
 # Custom imports
 from . import cfg
@@ -191,7 +192,8 @@ class MainWindow(QMainWindow):
         # TODO: Make this more elaborate. perhaps bring up a menu to ask to select a specific level.
         self.levelData = LevelData(file)
         self.statusComponents['levelName'].setText(self.levelData.currentLevel)
-        self.levelMenu.toggleLevelSelect()
+        self.levelMenu.enableLevelSelect()
+        self.levelMenu.updateLevelSelect(self.levelData.getLevelNames())
         self.mapView.drawLevel(self.levelData)
         self.toolBar.tileMenu.loadTiles(self.levelData.getSpriteURL())
 
@@ -258,7 +260,7 @@ class MapView(QGraphicsView):
             self.drawCheckerGrid(painter)
 
     def drawForeground(self, painter, rect):
-        if self.parent.gridAct.isChecked() and self.parent.level:
+        if self.parent.gridAct.isChecked() and self.parent.levelData:
             self.drawGrid(painter)
 
         if self.parent.cursorMode == 'select' and self.mousePos:
@@ -275,7 +277,7 @@ class MapView(QGraphicsView):
 
     def mousePressEvent(self, event):
         print('Press detected!')
-        print(self.parent.level)
+        print(self.parent.levelData)
 
     def leaveEvent(self, event):
         self.mousePos = None
@@ -547,17 +549,32 @@ class LevelMenuBar(QWidget):
     def __init__(self, parent):
         super().__init__()
         self.parent = parent
-        self.layout = QVBoxLayout()
+        self.layout = QHBoxLayout()
 
         self.levelSelectBtn = QComboBox()
-        self.levelSelectBtn.addItem("No level loaded")
-        self.levelSelectBtn.setEnabled(False)
+        self.defaultLevelSelect()
         self.layout.addWidget(self.levelSelectBtn)
         self.setLayout(self.layout)
 
-    def toggleLevelSelect(self):
-        value = self.levelSelectBtn.isEnabled()
-        self.levelSelectBtn.setEnabled(not value)
+    def enableLevelSelect(self):
+        self.levelSelectBtn.setEnabled(True)
+
+    def disableLevelSelect(self):
+        self.levelSelectBtn.setEnabled(False)
+
+    def defaultLevelSelect(self):
+        """Set self.levelSelectBtn to the default.
+        """
+        self.levelSelectBtn.clear()
+        self.levelSelectBtn.addItem("No level loaded")
+        self.levelSelectBtn.setEnabled(False)
+
+    def updateLevelSelect(self, options: Tuple[str]):
+        """Set the items of self.levelSelectBtn.
+        """
+        self.levelSelectBtn.clear()
+        for o in options:
+            self.levelSelectBtn.addItem(o)
 
 # ==================
 # NON-WIDGET CLASSES
@@ -612,6 +629,11 @@ class LevelData:
         """Return the dictionary of a particular level in levelData
         """
         return self.levelJson["levelData"][levelName]
+
+    def getLevelNames(self) -> Tuple[str]:
+        """Return the names of all levels in the file.
+        """
+        return tuple(self.levelJson["levelData"].keys())
 
     def getSpriteURL(self, levelName=None) -> str:
         """Return the url of the specified level's spritesheet

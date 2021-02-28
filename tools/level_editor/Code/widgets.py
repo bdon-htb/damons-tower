@@ -11,7 +11,7 @@ QGraphicsProxyWidget, QGraphicsPixmapItem, QFileDialog, QFrame, QListView,
 QScrollArea, QButtonGroup, QComboBox)
 
 # Other python imports
-import math, random
+import math
 from typing import Tuple
 
 # Custom imports
@@ -183,16 +183,16 @@ class MainWindow(QMainWindow):
         file_tuple = QFileDialog.getOpenFileName(None, 'Open Level', directory, 'Level data file (*.json)')
         file = load_json(file_tuple[0]) if file_tuple[0] else None
         if file and is_level(file): # Check if filename isn't blank
-            if self.levelData:
-                self.clearLevel()
             self.loadLevelData(file)
+
+    def getLevelData(self):
+        return self.levelData
 
     def loadLevelData(self, file: dict):
         """Load the entire level data file.
         """
         print(file['levelData']['testLevel'])
         self.levelData = LevelData(file)
-        self.loadLevel(self.levelData.currentLevel)
         self.levelMenu.enableLevelSelect()
         self.levelMenu.updateLevelSelect(self.levelData.getLevelNames())
 
@@ -232,9 +232,14 @@ class MainWindow(QMainWindow):
             self.cursorMode = new_mode
             self.mapView.updateScene()
 
+
     def clearLevel(self):
+        """ Clear anything associated with the current level.
+
+        Note: It does NOT touch self.levelData
+        """
         self.toolBar.tileMenu.clearTiles()
-        self.levelData = None
+        self.mapView.clearScene(True)
 
     # =============
     # MISC. METHODS
@@ -562,40 +567,52 @@ class LevelMenuBar(QWidget):
         self.parent = parent
         self.layout = QHBoxLayout()
 
-        self.levelSelectBtn = QComboBox()
-        self.levelSelectBtn.changeEvent = self.levelChangeEvent
-        self.defaultLevelSelect()
-        self.layout.addWidget(self.levelSelectBtn)
+        self.levelSelectBox = LevelSelectBox(self)
+        self.layout.addWidget(self.levelSelectBox)
         self.setLayout(self.layout)
 
     def enableLevelSelect(self):
-        self.levelSelectBtn.setEnabled(True)
+        self.levelSelectBox.setEnabled(True)
 
     def disableLevelSelect(self):
-        self.levelSelectBtn.setEnabled(False)
+        self.levelSelectBox.setEnabled(False)
 
-    def defaultLevelSelect(self):
-        """Set self.levelSelectBtn to the default.
+    def updateLevelSelect(self, options):
+        self.levelSelectBox.updateLevelSelect(options)
+
+    def setLevel(self, levelName):
+        """Handle the setting and clearing of levelData.
         """
-        self.levelSelectBtn.clear()
-        self.levelSelectBtn.addItem("No level loaded")
-        self.levelSelectBtn.setEnabled(False)
+        self.parent.clearLevel()
+        levelData = self.parent.getLevelData()
+        if self.isEnabled() and levelData and levelName:
+            levelData.setCurrentLevel(levelName)
+            self.parent.loadLevel(levelName)
+
+class LevelSelectBox(QComboBox):
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+        self.setDefault()
+        self.currentIndexChanged.connect(self.setLevel)
+
+    def setDefault(self):
+        """Set the default properties.
+        """
+        self.clear()
+        self.addItem("No level loaded")
+        self.setEnabled(False)
 
     def updateLevelSelect(self, options: Tuple[str]):
-        """Set the items of self.levelSelectBtn.
+        """Set the items based on options
         """
-        self.levelSelectBtn.clear()
+        self.clear()
         for o in options:
-            self.levelSelectBtn.addItem(o)
+            self.addItem(o)
 
-    # TODO: Implement
-    def levelChangeEvent(self, event):
-        print(self.levelSelectBtn.currentIndex())
-        selected = self.levelSelectBtn.itemData(self.levelSelectBtn.currentIndex())
-        if self.isEnabled() and self.parent.levelData and selected:
-            self.parent.levelData.setCurrentLevel(selected)
-            print(selected)
-            self.parent.loadLevel(selected)
+    def setLevel(self, index):
+        selected = self.itemText(index)
+        self.parent.setLevel(selected)
 
 # ==================
 # NON-WIDGET CLASSES
@@ -603,7 +620,7 @@ class LevelMenuBar(QWidget):
 class LevelData:
     def __init__(self, file: dict):
         self.levelJson = file
-        self.currentLevel = list(file["levelData"].keys())[0] # This is the name of the fist level in dictionary.
+        self.currentLevel = list(file["levelData"].keys())[0] # This is the name of the first level in dictionary.
 
     def _getDefaultName(self, levelName) -> str:
         """Return self.currentLevel if levelName is None otherwise

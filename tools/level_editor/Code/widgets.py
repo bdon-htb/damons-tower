@@ -200,7 +200,7 @@ class MainWindow(QMainWindow):
         """Load in specified level from level data file.
         """
         self.statusComponents['levelName'].setText(levelName)
-        self.mapView.drawLevel(self.levelData)
+        self.mapView.drawLevel()
         self.toolBar.tileMenu.loadTiles(self.levelData.getSpriteURL())
 
     def saveLevelData(self):
@@ -250,7 +250,6 @@ class MapView(QGraphicsView):
         self.tileSize = cfg.TILESIZE
         self.mousePos = None
         self.bg_color = cfg.colors['mauve']
-        self._emptyTileID = '00'
         self.setScene(QGraphicsScene())
         self.setupView()
 
@@ -282,8 +281,7 @@ class MapView(QGraphicsView):
         print('Press detected!')
         level = self.parent.getLevelData()
         if level and self.mousePos:
-            self.updateMap()
-        # print(self.parent.levelData)
+            self.editMap()
 
     def leaveEvent(self, event):
         self.mousePos = None
@@ -306,18 +304,6 @@ class MapView(QGraphicsView):
 
     def updateSceneSize(self):
         self.scene().setSceneRect(self.scene().itemsBoundingRect())
-
-    def updateMap(self):
-        """Test
-        """
-        levelData = self.parent.getLevelData()
-        levelWidth, levelHeight = levelData.getMapSize(self.tileSize)
-        x, y = self.mousePos
-        # We only care if it's in level bounds
-        if x <= levelWidth and y <= levelHeight:
-            index = self.getNearestTileIndex(x, y)
-            tile = levelData.getLevel()["tileData"][index]
-            print(tile)
 
     def getNearestTopLeft(self, pos_x, pos_y) -> tuple:
         """Return the top left coordinates of the nearest grid square relative to
@@ -349,6 +335,28 @@ class MapView(QGraphicsView):
         Precondition: self.parent.levelData is not None
         """
         return self.parent.levelData.getMapSize(self.tileSize)
+
+    # ==========================
+    # LEVEL MANIPULATION METHODS
+    # ==========================
+    def editMap(self):
+        """Test
+        """
+        cursorMode = self.parent.cursorMode
+        levelData = self.parent.getLevelData()
+        levelWidth, levelHeight = levelData.getMapSize(self.tileSize)
+        x, y = self.mousePos
+        # We only care if it's in level bounds
+        if x < levelWidth and y < levelHeight:
+            index = self.getNearestTileIndex(x, y)
+            # TODO: Implement
+            if cursorMode == 'draw':
+                # new_id = self.constructId()
+                # levelData.setTile(index, new_id)
+                pass
+            elif cursorMode == 'erase':
+                levelData.eraseTile(index)
+            self.redrawLevel()
 
     # =====================
     # SCENE DRAWING METHODS
@@ -431,23 +439,28 @@ class MapView(QGraphicsView):
                 v_line = QLine(x * tileSize, 0, x * tileSize, height)
                 painter.drawLine(v_line)
 
-    def drawLevel(self, level):
+    def drawLevel(self):
         """Draws in the tiles of a level. Should only be called once
         everytime the level is updated.
         """
-        tileData = level.getTileData()
+        levelData = self.parent.getLevelData()
+        tileData = levelData.getTileData()
         tileSize = self.tileSize
         for index in range(len(tileData)):
             data = [int(n) for n in tileData[index].split('-')[:-1]]
             id = tileData[index].split('-')[-1]
-            if id != self._emptyTileID:
+            if id != cfg.EMPTY_TILE_ID:
                 slice = QRect(data[0] * tileSize, data[1] * tileSize, tileSize, tileSize)
-                tile = QPixmap(level.getSpriteURL()).copy(slice)
-                pos = level.getTilePos(index, tileSize)
+                tile = QPixmap(levelData.getSpriteURL()).copy(slice)
+                pos = levelData.getTilePos(index, tileSize)
 
                 # For some reason the pixmap was originally off 1 pixel. Probably has something to
                 # do with the scene being nested in the view? Band-aid fix.
                 self.scene().addPixmap(tile).setPos(pos[0] + 1, pos[1] + 1)
+
+    def redrawLevel(self):
+        self.clearScene(True)
+        self.drawLevel()
 
 class ToolBar(QWidget):
     def __init__(self, parent):
@@ -474,8 +487,11 @@ class ToolBar(QWidget):
         self.tileMenu = TileMenu()
 
         btns = [
-            self.selectBtn, self.fillBtn, self.drawBtn,
-            self.eraseBtn, self.dragBtn
+            self.selectBtn,
+            self.fillBtn,
+            self.drawBtn,
+            self.eraseBtn,
+            self.dragBtn
         ]
 
         self.buttons = {} # button reference.
@@ -727,6 +743,17 @@ class LevelData:
 
     def setCurrentLevel(self, levelName):
         self.currentLevel = levelName
+
+    # ==========================
+    # LEVEL MANIPULATION METHODS
+    # ==========================
+    def setTile(self, tile_index, new_id, levelName=None):
+        level = self.getLevel(levelName)
+        level["tileData"][tile_index] = new_id
+
+    def eraseTile(self, tile_index, levelName=None):
+        self.setTile(tile_index, cfg.EMPTY_TILE_ID, levelName)
+
 
 # ========================
 # AESTHETIC WIDGET CLASSES

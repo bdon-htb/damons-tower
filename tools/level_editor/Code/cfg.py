@@ -8,6 +8,7 @@ __version__ = '0.0.0'
 __name__ = 'js-roguelite Level Editor'
 
 TILESIZE = 32
+EMPTY_TILE_ID = '00'
 
 main_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
 code_dir = os.path.abspath(os.path.join(main_dir, 'Code'))

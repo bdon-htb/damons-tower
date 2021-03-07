@@ -280,9 +280,9 @@ class MapView(QGraphicsView):
 
     def mousePressEvent(self, event):
         print('Press detected!')
-        print(self.mousePos)
-        x, y = self.mousePos
-        print(self.getNearestTopLeft(x, y))
+        level = self.parent.getLevelData()
+        if level and self.mousePos:
+            self.updateMap()
         # print(self.parent.levelData)
 
     def leaveEvent(self, event):
@@ -307,6 +307,18 @@ class MapView(QGraphicsView):
     def updateSceneSize(self):
         self.scene().setSceneRect(self.scene().itemsBoundingRect())
 
+    def updateMap(self):
+        """Test
+        """
+        levelData = self.parent.getLevelData()
+        levelWidth, levelHeight = levelData.getMapSize(self.tileSize)
+        x, y = self.mousePos
+        # We only care if it's in level bounds
+        if x <= levelWidth and y <= levelHeight:
+            index = self.getNearestTileIndex(x, y)
+            tile = levelData.getLevel()["tileData"][index]
+            print(tile)
+
     def getNearestTopLeft(self, pos_x, pos_y) -> tuple:
         """Return the top left coordinates of the nearest grid square relative to
         pos_x and pos_y
@@ -314,12 +326,23 @@ class MapView(QGraphicsView):
         tileSize = self.tileSize
         x = pos_x - (pos_x % tileSize)
         y = pos_y - (pos_y % tileSize)
-        return (x, y)
+        return x, y
 
-    def getTileIndex(self, pos_x, pos_y) -> int:
-        """Return the
+    def getNearestTileIndex(self, pos_x, pos_y) -> int:
+        """Return the index of the nearest tile that the mouse is hovering
+        over.
+
+        i.e. if the mouse is close to the top left of the mapview it will
+        return 0.
+
+        Precondition: self.parent.levelData is not None and
+        pos_x, and pos_y are valid positions.
         """
-        pass
+        levelData = self.parent.getLevelData()
+        pos_x, pos_y = self.getNearestTopLeft(pos_x, pos_y)
+        pos_x, pos_y = int(pos_x // self.tileSize), int(pos_y // self.tileSize)
+        array_width = levelData.getLevel()["width"]
+        return levelData.get1DFrom2D(pos_x, pos_y, array_width)
 
     def getMapSize(self):
         """Return level map size in pixels.
@@ -642,7 +665,7 @@ class LevelData:
         levelName = self._getDefaultName(levelName)
         width = self.getLevel(levelName)["width"]
         height = self.getLevel(levelName)["height"]
-        return (width * tileSize, height * tileSize)
+        return width * tileSize, height * tileSize
 
     def getTilePos(self, index: int, tileSize: int, levelName=None) -> tuple:
         """Return the true position of a particular tile.
@@ -652,7 +675,7 @@ class LevelData:
         pos = self.get2DFrom1D(index, array_width)
         x = pos[0]
         y = pos[1]
-        return (x * tileSize, y * tileSize)
+        return x * tileSize, y * tileSize
 
     def get2DFrom1D(self, index: int, array_width: int) -> tuple:
         """Convert the index of a one-dimensional array to
@@ -666,12 +689,24 @@ class LevelData:
         y = math.floor(index / array_width)
         return (x, y)
 
+    def get1DFrom2D(self, x: int, y: int, array_width: int) -> int:
+        """Convert the coords of a 2d array to its 1d index equivalent.
+
+        A direction translation of js-roguelite's
+        convertCoordsToIndex() in engine.js
+        """
+        return (y * array_width) + x
+
     def getLevelJson(self) -> str:
         return self.levelJson
 
-    def getLevel(self, levelName: str) -> dict:
+    def getLevel(self, levelName=None) -> dict:
         """Return the dictionary of a particular level in levelData
+
+        if levelName is set to false, it will return the currently
+        set level.
         """
+        levelName = self._getDefaultName(levelName)
         return self.levelJson["levelData"][levelName]
 
     def getLevelNames(self) -> Tuple[str]:

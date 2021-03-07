@@ -219,12 +219,12 @@ class MainWindow(QMainWindow):
     # WIDGET-RELATED METHODS
     # =============
     def repaintMapView(self):
-        """ Precondition: self.mapView is already loaded.
+        """Precondition: self.mapView is already loaded.
         """
         self.mapView.updateScene()
 
     def changeCursorMode(self, new_mode):
-        """ Change self.cursorMode and check the corresponding button
+        """Change self.cursorMode and check the corresponding button
         in self.toolBar
         """
         if new_mode in self.allCursorModes:
@@ -234,21 +234,13 @@ class MainWindow(QMainWindow):
 
 
     def clearLevel(self):
-        """ Clear anything associated with the current level.
+        """Clear anything associated with the current level.
 
         Note: It does NOT touch self.levelData
         """
         self.toolBar.tileMenu.clearTiles()
         self.mapView.clearScene(True)
 
-    # =============
-    # MISC. METHODS
-    # =============
-    def getMapSize(self):
-        """ Return the dimensions of the level / map in pixels.
-        Precondition: level is not None
-        """
-        return self.levelData.getMapSize()
 
 class MapView(QGraphicsView):
     def __init__(self, parent):
@@ -288,7 +280,10 @@ class MapView(QGraphicsView):
 
     def mousePressEvent(self, event):
         print('Press detected!')
-        print(self.parent.levelData)
+        print(self.mousePos)
+        x, y = self.mousePos
+        print(self.getNearestTopLeft(x, y))
+        # print(self.parent.levelData)
 
     def leaveEvent(self, event):
         self.mousePos = None
@@ -313,7 +308,7 @@ class MapView(QGraphicsView):
         self.scene().setSceneRect(self.scene().itemsBoundingRect())
 
     def getNearestTopLeft(self, pos_x, pos_y) -> tuple:
-        """ Return the top left coordinates of the nearest grid square relative to
+        """Return the top left coordinates of the nearest grid square relative to
         pos_x and pos_y
         """
         tileSize = self.tileSize
@@ -321,14 +316,25 @@ class MapView(QGraphicsView):
         y = pos_y - (pos_y % tileSize)
         return (x, y)
 
+    def getTileIndex(self, pos_x, pos_y) -> int:
+        """Return the
+        """
+        pass
+
+    def getMapSize(self):
+        """Return level map size in pixels.
+        Precondition: self.parent.levelData is not None
+        """
+        return self.parent.levelData.getMapSize(self.tileSize)
+
     # =====================
     # SCENE DRAWING METHODS
     # =====================
     def drawSceneBackground(self, painter):
-        """ Draw the background of the view / scene.
+        """Draw the background of the view / scene.
         """
         if self.parent.levelData:
-            mapSize = self.parent.getMapSize()
+            mapSize = self.getMapSize()
         else:
             mapSize = (0, 0)
 
@@ -342,7 +348,7 @@ class MapView(QGraphicsView):
         painter.drawRect(0, 0, width, height)
 
     def drawSelectOutline(self, painter):
-        """ Draws a rectangular outline of the nearest grid square.
+        """Draws a rectangular outline of the nearest grid square.
         Used to indicate the grid square the cursor is currently hovering over.
         """
         topLeft = self.getNearestTopLeft(self.mousePos[0], self.mousePos[1])
@@ -352,12 +358,12 @@ class MapView(QGraphicsView):
         painter.drawRect(topLeft[0], topLeft[1], tileSize, tileSize)
 
     def drawCheckerGrid(self, painter):
-        """ Draws a pattern of grey and white squares into the scene.
+        """Draws a pattern of grey and white squares into the scene.
         Used to represent transparency in the background.
 
         Precondition: self.parent.level is not None
         """
-        mapSize = self.parent.getMapSize()
+        mapSize = self.getMapSize()
         width, height = mapSize[0], mapSize[1]
 
         tileSize = self.checkerTileSize
@@ -386,10 +392,10 @@ class MapView(QGraphicsView):
 
 
     def drawGrid(self, painter):
-        """ Draws a grid by drawing a series of lines into the scene.
+        """Draws a grid by drawing a series of lines into the scene.
         Precondition: self.grid is None and self.parent.level is not NOne
         """
-        mapSize = self.parent.getMapSize()
+        mapSize = self.getMapSize()
         width, height = mapSize[0], mapSize[1]
 
         painter.setPen(QColor(cfg.colors['cobalt']))
@@ -403,7 +409,7 @@ class MapView(QGraphicsView):
                 painter.drawLine(v_line)
 
     def drawLevel(self, level):
-        """ Draws in the tiles of a level. Should only be called once
+        """Draws in the tiles of a level. Should only be called once
         everytime the level is updated.
         """
         tileData = level.getTileData()
@@ -630,20 +636,20 @@ class LevelData:
             return self.currentLevel
         return levelName
 
-    def getMapSize(self, levelName=None) -> tuple:
+    def getMapSize(self, tileSize: int, levelName=None) -> tuple:
         """ Return the dimensions of the level / map in pixels.
         """
         levelName = self._getDefaultName(levelName)
         width = self.getLevel(levelName)["width"]
         height = self.getLevel(levelName)["height"]
-        return (width * cfg.TILESIZE, height * cfg.TILESIZE)
+        return (width * tileSize, height * tileSize)
 
     def getTilePos(self, index: int, tileSize: int, levelName=None) -> tuple:
         """Return the true position of a particular tile.
         """
         levelName = self._getDefaultName(levelName)
-        width = self.getLevel(levelName)["width"]
-        pos = self.get2DFrom1D(index, width)
+        array_width = self.getLevel(levelName)["width"]
+        pos = self.get2DFrom1D(index, array_width)
         x = pos[0]
         y = pos[1]
         return (x * tileSize, y * tileSize)

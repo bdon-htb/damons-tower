@@ -265,7 +265,7 @@ class MapView(QGraphicsView):
         if self.parent.gridAct.isChecked() and self.parent.levelData:
             self.drawGrid(painter)
 
-        if self.parent.cursorMode == 'select' and self.mousePos:
+        if self.parent.cursorMode in ('select', 'draw', 'erase') and self.mousePos:
             self.drawSelectOutline(painter)
 
         self.updateSceneSize() # Call this once everything is drawn.
@@ -340,7 +340,7 @@ class MapView(QGraphicsView):
     # LEVEL MANIPULATION METHODS
     # ==========================
     def editMap(self):
-        """Test
+        """Handles all level manipulations done with the mapview.
         """
         cursorMode = self.parent.cursorMode
         levelData = self.parent.getLevelData()
@@ -351,6 +351,7 @@ class MapView(QGraphicsView):
             index = self.getNearestTileIndex(x, y)
             # TODO: Implement
             if cursorMode == 'draw':
+                print(self.parent.toolBar.tileMenu.getSelectedTile())
                 # new_id = self.constructId()
                 # levelData.setTile(index, new_id)
                 pass

@@ -350,8 +350,10 @@ class MapView(QGraphicsView):
         if x < levelWidth and y < levelHeight:
             index = self.getNearestTileIndex(x, y)
             # TODO: Implement
-            if cursorMode == 'draw':
-                print(self.parent.toolBar.tileMenu.getSelectedTile())
+            selectedTile = self.parent.toolBar.tileMenu.getSelectedTile()
+            if cursorMode == 'draw' and selectedTile:
+                id = '{}-{}'.format(selectedTile.sprite_x, selectedTile.sprite_y)
+                print(id)
                 # new_id = self.constructId()
                 # levelData.setTile(index, new_id)
                 pass
@@ -572,7 +574,7 @@ class TileMenu(QScrollArea):
             for x in range(0, spriteSheet.width(), cfg.TILESIZE):
                 slice = QRect(x, y, cfg.TILESIZE, cfg.TILESIZE)
                 tileSprite = spriteSheet.copy(slice)
-                tile = TileButton(tileSprite)
+                tile = TileButton(tileSprite, int(x / cfg.TILESIZE), int(y / cfg.TILESIZE))
                 self.addTile(tile)
                 col += 1
 
@@ -598,10 +600,14 @@ class TileMenu(QScrollArea):
             widget.setParent(None)
 
 class TileButton(QPushButton):
-    def __init__(self, pixmap):
+    def __init__(self, pixmap, x, y):
         super().__init__()
         self.icon = QIcon(pixmap)
         self.iconSize = QSize(32, 32)
+
+        # These refer to the location of this tile's sprite in its spriteSheet
+        self.sprite_x = x
+        self.sprite_y = y
 
         self.setIcon(QIcon(pixmap))
         self.setIconSize(self.iconSize)

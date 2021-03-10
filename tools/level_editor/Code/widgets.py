@@ -346,19 +346,25 @@ class MapView(QGraphicsView):
         """
         cursorMode = self.parent.cursorMode
         levelData = self.parent.getLevelData()
+        tileTabMenu = self.parent.toolBar.tileTabMenu
         levelWidth, levelHeight = levelData.getMapSize(self.tileSize)
         x, y = self.mousePos
         # We only care if it's in level bounds
         if x < levelWidth and y < levelHeight:
             index = self.getNearestTileIndex(x, y)
             # TODO: Implement
-            # selectedTile = self.parent.toolBar.tileTabMenu.getMenu('Sprite').getSelectedTile()
-            if cursorMode == 'draw' and selectedTile:
-                id = '{}-{}'.format(selectedTile.sprite_x, selectedTile.sprite_y)
-                print(id)
-                # new_id = self.constructId()
-                # levelData.setTile(index, new_id)
-                pass
+            activeTileMenu = tileTabMenu.getActiveMenu()
+            selectedTile = tileTabMenu.getActiveSelection()
+            tile_id = levelData.getTileData()[index].split('-')
+            if cursorMode == 'draw' and activeTileMenu == 'Tile Sprites' and selectedTile:
+                tile_id[0] = str(selectedTile.getMetaData()["sprite_x"])
+                tile_id[1] = str(selectedTile.getMetaData()["sprite_y"])
+                if tile_id[2] == cfg.EMPTY_TILE_ID:
+                    tile_id[2] = 'FL' # Floor is the default value for anything not empty.
+                tile_id = '-'.join(tile_id)
+                levelData.setTile(index, tile_id)
+                print('PAINTED!')
+                print(tile_id)
             elif cursorMode == 'erase':
                 levelData.eraseTile(index)
             self.redrawLevel()
@@ -549,8 +555,8 @@ class TileTabMenu(QTabWidget):
             'Tile Ids': self.idMenu
         }
 
-        for name, menu in self.tileMenus.items():
-            self.insertTab(-1, menu, name) # Append the widgets.
+        for menu_name, menu in self.tileMenus.items():
+            self.insertTab(-1, menu, menu_name) # Append the widgets.
 
     def getMenu(self, key):
         return self.tileMenus[key]
@@ -566,6 +572,24 @@ class TileTabMenu(QTabWidget):
         """
         for menu in self.tileMenus.values():
             menu.clearTiles()
+
+    def getActiveMenu(self) -> Optional[str]:
+        """Get the name of the currently active menu.
+        """
+        active = self.currentWidget()
+        for menu_name, menu in self.tileMenus.items():
+            if menu == active:
+                return menu_name
+        return None
+
+    def getActiveSelection(self) -> Optional['TileButton']:
+        """Get the currently selected tile of the active
+        menu.
+        """
+        active = self.getActiveMenu()
+        if active:
+            return self.tileMenus[active].getSelectedTile()
+        return None
 
 class TileMenu(QScrollArea):
     """Base class for the tile menus.
@@ -637,7 +661,13 @@ class TileSpriteMenu(TileMenu):
             for x in range(0, spriteSheet.width(), cfg.TILESIZE):
                 slice = QRect(x, y, cfg.TILESIZE, cfg.TILESIZE)
                 tileSprite = spriteSheet.copy(slice)
-                tile = TileButton(tileSprite, int(x / cfg.TILESIZE), int(y / cfg.TILESIZE))
+                metaData = {
+                    "type": "sprite",
+                    # Refers to the location of this tile's  sprite in its spriteSheet
+                    "sprite_x": int(x / cfg.TILESIZE),
+                    "sprite_y": int(y / cfg.TILESIZE)
+                    }
+                tile = TileButton(tileSprite, metaData)
                 self.addTile(tile)
                 col += 1
 
@@ -666,22 +696,26 @@ class TileIDMenu(TileMenu):
         """
         for tile_id, tile_color in cfg.tile_type_colors.items():
             tileSprite = self._createTileImage(tile_id, tile_color)
-            tile = TileButton(tileSprite)
+            metaData = {
+                "type": "id",
+                "id": tile_id
+                }
+            tile = TileButton(tileSprite, metaData)
             self.addTile(tile)
 
 class TileButton(QPushButton):
-    def __init__(self, pixmap, x=None, y=None):
+    def __init__(self, pixmap, metadata: dict):
         super().__init__()
         self.icon = QIcon(pixmap)
         self.iconSize = QSize(32, 32)
-
-        # These refer to the location of this tile's sprite in its spriteSheet
-        self.sprite_x = x
-        self.sprite_y = y
+        self.metaData = metadata
 
         self.setIcon(QIcon(pixmap))
         self.setIconSize(self.iconSize)
         self.setCheckable(True)
+
+    def getMetaData(self):
+        return self.metaData
 
 class LevelMenuBar(QWidget):
     def __init__(self, parent):
@@ -829,7 +863,8 @@ class LevelData:
         level["tileData"][tile_index] = new_id
 
     def eraseTile(self, tile_index, levelName=None):
-        self.setTile(tile_index, cfg.EMPTY_TILE_ID, levelName)
+        empty_id = '0-0-{}'.format(cfg.EMPTY_TILE_ID)
+        self.setTile(tile_index, empty_id, levelName)
 
 
 # ========================

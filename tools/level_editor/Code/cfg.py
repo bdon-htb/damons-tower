@@ -36,7 +36,15 @@ colors = {
     'cobalt': '#0050EF',
     'dark cobalt': '#00356A',
     'mauve': '#76608A',
-    'light teal': '#45FFFD'
+    'teal': '#00ABA9',
+    'light teal': '#45FFFD',
+    'yellow': '#E3C800'
+}
+
+tile_type_colors = {
+    'WA': colors['grey dark'],
+    'FL': colors['teal'],
+    '00': None
 }
 
 # IMPORTANT!

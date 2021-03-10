@@ -8,11 +8,11 @@ from PyQt5.QtCore import Qt, QSize, QLineF, QLine, QRect
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene,
 QGraphicsProxyWidget, QGraphicsPixmapItem, QFileDialog, QFrame, QListView,
-QScrollArea, QButtonGroup, QComboBox)
+QScrollArea, QButtonGroup, QComboBox, QTabWidget)
 
 # Other python imports
 import math
-from typing import Tuple
+from typing import Tuple, Optional
 
 # Custom imports
 from . import cfg
@@ -201,7 +201,9 @@ class MainWindow(QMainWindow):
         """
         self.statusComponents['levelName'].setText(levelName)
         self.mapView.drawLevel()
-        self.toolBar.tileMenu.loadTiles(self.levelData.getSpriteURL())
+
+        spriteURL = self.levelData.getSpriteURL()
+        self.toolBar.tileTabMenu.loadTiles(spriteURL)
 
     def saveLevelData(self):
         print('Save level')
@@ -238,7 +240,7 @@ class MainWindow(QMainWindow):
 
         Note: It does NOT touch self.levelData
         """
-        self.toolBar.tileMenu.clearTiles()
+        self.toolBar.tileTabMenu.clearTiles()
         self.mapView.clearScene(True)
 
 
@@ -350,7 +352,7 @@ class MapView(QGraphicsView):
         if x < levelWidth and y < levelHeight:
             index = self.getNearestTileIndex(x, y)
             # TODO: Implement
-            selectedTile = self.parent.toolBar.tileMenu.getSelectedTile()
+            # selectedTile = self.parent.toolBar.tileTabMenu.getMenu('Sprite').getSelectedTile()
             if cursorMode == 'draw' and selectedTile:
                 id = '{}-{}'.format(selectedTile.sprite_x, selectedTile.sprite_y)
                 print(id)
@@ -483,11 +485,11 @@ class ToolBar(QWidget):
         self.eraseBtn = ToolButton(cfg.icons['eraser'], 'erase', invShortcuts['erase'])
         self.dragBtn = ToolButton(cfg.icons['drag'], 'drag', invShortcuts['drag'])
 
-        self.separator = QFrame()
-        self.separator.setFrameShape(QFrame.HLine)
-        self.separator.setLineWidth(2)
+        # self.separator = QFrame()
+        # self.separator.setFrameShape(QFrame.HLine)
+        # self.separator.setLineWidth(2)
 
-        self.tileMenu = TileMenu()
+        self.tileTabMenu = TileTabMenu()
 
         btns = [
             self.selectBtn,
@@ -503,8 +505,8 @@ class ToolBar(QWidget):
             self.buttonGroup.addButton(b)
             self.layout.addWidget(b)
 
-        self.layout.addWidget(self.separator)
-        self.layout.addWidget(self.tileMenu)
+        # self.layout.addWidget(self.separator)
+        self.layout.addWidget(self.tileTabMenu)
         self.setLayout(self.layout)
 
     def getCheckedButton(self):
@@ -534,7 +536,40 @@ class ToolButton(QPushButton):
         self.setToolTip(toolTip)
         self.setCheckable(True)
 
+class TileTabMenu(QTabWidget):
+    """Contains all the tile menus.
+    """
+    def __init__(self):
+        super().__init__()
+        self.spriteMenu = TileSpriteMenu()
+        self.idMenu = TileIDMenu()
+
+        self.tileMenus = {
+            'Tile Sprites': self.spriteMenu,
+            'Tile Ids': self.idMenu
+        }
+
+        for name, menu in self.tileMenus.items():
+            self.insertTab(-1, menu, name) # Append the widgets.
+
+    def getMenu(self, key):
+        return self.tileMenus[key]
+
+    def loadTiles(self, spriteURL):
+        """Loads the tiles for all menus.
+        """
+        self.spriteMenu.loadTiles(spriteURL)
+        self.idMenu.loadTiles()
+
+    def clearTiles(self):
+        """Clears the tiles for all menus.
+        """
+        for menu in self.tileMenus.values():
+            menu.clearTiles()
+
 class TileMenu(QScrollArea):
+    """Base class for the tile menus.
+    """
     def __init__(self):
         super().__init__()
         self.layout = QGridLayout()
@@ -562,21 +597,11 @@ class TileMenu(QScrollArea):
             tile.setChecked(True)
             self.selectedTile = tile
 
-    def loadTiles(self, spriteSheetURL):
-        """Load the tiles of a spriteSheet into the tileMenu.
-        Precondition: Assumes each 32x32 square in the sheet is occupied
-        and that 32 divides the area of the spriteSheet evenly.
+    def loadTiles(self):
+        """Load the tiles into the tileMenu. Needs to be implemented
+        individually.
         """
-        spriteSheet = QPixmap(spriteSheetURL)
-        col = 0
-        row = 0
-        for y in range(0, spriteSheet.height(), cfg.TILESIZE):
-            for x in range(0, spriteSheet.width(), cfg.TILESIZE):
-                slice = QRect(x, y, cfg.TILESIZE, cfg.TILESIZE)
-                tileSprite = spriteSheet.copy(slice)
-                tile = TileButton(tileSprite, int(x / cfg.TILESIZE), int(y / cfg.TILESIZE))
-                self.addTile(tile)
-                col += 1
+        pass
 
     def addTile(self, tile):
         if self._lastCol > self.cols:
@@ -599,8 +624,53 @@ class TileMenu(QScrollArea):
             self.buttonGroup.removeButton(widget)
             widget.setParent(None)
 
+class TileSpriteMenu(TileMenu):
+    def loadTiles(self, spriteSheetURL):
+        """Load the tiles of a spriteSheet into the tileMenu.
+        Precondition: Assumes each 32x32 square in the sheet is occupied
+        and that 32 divides the area of the spriteSheet evenly.
+        """
+        spriteSheet = QPixmap(spriteSheetURL)
+        col = 0
+        row = 0
+        for y in range(0, spriteSheet.height(), cfg.TILESIZE):
+            for x in range(0, spriteSheet.width(), cfg.TILESIZE):
+                slice = QRect(x, y, cfg.TILESIZE, cfg.TILESIZE)
+                tileSprite = spriteSheet.copy(slice)
+                tile = TileButton(tileSprite, int(x / cfg.TILESIZE), int(y / cfg.TILESIZE))
+                self.addTile(tile)
+                col += 1
+
+class TileIDMenu(TileMenu):
+    def _createTileImage(self, tile_id: str, bg_color: Optional[str]) -> 'QPixmap':
+        """Construct and return a pixmap representing the tile_id
+        """
+        width, height = cfg.TILESIZE, cfg.TILESIZE
+        image = QPixmap(width, height)
+        painter = QPainter(image)
+
+        if bg_color is None:
+            bg_color = cfg.colors['mauve'] # Default bg color I guess.
+
+        bg_color = QColor(bg_color)
+        painter.setPen(bg_color)
+        painter.setBrush(QBrush(bg_color, Qt.SolidPattern))
+        painter.drawRect(0, 0, width, height)
+        painter.setPen(QColor(cfg.colors['yellow']))
+        painter.drawText(image.rect(), Qt.AlignCenter, tile_id)
+        return image
+
+    def loadTiles(self):
+        """Load all the tile types into the tileMenu according
+        to the types listed in cfg.py
+        """
+        for tile_id, tile_color in cfg.tile_type_colors.items():
+            tileSprite = self._createTileImage(tile_id, tile_color)
+            tile = TileButton(tileSprite)
+            self.addTile(tile)
+
 class TileButton(QPushButton):
-    def __init__(self, pixmap, x, y):
+    def __init__(self, pixmap, x=None, y=None):
         super().__init__()
         self.icon = QIcon(pixmap)
         self.iconSize = QSize(32, 32)

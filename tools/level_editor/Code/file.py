@@ -16,7 +16,7 @@ def file_len(filename: str) -> int:
     return num_lines
 
 def load_config_file(filename: str) -> Dict[str, str]:
-    """Load a ltmi custom .cfg file and return a dictionary of its contents.
+    """Load a custom .cfg file and return a dictionary of its contents.
     Ignores comments
     """
     D = {}

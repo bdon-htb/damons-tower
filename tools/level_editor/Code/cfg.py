@@ -38,13 +38,15 @@ colors = {
     'mauve': '#76608A',
     'teal': '#00ABA9',
     'light teal': '#45FFFD',
-    'yellow': '#E3C800'
+    'yellow': '#E3C800',
+    'dark indigo': '#4B0096',
+    'dark crimson': '#640024'
 }
 
 tile_type_colors = {
-    'WA': colors['grey dark'],
-    'FL': colors['teal'],
-    '00': None
+    'WA': colors['dark indigo'],
+    'FL': colors['dark crimson'],
+    '00': colors['mauve']
 }
 
 # IMPORTANT!

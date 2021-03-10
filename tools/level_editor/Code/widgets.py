@@ -270,6 +270,9 @@ class MapView(QGraphicsView):
         if self.parent.cursorMode in ('select', 'draw', 'erase') and self.mousePos:
             self.drawSelectOutline(painter)
 
+        if self.parent.levelData and self.parent.toolBar.tileTabMenu.getActiveMenu() == 'Tile Ids':
+            self.drawTileIds(painter)
+
         self.updateSceneSize() # Call this once everything is drawn.
 
     def mouseMoveEvent(self, event):
@@ -355,16 +358,18 @@ class MapView(QGraphicsView):
             # TODO: Implement
             activeTileMenu = tileTabMenu.getActiveMenu()
             selectedTile = tileTabMenu.getActiveSelection()
-            tile_id = levelData.getTileData()[index].split('-')
+            tile_data = levelData.getTileData()[index].split('-')
             if cursorMode == 'draw' and activeTileMenu == 'Tile Sprites' and selectedTile:
-                tile_id[0] = str(selectedTile.getMetaData()["sprite_x"])
-                tile_id[1] = str(selectedTile.getMetaData()["sprite_y"])
-                if tile_id[2] == cfg.EMPTY_TILE_ID:
-                    tile_id[2] = 'FL' # Floor is the default value for anything not empty.
-                tile_id = '-'.join(tile_id)
-                levelData.setTile(index, tile_id)
-                print('PAINTED!')
-                print(tile_id)
+                tile_data[0] = str(selectedTile.getMetaData()["sprite_x"])
+                tile_data[1] = str(selectedTile.getMetaData()["sprite_y"])
+                if tile_data[2] == cfg.EMPTY_TILE_ID:
+                    tile_data[2] = 'FL' # Floor is the default value for anything not empty.
+                tile_data = '-'.join(tile_data)
+                levelData.setTile(index, tile_data)
+            elif cursorMode == 'draw' and activeTileMenu == 'Tile Ids' and selectedTile:
+                tile_data[2] = selectedTile.getMetaData()["id"]
+                tile_data = '-'.join(tile_data)
+                levelData.setTile(index, tile_data)
             elif cursorMode == 'erase':
                 levelData.eraseTile(index)
             self.redrawLevel()
@@ -450,6 +455,22 @@ class MapView(QGraphicsView):
                 v_line = QLine(x * tileSize, 0, x * tileSize, height)
                 painter.drawLine(v_line)
 
+    def drawTileIds(self, painter):
+        """Draws the tile id over the tiles in the level.
+        """
+        levelData = self.parent.getLevelData()
+        tileData = levelData.getTileData()
+        tileSize = self.tileSize
+
+        buttons = self.parent.toolBar.tileTabMenu.getMenu('Tile Ids').buttonGroup.buttons()
+        tile_pixmap = {btn.metaData['id']: btn.icon().pixmap(tileSize) for btn in buttons}
+        painter.setOpacity(0.50)
+        for index in range(len(tileData)):
+            id = tileData[index].split('-')[-1]
+            pos = levelData.getTilePos(index, tileSize)
+            painter.drawPixmap(pos[0] + 1, pos[1] + 1, tile_pixmap[id])
+        painter.setOpacity(1)
+
     def drawLevel(self):
         """Draws in the tiles of a level. Should only be called once
         everytime the level is updated.
@@ -473,6 +494,7 @@ class MapView(QGraphicsView):
         self.clearScene(True)
         self.drawLevel()
 
+
 class ToolBar(QWidget):
     def __init__(self, parent):
         super().__init__()
@@ -495,7 +517,7 @@ class ToolBar(QWidget):
         # self.separator.setFrameShape(QFrame.HLine)
         # self.separator.setLineWidth(2)
 
-        self.tileTabMenu = TileTabMenu()
+        self.tileTabMenu = TileTabMenu(self)
 
         btns = [
             self.selectBtn,
@@ -545,10 +567,12 @@ class ToolButton(QPushButton):
 class TileTabMenu(QTabWidget):
     """Contains all the tile menus.
     """
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__()
+        self.parent = parent
         self.spriteMenu = TileSpriteMenu()
         self.idMenu = TileIDMenu()
+        self.currentChanged.connect(self.parent.parent.repaintMapView)
 
         self.tileMenus = {
             'Tile Sprites': self.spriteMenu,
@@ -557,6 +581,7 @@ class TileTabMenu(QTabWidget):
 
         for menu_name, menu in self.tileMenus.items():
             self.insertTab(-1, menu, menu_name) # Append the widgets.
+
 
     def getMenu(self, key):
         return self.tileMenus[key]
@@ -679,10 +704,7 @@ class TileIDMenu(TileMenu):
         image = QPixmap(width, height)
         painter = QPainter(image)
 
-        if bg_color is None:
-            bg_color = cfg.colors['mauve'] # Default bg color I guess.
-
-        bg_color = QColor(bg_color)
+        bg_color = QColor(cfg.tile_type_colors[tile_id])
         painter.setPen(bg_color)
         painter.setBrush(QBrush(bg_color, Qt.SolidPattern))
         painter.drawRect(0, 0, width, height)
@@ -706,12 +728,10 @@ class TileIDMenu(TileMenu):
 class TileButton(QPushButton):
     def __init__(self, pixmap, metadata: dict):
         super().__init__()
-        self.icon = QIcon(pixmap)
-        self.iconSize = QSize(32, 32)
         self.metaData = metadata
 
         self.setIcon(QIcon(pixmap))
-        self.setIconSize(self.iconSize)
+        self.setIconSize(QSize(32, 32))
         self.setCheckable(True)
 
     def getMetaData(self):

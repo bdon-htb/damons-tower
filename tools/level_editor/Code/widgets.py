@@ -8,7 +8,7 @@ from PyQt5.QtCore import Qt, QSize, QLineF, QLine, QRect
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene,
 QGraphicsProxyWidget, QGraphicsPixmapItem, QFileDialog, QFrame, QListView,
-QScrollArea, QButtonGroup, QComboBox, QTabWidget)
+QScrollArea, QButtonGroup, QComboBox, QTabWidget, QSizePolicy)
 
 # Other python imports
 import math
@@ -86,6 +86,14 @@ class MainWindow(QMainWindow):
         self.levelMenu = LevelMenuBar(self)
         self.mapView = MapView(self)
         self.toolBar = ToolBar(self)
+
+        leftPolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        rightPolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        leftPolicy.setHorizontalStretch(2)
+        rightPolicy.setHorizontalStretch(1)
+
+        self.mapView.setSizePolicy(leftPolicy)
+        self.toolBar.setSizePolicy(rightPolicy)
 
         self.layout.addWidget(self.levelMenu, 0, 0, 1, 2) # Span both cols.
         self.layout.addWidget(self.mapView, 1, 0)

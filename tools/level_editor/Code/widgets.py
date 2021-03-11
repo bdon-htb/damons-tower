@@ -268,7 +268,6 @@ class MapView(QGraphicsView):
         super().__init__()
         self.parent = parent
         self.checkerTileSize = 16
-        self.tileSize = cfg.TILESIZE
         self.mousePos = None
         self.bg_color = cfg.colors['mauve']
         # self.setStyleSheet("background-color: '#76608A';")
@@ -335,7 +334,7 @@ class MapView(QGraphicsView):
         """Return the top left coordinates of the nearest grid square relative to
         pos_x and pos_y
         """
-        tileSize = self.tileSize
+        tileSize = cfg.TILESIZE
         x = pos_x - (pos_x % tileSize)
         y = pos_y - (pos_y % tileSize)
         return x, y
@@ -352,7 +351,7 @@ class MapView(QGraphicsView):
         """
         levelData = self.parent.getLevelData()
         pos_x, pos_y = self.getNearestTopLeft(pos_x, pos_y)
-        pos_x, pos_y = int(pos_x // self.tileSize), int(pos_y // self.tileSize)
+        pos_x, pos_y = int(pos_x // cfg.TILESIZE), int(pos_y // cfg.TILESIZE)
         array_width = levelData.getLevel()["width"]
         return levelData.get1DFrom2D(pos_x, pos_y, array_width)
 
@@ -360,7 +359,7 @@ class MapView(QGraphicsView):
         """Return level map size in pixels.
         Precondition: self.parent.levelData is not None
         """
-        return self.parent.levelData.getMapSize(self.tileSize)
+        return self.parent.levelData.getMapSize(cfg.TILESIZE)
 
     # ==========================
     # LEVEL MANIPULATION METHODS
@@ -371,7 +370,7 @@ class MapView(QGraphicsView):
         cursorMode = self.parent.cursorMode
         levelData = self.parent.getLevelData()
         tileTabMenu = self.parent.toolBar.tileTabMenu
-        levelWidth, levelHeight = levelData.getMapSize(self.tileSize)
+        levelWidth, levelHeight = levelData.getMapSize(cfg.TILESIZE)
         x, y = self.mousePos
         # We only care if it's in level bounds
         if x < levelWidth and y < levelHeight:
@@ -420,7 +419,7 @@ class MapView(QGraphicsView):
         Used to indicate the grid square the cursor is currently hovering over.
         """
         topLeft = self.getNearestTopLeft(self.mousePos[0], self.mousePos[1])
-        tileSize = self.tileSize
+        tileSize = cfg.TILESIZE
 
         painter.setPen(QColor(cfg.colors['light teal']))
         painter.drawRect(topLeft[0], topLeft[1], tileSize, tileSize)
@@ -467,7 +466,7 @@ class MapView(QGraphicsView):
         width, height = mapSize[0], mapSize[1]
 
         painter.setPen(QColor(cfg.colors['cobalt']))
-        tileSize = self.tileSize
+        tileSize = cfg.TILESIZE
 
         for y in range(round(height / tileSize) + 1):
             h_line = QLine(0, y * tileSize, width, y * tileSize)
@@ -481,7 +480,7 @@ class MapView(QGraphicsView):
         """
         levelData = self.parent.getLevelData()
         tileData = levelData.getTileData()
-        tileSize = self.tileSize
+        tileSize = cfg.TILESIZE
 
         buttons = self.parent.toolBar.tileTabMenu.getMenu('Tile Ids').buttonGroup.buttons()
         tile_pixmap = {btn.metaData['id']: btn.icon().pixmap(tileSize) for btn in buttons}
@@ -498,7 +497,7 @@ class MapView(QGraphicsView):
         """
         levelData = self.parent.getLevelData()
         tileData = levelData.getTileData()
-        tileSize = self.tileSize
+        tileSize = cfg.TILESIZE
         for index in range(len(tileData)):
             data = [int(n) for n in tileData[index].split('-')[:-1]]
             id = tileData[index].split('-')[-1]

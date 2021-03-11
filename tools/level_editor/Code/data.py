@@ -3,6 +3,8 @@
 # basically contains all the non-widget stuff.
 # ===========================================================
 from typing import Tuple
+import math
+from . import cfg
 
 class LevelData:
     def __init__(self, file: dict):

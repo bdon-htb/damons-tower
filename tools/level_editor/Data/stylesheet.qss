@@ -538,6 +538,6 @@ MapView {
   background-color: cfg.colors['mauve'];
 }
 
-VLine {
-  border: none;
+NewLevelWindow {
+	background-color:#151a1e;
 }

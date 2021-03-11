@@ -8,7 +8,8 @@ from PyQt5.QtCore import Qt, QSize, QLineF, QLine, QRect
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene,
 QGraphicsProxyWidget, QGraphicsPixmapItem, QFileDialog, QFrame, QListView,
-QScrollArea, QButtonGroup, QComboBox, QTabWidget, QSizePolicy)
+QScrollArea, QButtonGroup, QComboBox, QTabWidget, QSizePolicy, QFormLayout,
+QLineEdit, QCheckBox)
 
 # Other python imports
 import math
@@ -34,6 +35,7 @@ class MainWindow(QMainWindow):
         self.parent = parent
         self.name = cfg.__name__
         self.version = cfg.__version__
+        self.zoom = 1
 
         self.levelData = None
         self.allCursorModes = [
@@ -183,6 +185,8 @@ class MainWindow(QMainWindow):
 
     def newLevel(self):
         print('New level')
+        self.test = NewLevelWindow(self)
+        self.test.show()
 
     def openLevelData(self):
         directory = cfg.level_dir if cfg.SETTINGS['inRepo'] else cfg.main_dir
@@ -227,14 +231,20 @@ class MainWindow(QMainWindow):
     def zoomInAction(self):
         if self.levelData:
             self.mapView.scale(1.25, 1.25)
+            self.zoom *= 1.25
+            self.statusComponents['zoom'].setText(f' {int(self.zoom * 100)}% ')
 
     def zoomOutAction(self):
         if self.levelData:
             self.mapView.scale(0.8, 0.8)
+            self.zoom *= 0.8
+            self.statusComponents['zoom'].setText(f' {int(self.zoom * 100)}% ')
 
     def setDefaultZoom(self):
         if self.levelData:
             self.mapView.setTransform(QTransform())
+            self.zoom = 1
+            self.statusComponents['zoom'].setText(f' {int(self.zoom * 100)}% ')
 
     # =============
     # WIDGET-RELATED METHODS
@@ -261,7 +271,6 @@ class MainWindow(QMainWindow):
         """
         self.toolBar.tileTabMenu.clearTiles()
         self.mapView.clearScene(True)
-
 
 class MapView(QGraphicsView):
     def __init__(self, parent):
@@ -513,7 +522,6 @@ class MapView(QGraphicsView):
     def redrawLevel(self):
         self.clearScene(True)
         self.drawLevel()
-
 
 class ToolBar(QWidget):
     def __init__(self, parent):
@@ -801,3 +809,26 @@ class LevelSelectBox(QComboBox):
     def setLevel(self, index):
         selected = self.itemText(index)
         self.parent.setLevel(selected)
+
+class NewLevelWindow(QWidget):
+    def __init__(self, parent, newGroup=False):
+        super().__init__()
+        self.parent = parent
+        self.setWindowTitle('Create a new level')
+        self.setFixedSize(500, 175)
+        self.layout = QFormLayout()
+
+        self.nameInput = QLineEdit()
+        self.spriteInput = QLineEdit()
+        self.widthInput = QLineEdit()
+        self.heightInput = QLineEdit()
+        self.submitButton = QPushButton('Create')
+        self.levelGroupBox = QCheckBox()
+
+        self.layout.addRow(QLabel('Name: '), self.nameInput)
+        self.layout.addRow(QLabel('Spritesheet: '), self.spriteInput)
+        self.layout.addRow(QLabel('Width: '), self.widthInput)
+        self.layout.addRow(QLabel('Height: '), self.heightInput)
+        self.layout.addRow(QLabel('Create new level group?: '), self.levelGroupBox)
+        self.layout.addRow(self.submitButton)
+        self.setLayout(self.layout)

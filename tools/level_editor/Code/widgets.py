@@ -16,7 +16,7 @@ from typing import Tuple, Optional
 
 # Custom imports
 from . import cfg
-from .file import load_config_file, update_config_file, load_json
+from .file import load_config_file, update_config_file, load_json, load_stylesheet
 
 SETTINGS = load_config_file(cfg.settings_file) # Currently does nothing
 print(SETTINGS)
@@ -80,7 +80,7 @@ class MainWindow(QMainWindow):
         self.addWidgets() # Important: must be before menubar sets up.
         self.setCentralWidget(self.centralWidget)
         self.centralWidget.setLayout(self.layout)
-        # self.loadStyleSheet()
+        self.setupStyleSheet()
 
     def addWidgets(self):
         self.levelMenu = LevelMenuBar(self)
@@ -180,9 +180,9 @@ class MainWindow(QMainWindow):
     # ====================
     # FILE RELATED METHODS
     # ====================
-    def loadStyleSheet(self):
-        qss = open(cfg.stylesheet_file, 'r')
-        self.parent.setStyleSheet(qss.read())
+    def setupStyleSheet(self):
+        print(load_stylesheet(cfg.stylesheet_file))
+        self.parent.setStyleSheet(load_stylesheet(cfg.stylesheet_file))
 
     def newLevel(self):
         print('New level')
@@ -227,10 +227,12 @@ class MainWindow(QMainWindow):
         print('Redo')
 
     def zoomInAction(self):
-        print('zoom in')
+        if self.levelData:
+            self.mapView.scale(1.25, 1.25)
 
     def zoomOutAction(self):
-        print('zoom out')
+        if self.levelData:
+            self.mapView.scale(0.8, 0.8)
 
     # =============
     # WIDGET-RELATED METHODS
@@ -267,6 +269,7 @@ class MapView(QGraphicsView):
         self.tileSize = cfg.TILESIZE
         self.mousePos = None
         self.bg_color = cfg.colors['mauve']
+        # self.setStyleSheet("background-color: '#76608A';")
         self.setScene(QGraphicsScene())
         self.setupView()
 
@@ -274,7 +277,7 @@ class MapView(QGraphicsView):
     # OVERRIDEN METHODS
     # =================
     def drawBackground(self, painter, rect):
-        self.drawSceneBackground(painter)
+        # self.drawSceneBackground(painter)
         if self.parent.levelData:
             self.drawCheckerGrid(painter)
 

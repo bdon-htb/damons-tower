@@ -3,7 +3,7 @@
 # ===============================================
 
 from typing import Dict, Union
-import shutil, os, json
+import shutil, os, json, re
 
 from . import cfg
 
@@ -77,3 +77,14 @@ def load_json(filename: str) -> Union[Dict, None]:
     except Exception as e:
         print(f'Error while opening {filename}\nError message: {e}')
         return None
+
+def load_stylesheet(filename: str) -> str:
+    """Load and return a qss file. Converts calls to color variables
+    in cfg.py to their actual values.
+    """
+    f = open(filename, 'r').read()
+    pattern = re.compile(r'cfg\.colors\[.*\]')
+    for match in set(pattern.findall(f)):
+        color = match[match.index('[\'') + 2: match.index('\']')]
+        f = f.replace(match, cfg.colors[color])
+    return f

@@ -150,7 +150,7 @@ class MainWindow(QMainWindow):
         undoAct.triggered.connect(self.undoAction)
         undoAct.setShortcut('Ctrl+Z')
 
-        redoAct = QAction('&' + 'Undo', self)
+        redoAct = QAction('&' + 'Redo', self)
         redoAct.triggered.connect(self.redoAction)
         redoAct.setShortcut('Ctrl+Shift+Z')
 
@@ -158,12 +158,21 @@ class MainWindow(QMainWindow):
         self.editMenu.addAction(redoAct)
 
     def configureViewMenu(self):
-        gridAct = QAction('&' + 'Grid', self)
-        gridAct.setCheckable(True)
-        gridAct.toggled.connect(self.repaintMapView) # Force a repaint of the window immediately after press.
-        self.viewMenu.addAction(gridAct)
+        self.gridAct = QAction('&' + 'Grid', self)
+        self.gridAct.setCheckable(True)
+        self.gridAct.toggled.connect(self.repaintMapView) # Force a repaint of the window immediately after press.
 
-        self.gridAct = gridAct
+        zoomInAct = QAction('&' + 'Zoom In', self)
+        zoomInAct.triggered.connect(self.zoomInAction)
+        zoomInAct.setShortcut('Ctrl+=')
+
+        zoomOutAct = QAction('&' + 'Zoom Out', self)
+        zoomOutAct.triggered.connect(self.zoomOutAction)
+        zoomOutAct.setShortcut('Ctrl+-')
+
+        self.viewMenu.addAction(self.gridAct)
+        self.viewMenu.addAction(zoomInAct)
+        self.viewMenu.addAction(zoomOutAct)
 
     def configureSettingsMenu(self):
         pass
@@ -216,6 +225,12 @@ class MainWindow(QMainWindow):
 
     def redoAction(self):
         print('Redo')
+
+    def zoomInAction(self):
+        print('zoom in')
+
+    def zoomOutAction(self):
+        print('zoom out')
 
     # =============
     # WIDGET-RELATED METHODS

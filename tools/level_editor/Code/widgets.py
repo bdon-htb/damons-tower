@@ -3,7 +3,7 @@
 # =======================================================
 
 # PyQt imports
-from PyQt5.QtGui import QIcon, QPainter, QPixmap, QPen, QColor, QFont, QBrush
+from PyQt5.QtGui import QIcon, QPainter, QPixmap, QPen, QColor, QFont, QBrush, QTransform
 from PyQt5.QtCore import Qt, QSize, QLineF, QLine, QRect
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene,
@@ -39,19 +39,15 @@ class MainWindow(QMainWindow):
 
         self.levelData = None
         self.allCursorModes = [
-            'select',
-            'fill',
             'draw',
-            'erase',
-            'drag'
+            'fill',
+            'erase'
         ]
 
         self.cursorShortcuts = {
-            'm': 'select',
-            'g': 'fill',
             'b': 'draw',
-            'e': 'erase',
-            'd': 'drag'
+            'g': 'fill',
+            'e': 'erase'
         }
 
         self.cursorMode = 'select'
@@ -176,9 +172,13 @@ class MainWindow(QMainWindow):
         zoomOutAct.triggered.connect(self.zoomOutAction)
         zoomOutAct.setShortcut('Ctrl+-')
 
+        defaultZoomAct = QAction('&' + 'Reset Zoom', self)
+        defaultZoomAct.triggered.connect(self.setDefaultZoom)
+
         self.viewMenu.addAction(self.gridAct)
         self.viewMenu.addAction(zoomInAct)
         self.viewMenu.addAction(zoomOutAct)
+        self.viewMenu.addAction(defaultZoomAct)
 
     def configureSettingsMenu(self):
         pass
@@ -218,6 +218,7 @@ class MainWindow(QMainWindow):
 
         spriteURL = self.levelData.getSpriteURL()
         self.toolBar.tileTabMenu.loadTiles(spriteURL)
+        self.setDefaultZoom()
 
     def saveLevelData(self):
         print('Save level')
@@ -238,6 +239,10 @@ class MainWindow(QMainWindow):
     def zoomOutAction(self):
         if self.levelData:
             self.mapView.scale(0.8, 0.8)
+
+    def setDefaultZoom(self):
+        if self.levelData:
+            self.mapView.setTransform(QTransform())
 
     # =============
     # WIDGET-RELATED METHODS
@@ -530,25 +535,17 @@ class ToolBar(QWidget):
         self.buttonGroup.buttonClicked.connect(self.changeCursorMode)
 
         invShortcuts = {name: shortcut for shortcut, name in parent.cursorShortcuts.items()}
-        self.selectBtn = ToolButton(cfg.icons['cursor'], 'select', invShortcuts['select'])
-        self.selectBtn.setChecked(True)
-        self.fillBtn = ToolButton(cfg.icons['fill'], 'fill', invShortcuts['fill'])
         self.drawBtn = ToolButton(cfg.icons['paint-brush'], 'draw', invShortcuts['draw'])
+        self.drawBtn.setChecked(True)
+        self.fillBtn = ToolButton(cfg.icons['fill'], 'fill', invShortcuts['fill'])
         self.eraseBtn = ToolButton(cfg.icons['eraser'], 'erase', invShortcuts['erase'])
-        self.dragBtn = ToolButton(cfg.icons['drag'], 'drag', invShortcuts['drag'])
-
-        # self.separator = QFrame()
-        # self.separator.setFrameShape(QFrame.HLine)
-        # self.separator.setLineWidth(2)
 
         self.tileTabMenu = TileTabMenu(self)
 
         btns = [
-            self.selectBtn,
-            self.fillBtn,
             self.drawBtn,
+            self.fillBtn,
             self.eraseBtn,
-            self.dragBtn
         ]
 
         self.buttons = {} # button reference.

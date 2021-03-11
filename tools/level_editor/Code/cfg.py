@@ -10,6 +10,10 @@ __name__ = 'js-roguelite Level Editor'
 TILESIZE = 32
 EMPTY_TILE_ID = '00'
 
+SETTINGS = {
+    'inRepo': True
+}
+
 main_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
 code_dir = os.path.abspath(os.path.join(main_dir, 'Code'))
 assets_dir = os.path.abspath(os.path.join(main_dir, 'Assets'))
@@ -23,7 +27,6 @@ for file in os.scandir(icons_dir):
         name = file.name[:-4] # Without extension
         icons[name] = os.path.abspath(os.path.join(icons_dir, file.name))
 
-settings_file = os.path.abspath(os.path.join(data_dir, 'settings.cfg'))
 stylesheet_file = os.path.abspath(os.path.join(data_dir, 'stylesheet.qss'))
 settings_default = '0'
 

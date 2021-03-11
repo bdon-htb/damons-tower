@@ -16,11 +16,8 @@ from typing import Tuple, Optional
 
 # Custom imports
 from . import cfg
-from .file import load_config_file, update_config_file, load_json, load_stylesheet
+from .file import load_json, load_stylesheet
 from .data import LevelData
-
-SETTINGS = load_config_file(cfg.settings_file) # Currently does nothing
-print(SETTINGS)
 
 def is_level(d: dict) -> bool:
     """Simply checks that the first key is 'levelData'
@@ -124,9 +121,6 @@ class MainWindow(QMainWindow):
         self.viewMenu = self.menubar.addMenu('&' + 'View')
         self.configureViewMenu()
 
-        self.settingsMenu = self.menubar.addMenu('&' + 'Settings')
-        self.configureSettingsMenu()
-
     def configureFileMenu(self):
         newAct = QAction('&' + 'New Level', self)
         newAct.triggered.connect(self.newLevel)
@@ -181,9 +175,6 @@ class MainWindow(QMainWindow):
         self.viewMenu.addAction(zoomOutAct)
         self.viewMenu.addAction(defaultZoomAct)
 
-    def configureSettingsMenu(self):
-        pass
-
     # ====================
     # FILE RELATED METHODS
     # ====================
@@ -194,7 +185,7 @@ class MainWindow(QMainWindow):
         print('New level')
 
     def openLevelData(self):
-        directory = cfg.level_dir if SETTINGS['inRepo'] == 'true' else cfg.main_dir
+        directory = cfg.level_dir if cfg.SETTINGS['inRepo'] else cfg.main_dir
         file_tuple = QFileDialog.getOpenFileName(None, 'Open Level', directory, 'Level data file (*.json)')
         file = load_json(file_tuple[0]) if file_tuple[0] else None
         if file and is_level(file): # Check if filename isn't blank
@@ -566,9 +557,6 @@ class ToolBar(QWidget):
         btn = self.getCheckedButton()
         if btn.name in self.allCursorModes:
             self.parent.changeCursorMode(btn.name)
-
-    def selectButton(self, name):
-        pass
 
 class ToolButton(QPushButton):
     def __init__(self, iconURL, name, shortcut=None):

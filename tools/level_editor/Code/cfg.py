@@ -29,6 +29,7 @@ settings_default = '0'
 
 colors = {
     'grey dark': '#222222',
+    'grey': '#555555',
     'grey light': '#999999',
     'grey lighter': '#EEEEEE',
     'white': '#FFFFFF',

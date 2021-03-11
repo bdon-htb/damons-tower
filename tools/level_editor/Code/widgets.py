@@ -94,17 +94,15 @@ class MainWindow(QMainWindow):
     def setupStatusBar(self):
         self.statusBar = self.statusBar()
         self.statusComponents = {
-            'levelName': QLabel('No level open'),
-            'levelSize': QLabel('0x0'),
-            'mousePos': QLabel('(0, 0)'),
-            'zoom': QLabel('100%')
+            'levelName': QLabel(' No level open '),
+            'levelSize': QLabel(' 0x0 '),
+            'mousePos': QLabel(' (0, 0) '),
+            'zoom': QLabel(' 100% ' )
         }
 
         last_component = list(self.statusComponents.keys())[-1]
         for component in self.statusComponents:
             self.statusBar.addPermanentWidget(self.statusComponents[component])
-            if component != last_component:
-                self.statusBar.addPermanentWidget(VLine())
 
     # ====================
     # MENUBAR RELATED METHODS
@@ -181,7 +179,6 @@ class MainWindow(QMainWindow):
     # FILE RELATED METHODS
     # ====================
     def setupStyleSheet(self):
-        print(load_stylesheet(cfg.stylesheet_file))
         self.parent.setStyleSheet(load_stylesheet(cfg.stylesheet_file))
 
     def newLevel(self):
@@ -208,7 +205,7 @@ class MainWindow(QMainWindow):
     def loadLevel(self, levelName: str):
         """Load in specified level from level data file.
         """
-        self.statusComponents['levelName'].setText(levelName)
+        self.statusComponents['levelName'].setText(' ' + levelName + ' ')
         self.mapView.drawLevel()
 
         spriteURL = self.levelData.getSpriteURL()
@@ -295,8 +292,9 @@ class MapView(QGraphicsView):
 
     def mouseMoveEvent(self, event):
         pos = self.mapToScene(event.pos())
-        s = f'({int(pos.x())},{int(pos.y())})'
-        self.parent.statusComponents['mousePos'].setText(s)
+        topleft = self.getNearestTopLeft(pos.x(), pos.y())
+        s = f'({int(topleft[0] / cfg.TILESIZE)},{int(topleft[1] / cfg.TILESIZE)})'
+        self.parent.statusComponents['mousePos'].setText(' ' + s + ' ')
         self.mousePos = (pos.x(), pos.y())
         self.updateScene()
 
@@ -781,7 +779,10 @@ class LevelMenuBar(QWidget):
         levelData = self.parent.getLevelData()
         if self.isEnabled() and levelData and levelName:
             levelData.setCurrentLevel(levelName)
+            mapSize = levelData.getMapSize(1, levelName)
+            mapSize = ' {}x{} '.format(mapSize[0], mapSize[1])
             self.parent.loadLevel(levelName)
+            self.parent.statusComponents['levelSize'].setText(mapSize)
 
 class LevelSelectBox(QComboBox):
     def __init__(self, parent):
@@ -903,16 +904,3 @@ class LevelData:
     def eraseTile(self, tile_index, levelName=None):
         empty_id = '0-0-{}'.format(cfg.EMPTY_TILE_ID)
         self.setTile(tile_index, empty_id, levelName)
-
-
-# ========================
-# AESTHETIC WIDGET CLASSES
-# ========================
-# TODO: Make this less ugly. Maybe add a horizontal frame too.
-class VLine(QFrame):
-    """a simple VLine, like the one you get from designer
-    Thanks stack overflow.
-    """
-    def __init__(self):
-        super(VLine, self).__init__()
-        self.setFrameShape(self.VLine|self.Sunken)

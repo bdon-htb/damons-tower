@@ -2,7 +2,7 @@ Each element in tileData's array is structured like: [x-y-ID] where
 - x and y are the location of the tile's sprite in the tileMap's spriteSheet (based on array-like index)
 - ID is the ID of the tile. The game will look at this to determine things like collidability and other
   properties.
-- Note that for the empty tile (has id 00), the x and y values will be ignored
-  as the renderer will simply not drawing anything for an empty tile space.
-  For consistency's sake they will still be required though. So empty tiles
-  will probably end up being something like '0-0-00'
+- Note that for the empty tile (has id 00), the x and y values will be ignored as the renderer will simply
+  not draw anything for an empty tile space. For consistency's sake they will still be required though. 
+  So empty tiles will probably end up being something like '0-0-00' but it could theoretically
+  be something like '9-1-00' for the same effect.

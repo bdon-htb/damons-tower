@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene,
 QGraphicsProxyWidget, QGraphicsPixmapItem, QFileDialog, QFrame, QListView,
 QScrollArea, QButtonGroup, QComboBox, QTabWidget, QSizePolicy, QFormLayout,
-QLineEdit, QCheckBox)
+QLineEdit, QCheckBox, QDialog)
 
 # Other python imports
 import math
@@ -184,9 +184,7 @@ class MainWindow(QMainWindow):
         self.parent.setStyleSheet(load_stylesheet(cfg.stylesheet_file))
 
     def newLevel(self):
-        print('New level')
-        self.test = NewLevelWindow(self)
-        self.test.show()
+        NewLevelWindow(self).show()
 
     def openLevelData(self):
         directory = cfg.level_dir if cfg.SETTINGS['inRepo'] else cfg.main_dir
@@ -810,20 +808,22 @@ class LevelSelectBox(QComboBox):
         selected = self.itemText(index)
         self.parent.setLevel(selected)
 
-class NewLevelWindow(QWidget):
-    def __init__(self, parent, newGroup=False):
-        super().__init__()
+class NewLevelWindow(QDialog):
+    def __init__(self, parent):
+        super().__init__(parent)
         self.parent = parent
         self.setWindowTitle('Create a new level')
         self.setFixedSize(500, 175)
+        self.setModal(True)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.layout = QFormLayout()
 
         self.nameInput = QLineEdit()
-        self.spriteInput = QLineEdit()
+        self.spriteInput = SpriteInput()
         self.widthInput = QLineEdit()
         self.heightInput = QLineEdit()
         self.submitButton = QPushButton('Create')
-        self.levelGroupBox = QCheckBox()
+        self.levelGroupBox = LevelGroupInput()
 
         self.layout.addRow(QLabel('Name: '), self.nameInput)
         self.layout.addRow(QLabel('Spritesheet: '), self.spriteInput)
@@ -832,3 +832,42 @@ class NewLevelWindow(QWidget):
         self.layout.addRow(QLabel('Create new level group?: '), self.levelGroupBox)
         self.layout.addRow(self.submitButton)
         self.setLayout(self.layout)
+
+class SpriteInput(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.layout = QHBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.textInput = QLineEdit()
+        self.browseBtn = QPushButton('Browse')
+        self.browseBtn.clicked.connect(self.getSpriteSheet)
+
+        self.layout.addWidget(self.textInput)
+        self.layout.addWidget(self.browseBtn)
+        self.setLayout(self.layout)
+
+    def getSpriteSheet(self):
+        directory = cfg.sprite_dir if cfg.SETTINGS['inRepo'] else cfg.data_dir
+        file_tuple = QFileDialog.getOpenFileName(None, 'Choose a level spritesheet', directory, 'PNG (*.png)')
+        filename = file_tuple[0].split('/')[-1].replace('.png', '')
+        self.textInput.setText(filename)
+
+class LevelGroupInput(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.layout = QHBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.checkBox = QCheckBox()
+        self.nameField = QLineEdit()
+
+        self.checkBox.stateChanged.connect(self.setNameField)
+        self.nameField.setEnabled(False)
+
+        self.layout.addWidget(self.checkBox)
+        self.layout.addWidget(QLabel('Level group name: '))
+        self.layout.addWidget(self.nameField)
+        self.setLayout(self.layout)
+
+    def setNameField(self):
+        result = self.checkBox.isChecked()
+        self.nameField.setEnabled(result)

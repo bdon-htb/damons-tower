@@ -4,7 +4,7 @@
 
 # PyQt imports
 from PyQt5.QtGui import QIcon, QPainter, QPixmap, QPen, QColor, QFont, QBrush, QTransform
-from PyQt5.QtCore import Qt, QSize, QLineF, QLine, QRect
+from PyQt5.QtCore import Qt, QSize, QLineF, QLine, QRect, QRectF
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene,
 QGraphicsProxyWidget, QGraphicsPixmapItem, QFileDialog, QFrame, QListView,
@@ -318,19 +318,18 @@ class MapView(QGraphicsView):
     # OVERRIDEN METHODS
     # =================
     def drawBackground(self, painter, rect):
-        # self.drawSceneBackground(painter)
         if self.parent.levelData:
             self.drawCheckerGrid(painter)
 
     def drawForeground(self, painter, rect):
+        if self.parent.levelData and self.parent.toolBar.tileTabMenu.getActiveMenu() == 'Tile Ids':
+            self.drawTileIds(painter)
+
         if self.parent.gridAct.isChecked() and self.parent.levelData:
             self.drawGrid(painter)
 
         if self.parent.cursorMode in ('select', 'draw', 'erase') and self.mousePos:
             self.drawSelectOutline(painter)
-
-        if self.parent.levelData and self.parent.toolBar.tileTabMenu.getActiveMenu() == 'Tile Ids':
-            self.drawTileIds(painter)
 
         self.updateSceneSize() # Call this once everything is drawn.
 
@@ -367,7 +366,15 @@ class MapView(QGraphicsView):
         self.scene().update()
 
     def updateSceneSize(self):
-        self.scene().setSceneRect(self.scene().itemsBoundingRect())
+        if self.parent.levelData:
+            levelWidth, levelHeight = self.parent.levelData.getMapSize(cfg.TILESIZE)
+
+            if levelWidth >= self.scene().width() or levelHeight >= self.scene().height():
+                rect = QRectF(0, 0, levelWidth, levelHeight)
+            else:
+                rect = self.scene().itemsBoundingRect()
+
+            self.scene().setSceneRect(rect)
 
     def getNearestTopLeft(self, pos_x, pos_y) -> tuple:
         """Return the top left coordinates of the nearest grid square relative to
@@ -436,23 +443,6 @@ class MapView(QGraphicsView):
     # =====================
     # SCENE DRAWING METHODS
     # =====================
-    def drawSceneBackground(self, painter):
-        """Draw the background of the view / scene.
-        """
-        if self.parent.levelData:
-            mapSize = self.getMapSize()
-        else:
-            mapSize = (0, 0)
-
-        width = max(self.viewport().width(), mapSize[0])
-        height = max(self.viewport().height(), mapSize[1])
-
-        color = QColor(self.bg_color)
-
-        painter.setPen(color)
-        painter.setBrush(QBrush(color, Qt.SolidPattern))
-        painter.drawRect(0, 0, width, height)
-
     def drawSelectOutline(self, painter):
         """Draws a rectangular outline of the nearest grid square.
         Used to indicate the grid square the cursor is currently hovering over.

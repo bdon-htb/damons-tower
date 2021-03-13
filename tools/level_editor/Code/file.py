@@ -86,4 +86,4 @@ def write_level_json(filename: str, file: dict):
 
         pretty_string = pretty_string.replace(tile_data, pretty_tile_data)
 
-    open(filename, 'w').write(file) # Write contents to file.
+    open(filename, 'w').write(pretty_string) # Write contents to file.

@@ -67,6 +67,6 @@ def get_assetURL(parent_dir, filename, ext=None) -> str:
     contains the file extension. If it does not then make sure to
     explicitly define it with ext.
     """
-    if ext:
+    if ext and not filename.endswith(ext):
         filename += ext
     return os.path.abspath(os.path.join(parent_dir, filename))

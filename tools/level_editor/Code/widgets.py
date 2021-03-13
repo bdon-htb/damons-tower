@@ -255,21 +255,20 @@ class MainWindow(QMainWindow):
         self.toolBar.tileTabMenu.loadTiles(spriteURL)
         self.setDefaultZoom()
 
-    # TODO: Implement
     def saveLevelData(self):
-        print('Save level')
         if self.levelData:
             if self.workingDirectory is None: # working with a new unsaved level.
                 directory = cfg.level_dir if cfg.SETTINGS['inRepo'] else cfg.data_dir
                 path = QFileDialog.getExistingDirectory(None, 'Save Level', directory)
                 if path == '':
                     return
-                path += self.levelData.getFileName() + '.json'
+                path = cfg.get_assetURL(path, self.levelData.getFileName(), '.json')
             else:
                 path = self.workingDirectory
             file = self.levelData.getLevelJson()
             print('SAVED!')
             s = write_level_json(path, file)
+            self.workingDirectory = path
         else:
             QMessageBox.information(None, ' ', 'Nothing to save.')
 
@@ -961,7 +960,7 @@ class LevelGroupInput(QWidget):
         self.nameField.setEnabled(False)
 
         self.layout.addWidget(self.checkBox)
-        self.layout.addWidget(QLabel('Filename: '))
+        self.layout.addWidget(QLabel('Filename (no ext): '))
         self.layout.addWidget(self.nameField)
         self.setLayout(self.layout)
 

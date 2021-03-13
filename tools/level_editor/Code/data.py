@@ -7,7 +7,8 @@ import math
 from . import cfg
 
 class LevelData:
-    def __init__(self, file: dict):
+    def __init__(self, file: dict, filename: str):
+        self.filename = filename
         self.levelJson = file
         self.currentLevel = list(file["levelData"].keys())[0] # This is the name of the first level in dictionary.
 
@@ -26,6 +27,9 @@ class LevelData:
         width = self.getLevel(levelName)["width"]
         height = self.getLevel(levelName)["height"]
         return width * tileSize, height * tileSize
+
+    def getFileName(self) -> str:
+        return self.filename
 
     def getTilePos(self, index: int, tileSize: int, levelName=None) -> tuple:
         """Return the true position of a particular tile.

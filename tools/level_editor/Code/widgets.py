@@ -36,6 +36,7 @@ class MainWindow(QMainWindow):
         self.name = cfg.__name__
         self.version = cfg.__version__
         self.zoom = 1
+        self.workingDirectory = None
 
         self.levelData = None
         self.allCursorModes = [
@@ -205,6 +206,8 @@ class MainWindow(QMainWindow):
 
         if groupName:
             file = {'levelData': {levelName: data_dict}}
+            filename = groupName
+            self.workingDirectory = None
         else:
             file = self.levelData.getLevelJson()
 
@@ -214,26 +217,29 @@ class MainWindow(QMainWindow):
                     return
 
             file['levelData'][levelName] = data_dict
+            filename = self.levelData.getFileName()
 
         if newLevelDialog:
             newLevelDialog.close()
 
-        self.loadLevelData(file)
+        self.loadLevelData(file, filename)
 
     def openLevelData(self):
         directory = cfg.level_dir if cfg.SETTINGS['inRepo'] else cfg.main_dir
         file_tuple = QFileDialog.getOpenFileName(None, 'Open Level', directory, 'Level data file (*.json)')
+        filename = file_tuple[0].split('\\')[-1]
+        self.workingDirectory = file_tuple[0]
         file = load_json(file_tuple[0]) if file_tuple[0] else None
         if file and is_level(file): # Check if filename isn't blank
-            self.loadLevelData(file)
+            self.loadLevelData(file, filename)
 
     def getLevelData(self):
         return self.levelData
 
-    def loadLevelData(self, file: dict):
+    def loadLevelData(self, file: dict, filename: str):
         """Load in level data from a given file (json.load() dictionary).
         """
-        self.levelData = LevelData(file)
+        self.levelData = LevelData(file, filename)
         self.levelMenu.enableLevelSelect()
         self.levelMenu.updateLevelSelect(self.levelData.getLevelNames())
 
@@ -247,6 +253,7 @@ class MainWindow(QMainWindow):
         self.toolBar.tileTabMenu.loadTiles(spriteURL)
         self.setDefaultZoom()
 
+    # TODO: Implement
     def saveLevelData(self):
         print('Save level')
 
@@ -517,7 +524,7 @@ class MapView(QGraphicsView):
         for index in range(len(tileData)):
             id = tileData[index].split('-')[-1]
             pos = levelData.getTilePos(index, tileSize)
-            painter.drawPixmap(pos[0] + 1, pos[1] + 1, tile_pixmap[id])
+            painter.drawPixmap(pos[0], pos[1], tile_pixmap[id])
         painter.setOpacity(1)
 
     def drawLevel(self):
@@ -537,7 +544,7 @@ class MapView(QGraphicsView):
 
                 # For some reason the pixmap was originally off 1 pixel. Probably has something to
                 # do with the scene being nested in the view? Band-aid fix.
-                self.scene().addPixmap(tile).setPos(pos[0] + 1, pos[1] + 1)
+                self.scene().addPixmap(tile).setPos(pos[0], pos[1])
 
     def redrawLevel(self):
         self.clearScene(True)
@@ -855,7 +862,7 @@ class NewLevelWindow(QDialog):
         self.layout.addRow(QLabel('Spritesheet: '), self.spriteInput)
         self.layout.addRow(QLabel('Width: '), self.widthInput)
         self.layout.addRow(QLabel('Height: '), self.heightInput)
-        self.layout.addRow(QLabel('Create new level group?: '), self.levelGroupBox)
+        self.layout.addRow(QLabel('Create new level file? '), self.levelGroupBox)
         self.layout.addRow(self.submitButton)
         self.setLayout(self.layout)
 
@@ -896,7 +903,7 @@ class NewLevelWindow(QDialog):
                 groupName = str(self.levelGroupBox.nameField.text())
 
             elif not self.levelGroupBox.checkBox.isChecked() and self.parent.levelData is None:
-                msg = 'Cannot add a new level to a preexisting group without a level file opened.'
+                msg = 'Cannot add a new level to a preexisting file without a level file opened.'
                 QMessageBox(QMessageBox.Critical, 'Error', msg, parent=self).show()
                 return
 
@@ -938,7 +945,7 @@ class LevelGroupInput(QWidget):
         self.nameField.setEnabled(False)
 
         self.layout.addWidget(self.checkBox)
-        self.layout.addWidget(QLabel('Level group name: '))
+        self.layout.addWidget(QLabel('Filename: '))
         self.layout.addWidget(self.nameField)
         self.setLayout(self.layout)
 

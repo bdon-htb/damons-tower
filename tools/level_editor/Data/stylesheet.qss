@@ -541,3 +541,7 @@ MapView {
 NewLevelWindow {
 	background-color:#151a1e;
 }
+
+QMessageBox {
+	background-color:#151a1e;
+}

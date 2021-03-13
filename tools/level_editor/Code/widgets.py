@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene,
 QGraphicsProxyWidget, QGraphicsPixmapItem, QFileDialog, QFrame, QListView,
 QScrollArea, QButtonGroup, QComboBox, QTabWidget, QSizePolicy, QFormLayout,
-QLineEdit, QCheckBox, QDialog)
+QLineEdit, QCheckBox, QDialog, QMessageBox)
 
 # Other python imports
 import math
@@ -186,6 +186,40 @@ class MainWindow(QMainWindow):
     def newLevel(self):
         NewLevelWindow(self).show()
 
+    def createLevelData(self, levelName: str, spriteSheet: str, width: int,
+        height: int, groupName: Optional[str], newLevelDialog=None):
+        """Create level data from scratch with the given parameters.
+        if this is called from a NewLevelWindow, newLevelDialog can be optionally
+        passed to have it close once the operation is completed.
+
+        Precondition: if groupName is None, then self.levelData is not None
+        """
+
+        data_dict = {
+            'name': levelName,
+            'spriteSheet': spriteSheet,
+            'width': int(width),
+            'height': int(height),
+            'tileData': ['0-0-00' for n in range(width * height)]
+            }
+
+        if groupName:
+            file = {'levelData': {levelName: data_dict}}
+        else:
+            file = self.levelData.getLevelJson()
+
+            if levelName in file['levelData']: # Check if level already exists.
+                msg = f'Detected an existing level in file with name {levelName}. Do you want to overwrite this data?'
+                if QMessageBox.question(self, 'Message', msg, QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
+                    return
+
+            file['levelData'][levelName] = data_dict
+
+        if newLevelDialog:
+            newLevelDialog.close()
+
+        self.loadLevelData(file)
+
     def openLevelData(self):
         directory = cfg.level_dir if cfg.SETTINGS['inRepo'] else cfg.main_dir
         file_tuple = QFileDialog.getOpenFileName(None, 'Open Level', directory, 'Level data file (*.json)')
@@ -197,9 +231,8 @@ class MainWindow(QMainWindow):
         return self.levelData
 
     def loadLevelData(self, file: dict):
-        """Load the entire level data file.
+        """Load in level data from a given file (json.load() dictionary).
         """
-        print(file['levelData']['testLevel'])
         self.levelData = LevelData(file)
         self.levelMenu.enableLevelSelect()
         self.levelMenu.updateLevelSelect(self.levelData.getLevelNames())
@@ -310,7 +343,6 @@ class MapView(QGraphicsView):
         self.updateScene()
 
     def mousePressEvent(self, event):
-        print('Press detected!')
         level = self.parent.getLevelData()
         if level and self.mousePos:
             self.editMap()
@@ -808,6 +840,9 @@ class LevelSelectBox(QComboBox):
         selected = self.itemText(index)
         self.parent.setLevel(selected)
 
+# =========================
+# NEW LEVEL RELATED WIDGETS
+# =========================
 class NewLevelWindow(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
@@ -823,6 +858,7 @@ class NewLevelWindow(QDialog):
         self.widthInput = QLineEdit()
         self.heightInput = QLineEdit()
         self.submitButton = QPushButton('Create')
+        self.submitButton.clicked.connect(self.createNewLevel)
         self.levelGroupBox = LevelGroupInput()
 
         self.layout.addRow(QLabel('Name: '), self.nameInput)
@@ -832,6 +868,54 @@ class NewLevelWindow(QDialog):
         self.layout.addRow(QLabel('Create new level group?: '), self.levelGroupBox)
         self.layout.addRow(self.submitButton)
         self.setLayout(self.layout)
+
+    def _dataIsValid(self) -> bool:
+        """Check to see if the data is valid.
+        """
+        text_inputs = [
+            str(self.nameInput.text()).strip(),
+            str(self.spriteInput.textInput.text()).strip(),
+            str(self.widthInput.text()).strip(),
+            str(self.heightInput.text()).strip(),
+        ]
+
+        if self.levelGroupBox.checkBox.isChecked():
+            text_inputs.append(str(self.levelGroupBox.nameField.text()).strip())
+
+        for index in range(len(text_inputs)):
+            i = text_inputs[index]
+            if len(i.strip().replace(' ', '')) <= 0: # Check that content isn't empty
+                return False
+            elif index in (2, 3):
+                try:
+                    int(i)
+                except ValueError as e:
+                    print(e)
+                    return False
+        return True
+
+
+    def createNewLevel(self):
+        if self._dataIsValid():
+            levelName = str(self.nameInput.text())
+            spriteSheet = str(self.spriteInput.textInput.text())
+            width = int(self.widthInput.text())
+            height = int(self.heightInput.text())
+            groupName = None
+            if self.levelGroupBox.checkBox.isChecked():
+                groupName = str(self.levelGroupBox.nameField.text())
+
+            elif not self.levelGroupBox.checkBox.isChecked() and self.parent.levelData is None:
+                msg = 'Cannot add a new level to a preexisting group without a level file opened.'
+                QMessageBox(QMessageBox.Critical, 'Error', msg, parent=self).show()
+                return
+
+            self.parent.createLevelData(levelName, spriteSheet, width, height, groupName, newLevelDialog=self)
+
+        else:
+            msg = 'Incorrect input detected. Please ensure level information is correct and try again.'
+            QMessageBox(QMessageBox.Critical, 'Error', msg, parent=self).show()
+
 
 class SpriteInput(QWidget):
     def __init__(self):

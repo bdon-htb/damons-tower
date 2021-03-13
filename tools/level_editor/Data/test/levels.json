@@ -14,7 +14,7 @@
         "1-1-WA", "2-2-FL", "3-2-FL", "3-2-FL", "3-2-FL", "3-2-FL", "3-2-FL", "3-2-FL", "3-2-FL", "3-2-FL", "4-2-FL", "1-1-WA",
         "1-1-WA", "1-1-WA", "1-1-WA", "1-1-WA", "1-1-WA", "1-1-WA", "1-1-WA", "1-1-WA", "1-1-WA", "1-1-WA", "1-1-WA", "1-1-WA"
       ]
-    },    
+    },
     "testLevel2": {
       "name": "long_level_test",
       "spriteSheet": "red_square",

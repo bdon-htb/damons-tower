@@ -17,7 +17,7 @@ from typing import Tuple, Optional
 
 # Custom imports
 from . import cfg
-from .file import load_json, load_stylesheet
+from .file import load_json, load_stylesheet, write_level_json
 from .data import LevelData
 
 def is_level(d: dict) -> bool:
@@ -232,6 +232,8 @@ class MainWindow(QMainWindow):
         file = load_json(file_tuple[0]) if file_tuple[0] else None
         if file and is_level(file): # Check if filename isn't blank
             self.loadLevelData(file, filename)
+        elif file and not is_level(file):
+            QMessageBox.information(None, ' ', 'Not a valid level file.')
 
     def getLevelData(self):
         return self.levelData
@@ -256,6 +258,20 @@ class MainWindow(QMainWindow):
     # TODO: Implement
     def saveLevelData(self):
         print('Save level')
+        if self.levelData:
+            if self.workingDirectory is None: # working with a new unsaved level.
+                directory = cfg.level_dir if cfg.SETTINGS['inRepo'] else cfg.data_dir
+                path = QFileDialog.getExistingDirectory(None, 'Save Level', directory)
+                if path == '':
+                    return
+                path += self.levelData.getFileName() + '.json'
+            else:
+                path = self.workingDirectory
+            file = self.levelData.getLevelJson()
+            print('SAVED!')
+            s = write_level_json(path, file)
+        else:
+            QMessageBox.information(None, ' ', 'Nothing to save.')
 
     # ====================
     # EDIT RELATED METHODS
@@ -267,13 +283,13 @@ class MainWindow(QMainWindow):
         print('Redo')
 
     def zoomInAction(self):
-        if self.levelData:
+        if self.levelData and self.zoom < 2:
             self.mapView.scale(1.25, 1.25)
             self.zoom *= 1.25
             self.statusComponents['zoom'].setText(f' {int(self.zoom * 100)}% ')
 
     def zoomOutAction(self):
-        if self.levelData:
+        if self.levelData and self.zoom > 0.7:
             self.mapView.scale(0.8, 0.8)
             self.zoom *= 0.8
             self.statusComponents['zoom'].setText(f' {int(self.zoom * 100)}% ')
@@ -904,14 +920,14 @@ class NewLevelWindow(QDialog):
 
             elif not self.levelGroupBox.checkBox.isChecked() and self.parent.levelData is None:
                 msg = 'Cannot add a new level to a preexisting file without a level file opened.'
-                QMessageBox(QMessageBox.Critical, 'Error', msg, parent=self).show()
+                QMessageBox.information(None, ' ', msg)
                 return
 
             self.parent.createLevelData(levelName, spriteSheet, width, height, groupName, newLevelDialog=self)
 
         else:
             msg = 'Incorrect input detected. Please ensure level information is correct and try again.'
-            QMessageBox(QMessageBox.Critical, 'Error', msg, parent=self).show()
+            QMessageBox.information(None, ' ', msg)
 
 
 class SpriteInput(QWidget):

@@ -50,7 +50,7 @@ def _get_pretty_tile_data(level_name: str, file: dict, indent: int) -> str:
         if index % width == 0:
             S += '\n' + ' ' * (indent * 4)
 
-        S += tile_data[index]
+        S += '"' + tile_data[index] + '"'
 
         if index != (width * height) - 1: # last index in array
             S += ', '

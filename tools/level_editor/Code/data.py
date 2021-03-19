@@ -1,7 +1,7 @@
-# ===========================================================
-# data.py contains all classes related to in-game structures.
+# =============================================================
+# data.py contains all classes representing in-game structures.
 # basically contains all the non-widget stuff.
-# ===========================================================
+# =============================================================
 from typing import Tuple, Optional
 import math
 from . import cfg
@@ -112,7 +112,7 @@ class LevelData:
 
         fill_indexes is an optional pair of integers in the format (start, end)
         that tells the function to only check if source_id and tile_id are equal
-        within those indexes (the ids are split by the hyphens '-').
+        within those indexes (the indexes are split by the hyphens '-').
 
         If fill_indexes is not specified then the function just checks that the
         full ids are equal.

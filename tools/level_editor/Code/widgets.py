@@ -51,7 +51,7 @@ class MainWindow(QMainWindow):
             'e': 'erase'
         }
 
-        self.cursorMode = 'select'
+        self.cursorMode = 'draw'
         self.initUI() # Should be done last always!
 
     # =================

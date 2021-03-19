@@ -64,12 +64,8 @@ def write_level_json(filename: str, file: dict):
 
     Precondition: file dict is properly formatted.
     """
-    # TODO: Write json to file in the same way I write them.
-    # i.e. if a level's width is 12, the array is neatly organized
-    # so that it write's a new line every 12 items.
-
-    # this puts the whole thing in memory but the files probably won't be crazy large.
     INDENTATION = 2
+    # this puts the whole file in memory but the files probably won't be crazy large.
     pretty_string = json.dumps(file, ensure_ascii=False, indent=INDENTATION)
 
     # prettify how arrays are displayed.

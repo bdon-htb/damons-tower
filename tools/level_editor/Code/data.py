@@ -7,12 +7,7 @@ import math
 from . import cfg
 
 class LevelData:
-    def __init__(self, file: dict, filename: str):
-
-        if filename.endswith('.json'):
-            filename = filename.replace('.json', '') # Trim off .json extension just in case.
-
-        self.filename = filename
+    def __init__(self, file: dict):
         self.levelJson = file
         self.currentLevel = list(file["levelData"].keys())[0] # This is the name of the first level in dictionary.
 

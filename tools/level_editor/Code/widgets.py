@@ -130,12 +130,16 @@ class MainWindow(QMainWindow):
         newAct.setShortcut('Ctrl+N')
 
         openAct = QAction('&' + 'Open Level', self)
-        openAct.triggered.connect(self.openLevelData)
+        openAct.triggered.connect(self.openLevelAction)
         openAct.setShortcut('Ctrl+O')
 
         saveAct = QAction('&' + 'Save', self)
-        saveAct.triggered.connect(self.saveLevelData)
+        saveAct.triggered.connect(self.saveAction)
         saveAct.setShortcut('Ctrl+S')
+
+        saveAsAct = QAction('&' + 'Save As', self)
+        saveAsAct.triggered.connect(self.saveAsAction)
+        saveAsAct.setShortcut('Ctrl+Shift+S')
 
         exitAct = QAction('&' + 'Exit', self)
         exitAct.triggered.connect(self.close)
@@ -143,6 +147,7 @@ class MainWindow(QMainWindow):
         self.fileMenu.addAction(newAct)
         self.fileMenu.addAction(openAct)
         self.fileMenu.addAction(saveAct)
+        self.fileMenu.addAction(saveAsAct)
         self.fileMenu.addAction(exitAct)
 
     def configureEditMenu(self):
@@ -188,12 +193,10 @@ class MainWindow(QMainWindow):
         NewLevelWindow(self).show()
 
     def createLevelData(self, levelName: str, spriteSheet: str, width: int,
-        height: int, groupName: Optional[str], newLevelDialog=None):
+        height: int, newFile=False, newLevelDialog=None):
         """Create level data from scratch with the given parameters.
         if this is called from a NewLevelWindow, newLevelDialog can be optionally
         passed to have it close once the operation is completed.
-
-        Precondition: if groupName is None, then self.levelData is not None
         """
 
         data_dict = {
@@ -204,9 +207,8 @@ class MainWindow(QMainWindow):
             'tileData': ['0-0-00' for n in range(width * height)]
             }
 
-        if groupName:
+        if newFile:
             file = {'levelData': {levelName: data_dict}}
-            filename = groupName
             self.workingDirectory = None
         else:
             file = self.levelData.getLevelJson()
@@ -217,31 +219,19 @@ class MainWindow(QMainWindow):
                     return
 
             file['levelData'][levelName] = data_dict
-            filename = self.levelData.getFileName()
 
         if newLevelDialog:
             newLevelDialog.close()
 
-        self.loadLevelData(file, filename)
-
-    def openLevelData(self):
-        directory = cfg.level_dir if cfg.SETTINGS['inRepo'] else cfg.main_dir
-        file_tuple = QFileDialog.getOpenFileName(None, 'Open Level', directory, 'Level data file (*.json)')
-        filename = file_tuple[0].split('\\')[-1]
-        self.workingDirectory = file_tuple[0]
-        file = load_json(file_tuple[0]) if file_tuple[0] else None
-        if file and is_level(file): # Check if filename isn't blank
-            self.loadLevelData(file, filename)
-        elif file and not is_level(file):
-            QMessageBox.information(None, ' ', 'Not a valid level file.')
+        self.loadLevelData(file)
 
     def getLevelData(self):
         return self.levelData
 
-    def loadLevelData(self, file: dict, filename: str):
+    def loadLevelData(self, file: dict):
         """Load in level data from a given file (json.load() dictionary).
         """
-        self.levelData = LevelData(file, filename)
+        self.levelData = LevelData(file)
         self.levelMenu.enableLevelSelect()
         self.levelMenu.updateLevelSelect(self.levelData.getLevelNames())
 
@@ -256,19 +246,40 @@ class MainWindow(QMainWindow):
         self.setDefaultZoom()
 
     def saveLevelData(self):
+        """Save levelData to file specified in self.workingDirectory.
+
+        Precondition: self.workingDirectory is not None
+        """
+        file = self.levelData.getLevelJson()
+        print('SAVED!')
+        s = write_level_json(self.workingDirectory, file)
+
+    def openLevelAction(self):
+        directory = cfg.level_dir if cfg.SETTINGS['inRepo'] else cfg.main_dir
+        path = QFileDialog.getOpenFileName(None, 'Open Level', directory, 'Level data file (*.json)')[0]
+        self.workingDirectory = path
+        file = load_json(path) if path != '' else None
+        if file and is_level(file): # Check if filename isn't blank
+            self.loadLevelData(file)
+        elif file and not is_level(file):
+            QMessageBox.information(None, ' ', 'Not a valid level file.')
+
+    def saveAction(self):
+        if self.levelData and self.workingDirectory:
+            self.saveLevelData()
+        elif self.levelData and self.workingDirectory is None:
+            self.saveAsAction()
+        else:
+            QMessageBox.information(None, ' ', 'Nothing to save.')
+
+    def saveAsAction(self):
         if self.levelData:
-            if self.workingDirectory is None: # working with a new unsaved level.
-                directory = cfg.level_dir if cfg.SETTINGS['inRepo'] else cfg.data_dir
-                path = QFileDialog.getExistingDirectory(None, 'Save Level', directory)
-                if path == '':
-                    return
-                path = cfg.get_assetURL(path, self.levelData.getFileName(), '.json')
-            else:
-                path = self.workingDirectory
-            file = self.levelData.getLevelJson()
-            print('SAVED!')
-            s = write_level_json(path, file)
+            directory = cfg.level_dir if cfg.SETTINGS['inRepo'] else cfg.data_dir
+            path = QFileDialog.getSaveFileName(None, 'Save Level', directory, '(*.json)')[0]
+            if path == '':
+                return
             self.workingDirectory = path
+            self.saveLevelData()
         else:
             QMessageBox.information(None, ' ', 'Nothing to save.')
 
@@ -878,7 +889,7 @@ class NewLevelWindow(QDialog):
         self.heightInput = QLineEdit()
         self.submitButton = QPushButton('Create')
         self.submitButton.clicked.connect(self.createNewLevel)
-        self.levelGroupBox = LevelGroupInput()
+        self.levelGroupBox = QCheckBox()
 
         self.layout.addRow(QLabel('Name: '), self.nameInput)
         self.layout.addRow(QLabel('Spritesheet: '), self.spriteInput)
@@ -898,14 +909,11 @@ class NewLevelWindow(QDialog):
             str(self.heightInput.text()).strip(),
         ]
 
-        if self.levelGroupBox.checkBox.isChecked():
-            text_inputs.append(str(self.levelGroupBox.nameField.text()).strip())
-
         for index in range(len(text_inputs)):
             i = text_inputs[index]
             if len(i.strip().replace(' ', '')) <= 0: # Check that content isn't empty
                 return False
-            elif index in (2, 3):
+            elif index in (2, 3): # Check that the width and height inputs are integers.
                 try:
                     int(i)
                 except ValueError as e:
@@ -920,16 +928,13 @@ class NewLevelWindow(QDialog):
             spriteSheet = str(self.spriteInput.textInput.text())
             width = int(self.widthInput.text())
             height = int(self.heightInput.text())
-            groupName = None
-            if self.levelGroupBox.checkBox.isChecked():
-                groupName = str(self.levelGroupBox.nameField.text())
 
-            elif not self.levelGroupBox.checkBox.isChecked() and self.parent.levelData is None:
+            if not self.levelGroupBox.isChecked() and self.parent.levelData is None:
                 msg = 'Cannot add a new level to a preexisting file without a level file opened.'
                 QMessageBox.information(None, ' ', msg)
                 return
 
-            self.parent.createLevelData(levelName, spriteSheet, width, height, groupName, newLevelDialog=self)
+            self.parent.createLevelData(levelName, spriteSheet, width, height, newFile=self.levelGroupBox.isChecked(), newLevelDialog=self)
 
         else:
             msg = 'Incorrect input detected. Please ensure level information is correct and try again.'
@@ -954,23 +959,3 @@ class SpriteInput(QWidget):
         file_tuple = QFileDialog.getOpenFileName(None, 'Choose a level spritesheet', directory, 'PNG (*.png)')
         filename = file_tuple[0].split('/')[-1].replace('.png', '')
         self.textInput.setText(filename)
-
-class LevelGroupInput(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.layout = QHBoxLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.checkBox = QCheckBox()
-        self.nameField = QLineEdit()
-
-        self.checkBox.stateChanged.connect(self.setNameField)
-        self.nameField.setEnabled(False)
-
-        self.layout.addWidget(self.checkBox)
-        self.layout.addWidget(QLabel('Filename (no ext): '))
-        self.layout.addWidget(self.nameField)
-        self.setLayout(self.layout)
-
-    def setNameField(self):
-        result = self.checkBox.isChecked()
-        self.nameField.setEnabled(result)

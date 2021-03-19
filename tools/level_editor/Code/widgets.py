@@ -350,7 +350,7 @@ class MapView(QGraphicsView):
         if self.parent.gridAct.isChecked() and self.parent.levelData:
             self.drawGrid(painter)
 
-        if self.parent.cursorMode in ('select', 'draw', 'erase') and self.mousePos:
+        if self.parent.cursorMode in ('fill', 'draw', 'erase') and self.mousePos:
             self.drawSelectOutline(painter)
 
         self.updateSceneSize() # Call this once everything is drawn.
@@ -460,6 +460,13 @@ class MapView(QGraphicsView):
                 levelData.setTile(index, tile_data)
             elif cursorMode == 'erase':
                 levelData.eraseTile(index)
+            elif cursorMode == 'fill' and activeTileMenu == 'Tile Sprites' and selectedTile:
+                source_id = '-'.join(tile_data)
+                tile_data[0] = str(selectedTile.getMetaData()["sprite_x"])
+                tile_data[1] = str(selectedTile.getMetaData()["sprite_y"])
+                new_id = '-'.join(tile_data)
+                # condition requires that the tile's spriteSheet location / position is the same.
+                levelData.fillTiles(index, source_id, new_id, fill_indexes=(0, 2))
             self.redrawLevel()
 
     # =====================

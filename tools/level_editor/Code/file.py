@@ -9,9 +9,10 @@ import json, re
 from . import cfg
 
 def file_exists(filename: str) -> bool:
-    """Checks if file exixts
-    """
     return os.path.isfile(filename)
+
+def get_filename_from_path(full_path: str) -> bool:
+    return os.path.basename(full_path)
 
 def load_stylesheet(filename: str) -> str:
     """Load and return a qss file. Converts calls to color variables

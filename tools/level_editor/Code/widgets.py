@@ -17,7 +17,7 @@ from typing import Tuple, Optional
 
 # Custom imports
 from . import cfg
-from .file import load_json, load_stylesheet, write_level_json
+from .file import load_json, load_stylesheet, write_level_json, get_filename_from_path
 from .data import LevelData
 
 def is_level(d: dict) -> bool:
@@ -956,6 +956,6 @@ class SpriteInput(QWidget):
 
     def getSpriteSheet(self):
         directory = cfg.sprite_dir if cfg.SETTINGS['inRepo'] else cfg.data_dir
-        file_tuple = QFileDialog.getOpenFileName(None, 'Choose a level spritesheet', directory, 'PNG (*.png)')
-        filename = file_tuple[0].split('/')[-1].replace('.png', '')
+        path = QFileDialog.getOpenFileName(None, 'Choose a level spritesheet', directory, 'PNG (*.png)')[0]
+        filename = get_filename_from_path(path).replace('.png', '')
         self.textInput.setText(filename)

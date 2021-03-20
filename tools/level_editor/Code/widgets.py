@@ -563,7 +563,10 @@ class MapView(QGraphicsView):
                     tileHeight = (yrange * tileSize) - height
                 else:
                     tileHeight = tileSize
-                painter.drawRect(x * tileSize, y * tileSize, tileWidth, tileHeight)
+
+                # Shifting it one makes it look less jarring. Not sure why the tiles
+                # are off.
+                painter.drawRect(x * tileSize - 1, y * tileSize - 1, tileWidth, tileHeight)
 
 
     def drawGrid(self, painter):
@@ -614,8 +617,6 @@ class MapView(QGraphicsView):
                 tile = QPixmap(levelData.getSpriteURL()).copy(slice)
                 pos = levelData.getTilePos(index, tileSize)
 
-                # For some reason the pixmap was originally off 1 pixel. Probably has something to
-                # do with the scene being nested in the view? Band-aid fix.
                 self.scene().addPixmap(tile).setPos(pos[0], pos[1])
 
     def redrawLevel(self):

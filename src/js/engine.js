@@ -443,8 +443,8 @@ AssetLoader.prototype.loadMenu = function(data, success){
 };
 
 /**
- * Custom state machine class. Is responsible for chaning and keeping track
- * of ENGINE state.
+ * Custom state machine class. Is responsible for changing and keeping track
+ * of states.
  *
  * [states] can be an array of strings if none of the states require methods to be called.
  * on change. i.e. ["starting", "loading", "runnng"]

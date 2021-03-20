@@ -39,6 +39,11 @@ class MainWindow(QMainWindow):
         self.workingDirectory = None
 
         self.levelData = None
+
+        # Arrays containing previous states of the current level's tileData
+        self.undoHistory = []
+        self.redoHistory = []
+
         self.allCursorModes = [
             'draw',
             'fill',
@@ -225,6 +230,15 @@ class MainWindow(QMainWindow):
 
         self.loadLevelData(file)
 
+        if newFile:
+            self.clearHistory()
+        else:
+            self.levelMenu.setLevel(levelName)
+
+    def clearHistory(self):
+        self.undoHistory.clear()
+        self.redoHistory.clear()
+
     def getLevelData(self):
         return self.levelData
 
@@ -261,6 +275,7 @@ class MainWindow(QMainWindow):
         file = load_json(path) if path != '' else None
         if file and is_level(file): # Check if filename isn't blank
             self.loadLevelData(file)
+            self.clearHistory()
         elif file and not is_level(file):
             QMessageBox.information(None, ' ', 'Not a valid level file.')
 
@@ -286,11 +301,25 @@ class MainWindow(QMainWindow):
     # ====================
     # EDIT RELATED METHODS
     # ====================
+    def _applyHistory(self, stack1, stack2):
+        """Appends a copy of current tileData to stack1
+        and removes it from stack2.
+
+        This is just a general function for undo / redo
+        because the logic is the same.
+        """
+        if self.levelData and stack2:
+            stack1.append(self.levelData.getTileData().copy())
+            self.levelData.setTileData(stack2.pop())
+            self.mapView.redrawLevel()
+
     def undoAction(self):
-        print('Undo')
+        if self.levelData and self.undoHistory:
+            self._applyHistory(self.redoHistory, self.undoHistory)
 
     def redoAction(self):
-        print('Redo')
+        if self.levelData and self.redoHistory:
+            self._applyHistory(self.undoHistory, self.redoHistory)
 
     def zoomInAction(self):
         if self.levelData and self.zoom < 2:
@@ -453,10 +482,11 @@ class MapView(QGraphicsView):
         x, y = self.mousePos
         # We only care if it's in level bounds
         if x < levelWidth and y < levelHeight:
+            oldTileData = levelData.getTileData().copy()
             index = self.getNearestTileIndex(x, y)
-            # TODO: Implement
             activeTileMenu = tileTabMenu.getActiveMenu()
             selectedTile = tileTabMenu.getActiveSelection()
+            # TODO: Implement
             tile_data = levelData.getTileData()[index].split('-')
             if cursorMode == 'draw' and activeTileMenu == 'Tile Sprites' and selectedTile:
                 tile_data[0] = str(selectedTile.getMetaData()["sprite_x"])
@@ -476,9 +506,18 @@ class MapView(QGraphicsView):
                 tile_data[0] = str(selectedTile.getMetaData()["sprite_x"])
                 tile_data[1] = str(selectedTile.getMetaData()["sprite_y"])
                 new_id = '-'.join(tile_data)
-                # condition requires that the tile's spriteSheet location / position is the same.
                 levelData.fillTiles(index, source_id, new_id, fill_indexes=(0, 2))
-            self.redrawLevel()
+            elif cursorMode == 'fill' and activeTileMenu == 'Tile Ids' and selectedTile:
+                source_id = '-'.join(tile_data)
+                tile_data[2] = str(selectedTile.getMetaData()["id"])
+                new_id = '-'.join(tile_data)
+                levelData.fillTiles(index, source_id, new_id, fill_indexes=(2, cfg.TILE_ARRAY_SIZE))
+
+            # Checks if there was a change made.
+            if oldTileData != levelData.getTileData():
+                self.parent.undoHistory.append(oldTileData)
+                self.parent.redoHistory.clear()
+                self.redrawLevel()
 
     # =====================
     # SCENE DRAWING METHODS

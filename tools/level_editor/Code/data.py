@@ -2,7 +2,7 @@
 # data.py contains all classes representing in-game structures.
 # basically contains all the non-widget stuff.
 # =============================================================
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 import math
 from . import cfg
 
@@ -94,6 +94,13 @@ class LevelData:
     # ==========================
     # LEVEL MANIPULATION METHODS
     # ==========================
+    def setTileData(self, tile_data: List[str], levelName=None):
+        """Set self.levelJson["tileData"] = tile_data
+
+        Precondition: tile_data is properly formatted.
+        """
+        self.getLevel(levelName)["tileData"] = tile_data
+
     def setTile(self, tile_index: int, new_id: str, levelName=None):
         level = self.getLevel(levelName)
         level["tileData"][tile_index] = new_id

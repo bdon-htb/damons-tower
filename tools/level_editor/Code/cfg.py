@@ -9,6 +9,7 @@ __name__ = 'js-roguelite Level Editor'
 
 TILESIZE = 32
 EMPTY_TILE_ID = '00'
+TILE_ARRAY_SIZE = 3
 
 SETTINGS = {
     'inRepo': True

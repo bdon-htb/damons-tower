@@ -19,7 +19,8 @@ def main():
     args = ['python', '-m', 'http.server', '-d', repo_dir, port]
 
     print(f'Starting local server at port {port}...')
-    subprocess.run(args)
+    try:
+        subprocess.run(args)
     except Exception as e:
         errors.append(e)
         print('Failed to start server with python. Trying python3...')

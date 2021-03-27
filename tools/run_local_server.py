@@ -20,6 +20,17 @@ def main():
 
     print(f'Starting local server at port {port}...')
     subprocess.run(args)
+    except Exception as e:
+        errors.append(e)
+        print('Failed to start server with python. Trying python3...')
+        args[0] = 'python3'
+        try:
+            subprocess.run(args)
+        except Exception as e:
+            errors.append(e)
+            print('Failed to start with python3. Printing error messages...')
+            for e in errors:
+                print(e, '\n')
 
 if __name__ == '__main__':
     main()

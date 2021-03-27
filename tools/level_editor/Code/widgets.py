@@ -4,7 +4,7 @@
 
 # PyQt imports
 from PyQt5.QtGui import QIcon, QPainter, QPixmap, QPen, QColor, QFont, QBrush, QTransform
-from PyQt5.QtCore import Qt, QSize, QLineF, QLine, QRect, QRectF
+from PyQt5.QtCore import Qt, QSize, QLineF, QLine, QRect, QRectF, QTimer
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QAction, QWidget,
 QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QGraphicsView, QGraphicsScene,
 QGraphicsProxyWidget, QGraphicsPixmapItem, QFileDialog, QFrame, QListView,
@@ -26,9 +26,7 @@ def is_level(d: dict) -> bool:
     """
     return list(d.keys())[0] == 'levelData'
 
-# =========================
-# FUNCTIONAL WIDGET CLASSES
-# =========================
+
 class MainWindow(QMainWindow):
     def __init__(self, parent):
         super().__init__()
@@ -164,11 +162,19 @@ class MainWindow(QMainWindow):
         redoAct.triggered.connect(self.redoAction)
         redoAct.setShortcut('Ctrl+Shift+Z')
 
+        changeTileAct = QAction('&' + 'Change Map Tileset', self)
+        changeTileAct.triggered.connect(self.changeTilesetAction)
+
+        resizeLevelAct = QAction('&' + 'Change Map Dimensions', self)
+        # resizeLevelAct.triggered.connect(self.resizeMapAction)
+
         self.editMenu.addAction(undoAct)
         self.editMenu.addAction(redoAct)
+        self.editMenu.addAction(changeTileAct)
+        self.editMenu.addAction(resizeLevelAct)
 
     def configureViewMenu(self):
-        self.gridAct = QAction('&' + 'Grid', self)
+        self.gridAct = QAction('&' + 'Toggle Grid', self)
         self.gridAct.setCheckable(True)
         self.gridAct.toggled.connect(self.repaintMapView) # Force a repaint of the window immediately after press.
 
@@ -321,6 +327,19 @@ class MainWindow(QMainWindow):
         if self.levelData and self.redoHistory:
             self._applyHistory(self.undoHistory, self.redoHistory)
 
+    def changeTilesetAction(self):
+        if self.levelData:
+            directory = cfg.sprite_dir if cfg.SETTINGS['inRepo'] else cfg.main_dir
+            path = QFileDialog.getOpenFileName(None, 'Choose a level spritesheet', directory, 'PNG (*.png)')[0]
+            if path:
+                filename = get_filename_from_path(path).replace('.png', '')
+                self.levelData.getLevel()["spriteSheet"] = filename
+                self.toolBar.tileTabMenu.clearTiles()
+                self.toolBar.tileTabMenu.loadTiles(path)
+                self.mapView.redrawLevel()
+        else:
+            QMessageBox.information(None, ' ', 'No level to load tileset into.')
+
     def zoomInAction(self):
         if self.levelData and self.zoom < 2:
             self.mapView.scale(1.25, 1.25)
@@ -356,7 +375,6 @@ class MainWindow(QMainWindow):
             self.cursorMode = new_mode
             self.mapView.updateScene()
 
-
     def clearLevel(self):
         """Clear anything associated with the current level.
 
@@ -364,6 +382,7 @@ class MainWindow(QMainWindow):
         """
         self.toolBar.tileTabMenu.clearTiles()
         self.mapView.clearScene(True)
+
 
 class CustomView(QGraphicsView):
     """Base class for MapView and TileMenu
@@ -395,12 +414,16 @@ class CustomView(QGraphicsView):
         painter.setPen(QColor(cfg.colors['light teal']))
         painter.drawRect(topLeft[0], topLeft[1], tileSize, tileSize)
 
+
 class MapView(CustomView):
     def __init__(self, parent):
         super().__init__()
         self.parent = parent
         self.checkerTileSize = 16
         self.mousePos = None
+        self.editTimer = QTimer()
+        self.editTimer.setInterval(1)
+        self.editTimer.timeout.connect(self.editMapEvent)
         self.setScene(QGraphicsScene())
         self.setupView()
 
@@ -432,17 +455,31 @@ class MapView(CustomView):
         self.updateScene()
 
     def mousePressEvent(self, event):
-        level = self.parent.getLevelData()
-        if level and self.mousePos:
-            self.editMap()
+        self.editMapEvent()
+        self.startEditTimer()
+
+    def mouseReleaseEvent(self, event):
+        self.stopEditTimer()
 
     def leaveEvent(self, event):
         self.mousePos = None
+        self.stopEditTimer()
         self.updateScene()
 
     # ==============
     # CUSTOM METHODS
     # ==============
+    def editMapEvent(self):
+        level = self.parent.getLevelData()
+        if level and self.mousePos:
+            self.editMap()
+
+    def startEditTimer(self):
+        self.editTimer.start()
+
+    def stopEditTimer(self):
+        self.editTimer.stop()
+
     def setupView(self):
         self.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.setMouseTracking(True)
@@ -624,6 +661,7 @@ class MapView(CustomView):
         self.clearScene(True)
         self.drawLevel()
 
+
 class ToolBar(QWidget):
     def __init__(self, parent):
         super().__init__()
@@ -666,6 +704,7 @@ class ToolBar(QWidget):
         if btn.name in self.allCursorModes:
             self.parent.changeCursorMode(btn.name)
 
+
 class ToolButton(QPushButton):
     def __init__(self, iconURL, name, shortcut=None):
         super().__init__()
@@ -681,6 +720,7 @@ class ToolButton(QPushButton):
             toolTip += f' ({shortcut.capitalize()})'
         self.setToolTip(toolTip)
         self.setCheckable(True)
+
 
 class TileTabMenu(QTabWidget):
     """Contains all the tile menus.
@@ -734,6 +774,7 @@ class TileTabMenu(QTabWidget):
             return self.tileMenus[active].getSelectedTile()
         return None
 
+
 class TileMenu(CustomView):
     """Base class for the tile menus.
     """
@@ -782,6 +823,10 @@ class TileMenu(CustomView):
     # ==============
     # CUSTOM METHODS
     # ==============
+    def updateSceneSize(self):
+        rect = QRectF(0, 0, self.width, self.height)
+        self.scene().setSceneRect(rect)
+
     def drawTileOutine(self, painter):
         x = self.selectedTile.getMetaData()["pos_x"]
         y = self.selectedTile.getMetaData()["pos_y"]
@@ -822,7 +867,10 @@ class TileMenu(CustomView):
     def clearTiles(self):
         self.tiles.clear()
         self.tileArrayWidth = 0
+        self.width = 0
+        self.height = 0
         self.clearScene()
+
 
 class TileSpriteMenu(TileMenu):
     def loadTiles(self, spriteSheetURL):
@@ -850,6 +898,8 @@ class TileSpriteMenu(TileMenu):
         self.height = spriteSheet.height()
         self.tileArrayWidth = int(self.width / cfg.TILESIZE)
         self.tilesLoaded = True
+        self.updateSceneSize()
+
 
 class TileIDMenu(TileMenu):
     def _createTileImage(self, tile_id: str, bg_color: Optional[str]) -> 'QPixmap':
@@ -908,6 +958,7 @@ class TileIDMenu(TileMenu):
         self.tileArrayWidth = col
         self.tilesLoaded = True
 
+
 class LevelMenuBar(QWidget):
     def __init__(self, parent):
         super().__init__()
@@ -938,6 +989,7 @@ class LevelMenuBar(QWidget):
             mapSize = ' {}x{} '.format(mapSize[0], mapSize[1])
             self.parent.loadLevel(levelName)
             self.parent.statusComponents['levelSize'].setText(mapSize)
+
 
 class LevelSelectBox(QComboBox):
     def __init__(self, parent):
@@ -1015,7 +1067,6 @@ class NewLevelWindow(QDialog):
                     return False
         return True
 
-
     def createNewLevel(self):
         if self._dataIsValid():
             levelName = str(self.nameInput.text())
@@ -1051,5 +1102,6 @@ class SpriteInput(QWidget):
     def getSpriteSheet(self):
         directory = cfg.sprite_dir if cfg.SETTINGS['inRepo'] else cfg.data_dir
         path = QFileDialog.getOpenFileName(None, 'Choose a level spritesheet', directory, 'PNG (*.png)')[0]
-        filename = get_filename_from_path(path).replace('.png', '')
-        self.textInput.setText(filename)
+        if path:
+            filename = get_filename_from_path(path).replace('.png', '')
+            self.textInput.setText(filename)

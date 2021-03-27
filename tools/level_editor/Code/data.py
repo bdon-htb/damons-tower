@@ -27,9 +27,6 @@ class LevelData:
         height = self.getLevel(levelName)["height"]
         return width * tileSize, height * tileSize
 
-    def getFileName(self) -> str:
-        return self.filename
-
     def getTilePos(self, index: int, tileSize: int, levelName=None) -> tuple:
         """Return the true position of a particular tile.
         """

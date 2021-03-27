@@ -1147,6 +1147,7 @@ class ResizeMapWindow(QDialog):
         self.setLayout(self.layout)
 
     def resizeMap(self):
+        pass
 
 class ResizeAnchorMenu(QWidget):
     def __init__(self):

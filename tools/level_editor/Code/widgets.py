@@ -166,7 +166,7 @@ class MainWindow(QMainWindow):
         changeTileAct.triggered.connect(self.changeTilesetAction)
 
         resizeLevelAct = QAction('&' + 'Change Map Dimensions', self)
-        # resizeLevelAct.triggered.connect(self.resizeMapAction)
+        resizeLevelAct.triggered.connect(self.resizeMapAction)
 
         self.editMenu.addAction(undoAct)
         self.editMenu.addAction(redoAct)
@@ -340,6 +340,18 @@ class MainWindow(QMainWindow):
         else:
             QMessageBox.information(None, ' ', 'No level to load tileset into.')
 
+    def resizeMapAction(self):
+        ResizeMapWindow(self).show()
+        '''
+        if self.levelData:
+            ResizeMapWindow(self).show()
+        else:
+            QMessageBox.information(None, ' ', 'No level to load change.')
+        '''
+
+    # ====================
+    # EDIT RELATED METHODS
+    # ====================
     def zoomInAction(self):
         if self.levelData and self.zoom < 2:
             self.mapView.scale(1.25, 1.25)
@@ -1105,3 +1117,66 @@ class SpriteInput(QWidget):
         if path:
             filename = get_filename_from_path(path).replace('.png', '')
             self.textInput.setText(filename)
+
+# TODO: Implement
+class ResizeMapWindow(QDialog):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.parent = parent
+        self.setWindowTitle('Set the map dimensions')
+        self.setFixedSize(400, 400)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+        self.setModal(True)
+
+        self.layout = QFormLayout()
+
+        self.widthInput = QLineEdit()
+        self.heightInput = QLineEdit()
+        self.layout.addRow(QLabel('Width: '), self.widthInput)
+        self.layout.addRow(QLabel('Height: '), self.heightInput)
+
+        self.anchorMenu = ResizeAnchorMenu()
+        self.layout.addRow(QLabel('Set anchor point: '))
+        self.layout.addRow(self.anchorMenu)
+
+        self.submitButton = QPushButton('Apply Changes')
+        self.layout.addRow(self.submitButton)
+        self.setLayout(self.layout)
+
+class ResizeAnchorMenu(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.layout = QGridLayout()
+        self._cols = 3
+        locations = [
+            'topLeft', 'top', 'topRight',
+            'left', 'middle', 'right',
+            'bottomLeft', 'bottom', 'bottomRight'
+            ]
+        self.buttons = {l: AnchorButton(l.capitalize()) for l in locations}
+        self.buttonGroup = QButtonGroup()
+
+        # Create layout.
+        row = 0
+        col = 0
+        for btn in self.buttons.values():
+            if col >= self._cols:
+                col = 0
+                row += 1
+            self.layout.addWidget(btn, row, col)
+            self.buttonGroup.addButton(btn)
+
+            col += 1
+
+        self.buttons['topLeft'].setChecked(True)
+        self.setLayout(self.layout)
+
+    def selectButton(self):
+        pass
+
+class AnchorButton(QPushButton):
+    def __init__(self, str):
+        super().__init__(str)
+        self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        self.setCheckable(True)
+        self.setAutoDefault(False)

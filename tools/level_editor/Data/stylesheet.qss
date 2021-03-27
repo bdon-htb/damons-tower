@@ -529,7 +529,7 @@ Custom Styling
 CustomView {
   background-color: cfg.colors['mauve'];
 }
-NewLevelWindow {
+NewLevelWindow, ResizeMapWindow {
 	background-color:#151a1e;
 }
 LevelSelectBox::disabled {
@@ -538,6 +538,13 @@ LevelSelectBox::disabled {
 TileButton {
 	background: none;
 	border: none;
+}
+AnchorButton {
+	background-color: #222b2e;
+}
+AnchorButton:checked, AnchorButton:pressed {
+	border: 2px solid cfg.colors['teal'];
+	padding: 2px;
 }
 QMessageBox {
 	background-color:#151a1e;

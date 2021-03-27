@@ -418,7 +418,7 @@ class MapView(CustomView):
         if self.parent.gridAct.isChecked() and self.parent.levelData:
             self.drawGrid(painter)
 
-        if self.parent.cursorMode in ('fill', 'draw', 'erase') and self.mousePos:
+        if self.parent.levelData and self.parent.cursorMode in ('fill', 'draw', 'erase') and self.mousePos:
             self.drawSelectOutline(painter)
 
         self.updateSceneSize() # Call this once everything is drawn.

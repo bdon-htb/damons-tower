@@ -341,13 +341,10 @@ class MainWindow(QMainWindow):
             QMessageBox.information(None, ' ', 'No level to load tileset into.')
 
     def resizeMapAction(self):
-        ResizeMapWindow(self).show()
-        '''
         if self.levelData:
             ResizeMapWindow(self).show()
         else:
-            QMessageBox.information(None, ' ', 'No level to load change.')
-        '''
+            QMessageBox.information(None, ' ', 'No level to change.')
 
     # ====================
     # EDIT RELATED METHODS
@@ -844,7 +841,7 @@ class TileMenu(CustomView):
         y = self.selectedTile.getMetaData()["pos_y"]
         tileSize = cfg.TILESIZE
 
-        painter.setPen(QColor(cfg.colors['black']))
+        painter.setPen(QColor(cfg.colors['yellow']))
         painter.drawRect(x, y, tileSize, tileSize)
 
     def getSelectedTile(self):
@@ -882,6 +879,7 @@ class TileMenu(CustomView):
         self.width = 0
         self.height = 0
         self.clearScene()
+        self.selectedTile = None
 
 
 class TileSpriteMenu(TileMenu):
@@ -1132,8 +1130,8 @@ class ResizeMapWindow(QDialog):
 
         self.widthInput = QLineEdit()
         self.heightInput = QLineEdit()
-        self.layout.addRow(QLabel('Width: '), self.widthInput)
-        self.layout.addRow(QLabel('Height: '), self.heightInput)
+        self.layout.addRow(QLabel('Width (in tiles): '), self.widthInput)
+        self.layout.addRow(QLabel('Height (in tiles): '), self.heightInput)
 
         self.anchorMenu = ResizeAnchorMenu()
         self.layout.addRow(QLabel('Set anchor point: '))
@@ -1141,6 +1139,11 @@ class ResizeMapWindow(QDialog):
 
         self.submitButton = QPushButton('Apply Changes')
         self.layout.addRow(self.submitButton)
+
+        level = self.parent.getLevelData().getLevel()
+
+        self.widthInput.setText(str(level['width']))
+        self.heightInput.setText(str(level['height']))
         self.setLayout(self.layout)
 
 class ResizeAnchorMenu(QWidget):
@@ -1170,9 +1173,6 @@ class ResizeAnchorMenu(QWidget):
 
         self.buttons['topLeft'].setChecked(True)
         self.setLayout(self.layout)
-
-    def selectButton(self):
-        pass
 
 class AnchorButton(QPushButton):
     def __init__(self, str):

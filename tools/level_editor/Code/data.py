@@ -157,3 +157,12 @@ class LevelData:
             if x - 1 >= 0:
                 index_left = self.get1DFrom2D(x - 1, y, array_width)
                 self.fillTiles(index_left, source_id, new_id, levelName, fill_indexes)
+
+class AbstractTile:
+    """An abstract tile class.
+    """
+    def __init__(self, metaData: dict):
+        self.metaData = metaData
+
+    def getMetaData(self):
+        return self.metaData

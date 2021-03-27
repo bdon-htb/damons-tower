@@ -225,7 +225,6 @@ QTabBar::tab:selected, QTabBar::tab:last:selected, QTabBar::tab:hover {
 	margin-left:0px;
 	background-color: #1e282c;
 }
-
 QTabBar::tab:selected, QTabBar::tab:first:selected, QTabBar::tab:hover {
   	border-style: solid;
   	border-left-width:1px;
@@ -240,7 +239,6 @@ QTabBar::tab:selected, QTabBar::tab:first:selected, QTabBar::tab:hover {
 	margin-left:0px;
 	background-color: #1e282c;
 }
-
 QCheckBox {
 	color: #d3dae3;
 	padding: 2px;
@@ -249,7 +247,6 @@ QCheckBox:disabled {
 	color: #808086;
 	padding: 2px;
 }
-
 QCheckBox:hover {
 	border-radius:4px;
 	border-style:solid;
@@ -261,7 +258,6 @@ QCheckBox:hover {
 	border-color: transparent;
 }
 QCheckBox::indicator:checked {
-
 	height: 10px;
 	width: 10px;
 	border-style:solid;
@@ -271,7 +267,6 @@ QCheckBox::indicator:checked {
 	background-color: qradialgradient(cx:0.4, cy:0.4, radius: 1.5,fx:0, fy:0, stop:0 #1e282c, stop:0.3 #1e282c, stop:0.4 cfg.colors['teal'], stop:0.5 #1e282c, stop:1 #1e282c);
 }
 QCheckBox::indicator:unchecked {
-
 	height: 10px;
 	width: 10px;
 	border-style:solid;
@@ -355,11 +350,9 @@ QComboBox {
 	border-style: solid;
 	border-color: cfg.colors['teal'];
 }
-
 QDial {
 	background: #16a085;
 }
-
 QToolBox {
 	color: #a9b7c6;
 	background-color: #222b2e;
@@ -522,7 +515,6 @@ QScrollBar::sub-line:vertical:pressed {
    subcontrol-position: top;
    subcontrol-origin: margin;
 }
-
 QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
    background: none;
 }
@@ -530,18 +522,23 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
    background: none;
 }
 
-/*
-Custom Style
-*/
 
-MapView {
+/*
+Custom Styling
+*/
+CustomView {
   background-color: cfg.colors['mauve'];
 }
-
 NewLevelWindow {
 	background-color:#151a1e;
 }
-
+LevelSelectBox::disabled {
+	color: #808086;
+}
+TileButton {
+	background: none;
+	border: none;
+}
 QMessageBox {
 	background-color:#151a1e;
 }

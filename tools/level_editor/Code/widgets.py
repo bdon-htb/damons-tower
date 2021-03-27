@@ -18,7 +18,7 @@ from typing import Tuple, Optional
 # Custom imports
 from . import cfg
 from .file import load_json, load_stylesheet, write_level_json, get_filename_from_path
-from .data import LevelData
+from .data import LevelData, AbstractTile
 
 def is_level(d: dict) -> bool:
     """Simply checks that the first key is 'levelData'
@@ -73,7 +73,7 @@ class MainWindow(QMainWindow):
     # =================
     def initUI(self):
         self.setWindowTitle(f'{self.name} - v{self.version}')
-        self.setMinimumSize(1000, 600)
+        self.setMinimumSize(1200, 700)
         self.centralWidget = QWidget()
         self.layout = QGridLayout()
 
@@ -365,14 +365,42 @@ class MainWindow(QMainWindow):
         self.toolBar.tileTabMenu.clearTiles()
         self.mapView.clearScene(True)
 
-class MapView(QGraphicsView):
+class CustomView(QGraphicsView):
+    """Base class for MapView and TileMenu
+    """
+    def clearScene(self, forceUpdate=True):
+        self.scene().clear()
+        if forceUpdate:
+            self.updateScene()
+
+    def updateScene(self):
+        self.scene().update()
+
+    def getNearestTopLeft(self, pos_x, pos_y) -> tuple:
+        """Return the top left coordinates of the nearest grid square relative to
+        pos_x and pos_y
+        """
+        tileSize = cfg.TILESIZE
+        x = pos_x - (pos_x % tileSize)
+        y = pos_y - (pos_y % tileSize)
+        return x, y
+
+    def drawSelectOutline(self, painter):
+        """Draws a rectangular outline of the nearest grid square.
+        Used to indicate the grid square the cursor is currently hovering over.
+        """
+        topLeft = self.getNearestTopLeft(self.mousePos[0], self.mousePos[1])
+        tileSize = cfg.TILESIZE
+
+        painter.setPen(QColor(cfg.colors['light teal']))
+        painter.drawRect(topLeft[0], topLeft[1], tileSize, tileSize)
+
+class MapView(CustomView):
     def __init__(self, parent):
         super().__init__()
         self.parent = parent
         self.checkerTileSize = 16
         self.mousePos = None
-        self.bg_color = cfg.colors['mauve']
-        # self.setStyleSheet("background-color: '#76608A';")
         self.setScene(QGraphicsScene())
         self.setupView()
 
@@ -419,14 +447,6 @@ class MapView(QGraphicsView):
         self.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.setMouseTracking(True)
 
-    def clearScene(self, forceUpdate=True):
-        self.scene().clear()
-        if forceUpdate:
-            self.updateScene()
-
-    def updateScene(self):
-        self.scene().update()
-
     def updateSceneSize(self):
         if self.parent.levelData:
             levelWidth, levelHeight = self.parent.levelData.getMapSize(cfg.TILESIZE)
@@ -437,15 +457,6 @@ class MapView(QGraphicsView):
                 rect = self.scene().itemsBoundingRect()
 
             self.scene().setSceneRect(rect)
-
-    def getNearestTopLeft(self, pos_x, pos_y) -> tuple:
-        """Return the top left coordinates of the nearest grid square relative to
-        pos_x and pos_y
-        """
-        tileSize = cfg.TILESIZE
-        x = pos_x - (pos_x % tileSize)
-        y = pos_y - (pos_y % tileSize)
-        return x, y
 
     def getNearestTileIndex(self, pos_x, pos_y) -> int:
         """Return the index of the nearest tile that the mouse is hovering
@@ -522,16 +533,6 @@ class MapView(QGraphicsView):
     # =====================
     # SCENE DRAWING METHODS
     # =====================
-    def drawSelectOutline(self, painter):
-        """Draws a rectangular outline of the nearest grid square.
-        Used to indicate the grid square the cursor is currently hovering over.
-        """
-        topLeft = self.getNearestTopLeft(self.mousePos[0], self.mousePos[1])
-        tileSize = cfg.TILESIZE
-
-        painter.setPen(QColor(cfg.colors['light teal']))
-        painter.drawRect(topLeft[0], topLeft[1], tileSize, tileSize)
-
     def drawCheckerGrid(self, painter):
         """Draws a pattern of grey and white squares into the scene.
         Used to represent transparency in the background.
@@ -593,8 +594,8 @@ class MapView(QGraphicsView):
         tileData = levelData.getTileData()
         tileSize = cfg.TILESIZE
 
-        buttons = self.parent.toolBar.tileTabMenu.getMenu('Tile Ids').buttonGroup.buttons()
-        tile_pixmap = {btn.metaData['id']: btn.icon().pixmap(tileSize) for btn in buttons}
+        tiles = self.parent.toolBar.tileTabMenu.getMenu('Tile Ids').getTiles()
+        tile_pixmap = {t.getMetaData()['id']: t.getMetaData()["image"] for t in tiles}
         painter.setOpacity(0.50)
         for index in range(len(tileData)):
             id = tileData[index].split('-')[-1]
@@ -733,62 +734,95 @@ class TileTabMenu(QTabWidget):
             return self.tileMenus[active].getSelectedTile()
         return None
 
-class TileMenu(QScrollArea):
+class TileMenu(CustomView):
     """Base class for the tile menus.
     """
     def __init__(self):
         super().__init__()
-        self.layout = QGridLayout()
-        self.cols = 5
-        self._lastRow = 0
-        self._lastCol = 0
+        self.tilesLoaded = False
+        self.mousePos = None
+        self.selectedTile = None
+        self.tiles = []
+        self.tileArrayWidth = 0
+        self.width = 0
+        self.height = 0
+        self.scale(2, 2)
+        self.setScene(QGraphicsScene())
 
-        self.buttonGroup = QButtonGroup()
-        self.buttonGroup.buttonClicked.connect(self.selectTile)
-        self.selectedTile = None # Currently selected tile button.
-        self.setLayout(self.layout)
+        # Hacky way to reuse functions but whatver.
+        self.get1DFrom2D = lambda x, y, array_width : LevelData.get1DFrom2D(self, x, y, array_width)
+        self.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        self.setMouseTracking(True)
+
+    # =================
+    # OVERRIDEN METHODS
+    # =================
+    def drawForeground(self, painter, rect):
+        if self.tilesLoaded and self.selectedTile:
+            self.drawTileOutine(painter)
+
+        if self.tilesLoaded and self.mousePos:
+            self.drawSelectOutline(painter)
+
+    def mouseMoveEvent(self, event):
+        pos = self.mapToScene(event.pos())
+        self.mousePos = (pos.x(), pos.y())
+        self.updateScene()
+
+    def mousePressEvent(self, event):
+        if self.tiles and self.mousePos \
+            and 0 <= self.mousePos[0] < self.width \
+            and 0 <= self.mousePos[1] < self.height:
+            self.selectTile()
+
+    def leaveEvent(self, event):
+        self.mousePos = None
+        self.updateScene()
+
+    # ==============
+    # CUSTOM METHODS
+    # ==============
+    def drawTileOutine(self, painter):
+        x = self.selectedTile.getMetaData()["pos_x"]
+        y = self.selectedTile.getMetaData()["pos_y"]
+        tileSize = cfg.TILESIZE
+
+        painter.setPen(QColor(cfg.colors['black']))
+        painter.drawRect(x, y, tileSize, tileSize)
 
     def getSelectedTile(self):
         return self.selectedTile
 
-    def selectTile(self, tile):
-        # Basically these if statements allow NO tiles to be selected at a time.
-        if tile.isChecked() and self.selectedTile == tile:
-            self.buttonGroup.setExclusive(False)
-            tile.setChecked(False)
-            self.selectedTile = None
+    def selectTile(self):
+        """Set self.selectedTile to the current tile being hovered over.
+        """
+        pos_x, pos_y = self.mousePos
+        pos_x, pos_y = self.getNearestTopLeft(pos_x, pos_y)
+        index = self.get1DFrom2D(int(pos_x // cfg.TILESIZE), int(pos_y // cfg.TILESIZE), self.tileArrayWidth)
+        tile = self.tiles[index]
+
+        if tile == self.selectedTile:
+            self.selectedTile = None # Unselect tile.
         else:
-            if not self.buttonGroup.exclusive():
-                self.buttonGroup.setExclusive(True)
-            tile.setChecked(True)
             self.selectedTile = tile
+        self.updateScene()
+
+    def getTiles(self):
+        return self.tiles
 
     def loadTiles(self):
-        """Load the tiles into the tileMenu. Needs to be implemented
+        """Load tiles into the tileMenu. Needs to be implemented
         individually.
         """
         pass
 
     def addTile(self, tile):
-        if self._lastCol > self.cols:
-            self._lastRow += 1 # Move on to next row.
-            self._lastCol = 0 # Go back to first column
-
-        self.layout.addWidget(tile, self._lastRow, self._lastCol)
-        self.buttonGroup.addButton(tile)
-
-        self._lastCol += 1
+        self.tiles.append(tile)
 
     def clearTiles(self):
-        self.selectedTile = None
-        self._lastRow = 0
-        self._lastCol = 0
-
-        # Thank you stack overflow! this helped: https://stackoverflow.com/questions/4528347/clear-all-widgets-in-a-layout-in-pyqt
-        for i in reversed(range(self.layout.count())):
-            widget = self.layout.itemAt(i).widget()
-            self.buttonGroup.removeButton(widget)
-            widget.setParent(None)
+        self.tiles.clear()
+        self.tileArrayWidth = 0
+        self.clearScene()
 
 class TileSpriteMenu(TileMenu):
     def loadTiles(self, spriteSheetURL):
@@ -796,22 +830,26 @@ class TileSpriteMenu(TileMenu):
         Precondition: Assumes each 32x32 square in the sheet is occupied
         and that 32 divides the area of the spriteSheet evenly.
         """
+        # Load tileset sprite into scene.
         spriteSheet = QPixmap(spriteSheetURL)
-        col = 0
-        row = 0
+        self.scene().addPixmap(spriteSheet)
+        # Note that this range only works because the tiles are squares.
         for y in range(0, spriteSheet.height(), cfg.TILESIZE):
             for x in range(0, spriteSheet.width(), cfg.TILESIZE):
-                slice = QRect(x, y, cfg.TILESIZE, cfg.TILESIZE)
-                tileSprite = spriteSheet.copy(slice)
                 metaData = {
                     "type": "sprite",
                     # Refers to the location of this tile's  sprite in its spriteSheet
                     "sprite_x": int(x / cfg.TILESIZE),
-                    "sprite_y": int(y / cfg.TILESIZE)
-                    }
-                tile = TileButton(tileSprite, metaData)
+                    "sprite_y": int(y / cfg.TILESIZE),
+                    "pos_x": x,
+                    "pos_y": y
+                }
+                tile = AbstractTile(metaData)
                 self.addTile(tile)
-                col += 1
+        self.width = spriteSheet.width()
+        self.height = spriteSheet.height()
+        self.tileArrayWidth = int(self.width / cfg.TILESIZE)
+        self.tilesLoaded = True
 
 class TileIDMenu(TileMenu):
     def _createTileImage(self, tile_id: str, bg_color: Optional[str]) -> 'QPixmap':
@@ -833,26 +871,42 @@ class TileIDMenu(TileMenu):
         """Load all the tile types into the tileMenu according
         to the types listed in cfg.py
         """
+        cols_per_row = 5
+        max_cols = False
+        col = 0
+        row = 0
         for tile_id, tile_color in cfg.tile_type_colors.items():
+
+            if col > cols_per_row:
+                col = 0
+                row += 1
+                max_cols = True
+
             tileSprite = self._createTileImage(tile_id, tile_color)
+            sceneItem = self.scene().addPixmap(tileSprite)
+            pos_x, pos_y = col * cfg.TILESIZE, row * cfg.TILESIZE
+            sceneItem.setPos(pos_x, pos_y)
+
             metaData = {
                 "type": "id",
-                "id": tile_id
+                "id": tile_id,
+                "image": tileSprite,
+                "pos_x": pos_x,
+                "pos_y": pos_y
                 }
-            tile = TileButton(tileSprite, metaData)
+
+            tile = AbstractTile(metaData)
             self.addTile(tile)
+            col += 1
 
-class TileButton(QPushButton):
-    def __init__(self, pixmap, metadata: dict):
-        super().__init__()
-        self.metaData = metadata
+        if max_cols:
+            self.width = cols_per_row * cfg.TILESIZE
+        else:
+            self.width = col * cfg.TILESIZE
 
-        self.setIcon(QIcon(pixmap))
-        self.setIconSize(QSize(32, 32))
-        self.setCheckable(True)
-
-    def getMetaData(self):
-        return self.metaData
+        self.height = (row + 1) * cfg.TILESIZE
+        self.tileArrayWidth = col
+        self.tilesLoaded = True
 
 class LevelMenuBar(QWidget):
     def __init__(self, parent):

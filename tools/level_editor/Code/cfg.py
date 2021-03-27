@@ -9,7 +9,7 @@ __name__ = 'js-roguelite Level Editor'
 
 TILESIZE = 32
 EMPTY_TILE_ID = '00'
-TILE_ARRAY_SIZE = 3
+TILE_ARRAY_SIZE = 3 # This is the number of elements in a tile id.
 
 SETTINGS = {
     'inRepo': True
@@ -51,7 +51,7 @@ colors = {
 tile_type_colors = {
     'WA': colors['dark indigo'],
     'FL': colors['dark crimson'],
-    '00': colors['mauve']
+    '00': colors['grey']
 }
 
 # IMPORTANT!

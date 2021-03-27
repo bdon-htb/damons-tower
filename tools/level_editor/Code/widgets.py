@@ -1146,6 +1146,8 @@ class ResizeMapWindow(QDialog):
         self.heightInput.setText(str(level['height']))
         self.setLayout(self.layout)
 
+    def resizeMap(self):
+
 class ResizeAnchorMenu(QWidget):
     def __init__(self):
         super().__init__()

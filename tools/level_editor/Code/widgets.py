@@ -1071,9 +1071,9 @@ class NewLevelWindow(QDialog):
                 return False
             elif index in (2, 3): # Check that the width and height inputs are integers.
                 try:
-                    int(i)
+                    if int(i) <= 0:
+                        return False
                 except ValueError as e:
-                    print(e)
                     return False
         return True
 
@@ -1138,6 +1138,7 @@ class ResizeMapWindow(QDialog):
         self.layout.addRow(self.anchorMenu)
 
         self.submitButton = QPushButton('Apply Changes')
+        self.submitButton.clicked.connect(self.resizeMap)
         self.layout.addRow(self.submitButton)
 
         level = self.parent.getLevelData().getLevel()
@@ -1146,8 +1147,38 @@ class ResizeMapWindow(QDialog):
         self.heightInput.setText(str(level['height']))
         self.setLayout(self.layout)
 
+    def _dataIsValid(self) -> bool:
+        """Check to see if the data is valid.
+        """
+        text_inputs = [
+            str(self.widthInput.text()).strip(),
+            str(self.heightInput.text()).strip(),
+        ]
+
+        for index in range(len(text_inputs)):
+            i = text_inputs[index]
+            if len(i.strip().replace(' ', '')) <= 0: # Check that content isn't empty
+                return False
+            # Check that the width and height inputs are integers.
+            try:
+                if int(i) <= 0:
+                    return False
+            except ValueError as e:
+                return False
+        return True
+
+
     def resizeMap(self):
-        pass
+        if self._dataIsValid():
+            level = self.parent.getLevelData().getLevel()
+            newWidth = str(self.widthInput.text())
+            newHeight = str(self.heightInput.text())
+            anchorPoint = self.anchorMenu.getAnchorPoint()
+            # level.resizeTileArray(anchorPoint, newWidth, newHeight)
+            self.close()
+        else:
+            msg = 'Incorrect input detected. Please ensure dimensions are correct and try again.'
+            QMessageBox.information(None, ' ', msg)
 
 class ResizeAnchorMenu(QWidget):
     def __init__(self):
@@ -1177,9 +1208,13 @@ class ResizeAnchorMenu(QWidget):
         self.buttons['topLeft'].setChecked(True)
         self.setLayout(self.layout)
 
+    def getAnchorPoint(self):
+        return self.buttonGroup.checkedButton().name
+
 class AnchorButton(QPushButton):
     def __init__(self, str):
         super().__init__(str)
+        self.name = str
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         self.setCheckable(True)
         self.setAutoDefault(False)

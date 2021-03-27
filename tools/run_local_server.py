@@ -1,10 +1,11 @@
 #!/usr/bin/python3
-# ================================================================
+
+# ==============================================================
 # Use this script to quickly run a local server for playtesting.
 #
 # Optionally accepts a port as an argument. If no additional
 # arguments are passed it will just default to 8000.
-# ================================================================
+# ==============================================================
 import subprocess, os, sys
 
 def main():

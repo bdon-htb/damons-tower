@@ -1170,11 +1170,12 @@ class ResizeMapWindow(QDialog):
 
     def resizeMap(self):
         if self._dataIsValid():
-            level = self.parent.getLevelData().getLevel()
-            newWidth = str(self.widthInput.text())
-            newHeight = str(self.heightInput.text())
+            level = self.parent.getLevelData()
+            newWidth = int(self.widthInput.text())
+            newHeight = int(self.heightInput.text())
             anchorPoint = self.anchorMenu.getAnchorPoint()
-            # level.resizeTileArray(anchorPoint, newWidth, newHeight)
+            level.resizeTileArray(anchorPoint, newWidth, newHeight)
+            self.parent.mapView.redrawLevel()
             self.close()
         else:
             msg = 'Incorrect input detected. Please ensure dimensions are correct and try again.'
@@ -1186,9 +1187,9 @@ class ResizeAnchorMenu(QWidget):
         self.layout = QGridLayout()
         self._cols = 3
         locations = [
-            'topLeft', 'top', 'topRight',
-            'left', 'middle', 'right',
-            'bottomLeft', 'bottom', 'bottomRight'
+            'Top Left', 'Top Centre', 'Top Right',
+            'Middle Left', 'Middle Centre', 'Middle Right',
+            'Bottom Left', 'Bottom Centre', 'Bottom Right'
             ]
         self.buttons = {l: AnchorButton(l.capitalize()) for l in locations}
         self.buttonGroup = QButtonGroup()
@@ -1205,7 +1206,7 @@ class ResizeAnchorMenu(QWidget):
 
             col += 1
 
-        self.buttons['topLeft'].setChecked(True)
+        self.buttons['Top Left'].setChecked(True)
         self.setLayout(self.layout)
 
     def getAnchorPoint(self):

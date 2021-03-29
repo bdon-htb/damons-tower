@@ -85,12 +85,28 @@ class LevelData:
         levelName = self._getDefaultName(levelName)
         return self.getLevel(levelName)["tileData"]
 
+    def getWidth(self, levelName=None) -> int:
+        levelName = self._getDefaultName(levelName)
+        return self.getLevel(levelName)["width"]
+
+    def getHeight(self, levelName=None) -> int:
+        levelName = self._getDefaultName(levelName)
+        return self.getLevel(levelName)["height"]
+
     def setCurrentLevel(self, levelName: str):
         self.currentLevel = levelName
 
     # ==========================
     # LEVEL MANIPULATION METHODS
     # ==========================
+    def setWidth(self, new_width: int, levelName=None):
+        levelName = self._getDefaultName(levelName)
+        self.getLevel(levelName)["width"] = new_width
+
+    def setHeight(self, new_height: int, levelName=None):
+        levelName = self._getDefaultName(levelName)
+        self.getLevel(levelName)["height"] = new_height
+
     def setTileData(self, tile_data: List[str], levelName=None):
         """Set self.levelJson["tileData"] = tile_data
 
@@ -154,6 +170,80 @@ class LevelData:
             if x - 1 >= 0:
                 index_left = self.get1DFrom2D(x - 1, y, array_width)
                 self.fillTiles(index_left, source_id, new_id, levelName, fill_indexes)
+
+    def resizeTileArray(self, anchorPoint: str, newWidth: int, newHeight: int):
+        #These are variables needed to resize the level
+        anchorPointSplit = anchorPoint.split()
+        tiles = self.getTileData()
+        width = self.getWidth()
+        height = self.getHeight()
+        changeHeight = newHeight - height
+        changeWidth = newWidth - width
+        
+        #Resize the height first, resizing from the middle is done by resizing the top then bottom
+        if anchorPointSplit[0].capitalize() == "Middle":
+            addTop = math.ceil(changeHeight / 2)
+            addBottom = (changeHeight // 2)
+            if changeHeight < 0:
+                addTop, addBottom = addBottom, addTop
+            topHeight = height + addTop
+            newTiles = self.resizeArray("Top", addTop, width, topHeight, tiles)
+            bottomHeight = height + addBottom
+            newTiles = self.resizeArray("Bottom", addBottom, width, bottomHeight, newTiles)
+        else:
+            newTiles = self.resizeArray(anchorPointSplit[0], changeHeight, width, newHeight, tiles)
+        self.setHeight(newHeight)
+
+        #Resize the width, resizing from the centre is done by resizing left then right
+        if anchorPointSplit[1].capitalize() == "Centre":
+            addRight = (changeWidth // 2)
+            addLeft = math.ceil(changeWidth / 2)
+            if changeWidth < 0:
+                addRight, addLeft = addLeft, addRight
+            leftWidth = width + addLeft
+            newTiles = self.resizeArray("Left", addLeft, newHeight, leftWidth, newTiles)
+            rightWidth = width + addRight + addLeft
+            newTiles = self.resizeArray("Right", addRight, newHeight, rightWidth, newTiles)
+        else:
+            newTiles = self.resizeArray(anchorPointSplit[1], changeWidth, newHeight, newWidth, tiles)
+        self.setWidth(newWidth)
+
+        #Replace tiles
+        self.setTileData(newTiles)
+
+    def resizeArray(self, anchorPoint: str, changeDim: int, dimension: int, newDim: int, tiles: list):
+        #Create new array of new size
+        newSize = dimension * newDim
+        changeDifference = dimension * changeDim
+        newTiles = [None] * (newSize)
+
+        #Check which side of level we are added tiles to
+        if anchorPoint.capitalize() == "Top":
+            newTiles[:len(tiles)] = tiles
+            newTiles[len(tiles):] = ['0-0-{}'.format(cfg.EMPTY_TILE_ID)] * changeDifference
+        elif anchorPoint.capitalize() == "Bottom":
+            newTiles[:changeDifference] = ['0-0-{}'.format(cfg.EMPTY_TILE_ID)] * changeDifference
+            if changeDifference < 0:
+                newTiles[changeDifference:] = tiles[abs(changeDifference):]
+            else:
+                newTiles[changeDifference:] = tiles
+        elif anchorPoint.capitalize() == "Right":
+            for i in range(newSize):
+                if i % newDim < changeDim:
+                    newTiles[i] = '0-0-{}'.format(cfg.EMPTY_TILE_ID)
+                elif changeDim > 0:
+                    newTiles[i] = tiles[i - abs(changeDim) * ((i // newDim) + 1)]
+                else:
+                    newTiles[i] = tiles[i + abs(changeDim) * ((i // newDim) + 1)]
+        else:
+            for i in range(newSize):
+                if i % newDim >= newDim - changeDim:
+                    newTiles[i] = '0-0-{}'.format(cfg.EMPTY_TILE_ID)
+                elif changeDim > 0:
+                    newTiles[i] = tiles[i - abs(changeDim) * (i // newDim)]
+                else:
+                    newTiles[i] = tiles[i + abs(changeDim) * (i // newDim)]
+        return newTiles
 
 class AbstractTile:
     """An abstract tile class.

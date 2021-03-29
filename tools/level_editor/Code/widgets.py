@@ -12,7 +12,7 @@ QScrollArea, QButtonGroup, QComboBox, QTabWidget, QSizePolicy, QFormLayout,
 QLineEdit, QCheckBox, QDialog, QMessageBox)
 
 # Other python imports
-import math
+import math, sys
 from typing import Tuple, Optional
 
 # Custom imports
@@ -543,7 +543,6 @@ class MapView(CustomView):
             index = self.getNearestTileIndex(x, y)
             activeTileMenu = tileTabMenu.getActiveMenu()
             selectedTile = tileTabMenu.getActiveSelection()
-            # TODO: Implement
             tile_data = levelData.getTileData()[index].split('-')
             if cursorMode == 'draw' and activeTileMenu == 'Tile Sprites' and selectedTile:
                 tile_data[0] = str(selectedTile.getMetaData()["sprite_x"])
@@ -562,6 +561,8 @@ class MapView(CustomView):
                 source_id = '-'.join(tile_data)
                 tile_data[0] = str(selectedTile.getMetaData()["sprite_x"])
                 tile_data[1] = str(selectedTile.getMetaData()["sprite_y"])
+                if tile_data[2] == cfg.EMPTY_TILE_ID:
+                    tile_data[2] = 'FL'
                 new_id = '-'.join(tile_data)
                 levelData.fillTiles(index, source_id, new_id, fill_indexes=(0, 2))
             elif cursorMode == 'fill' and activeTileMenu == 'Tile Ids' and selectedTile:

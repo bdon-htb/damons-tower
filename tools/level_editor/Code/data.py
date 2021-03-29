@@ -138,7 +138,7 @@ class LevelData:
         source_id = source_id.split('-')
         new_id = new_id.split('-')
 
-        if fill_indexes: # Assume fill_indexes is a tuple.
+        if fill_indexes and source_id[2] != cfg.EMPTY_TILE_ID: # Assume fill_indexes is a tuple.
             start, end = fill_indexes
             can_fill = (source_id[start:end] == tile_id[start:end])
 
@@ -147,8 +147,12 @@ class LevelData:
             replacement_tile[start:end] = new_id[start:end]
             replacement_tile = '-'.join(replacement_tile)
         else:
-            can_fill = (source_id == tile_id)
-            replacement_tile = new_id
+            if source_id[2] == cfg.EMPTY_TILE_ID:
+                can_fill = (tile_id[2] == cfg.EMPTY_TILE_ID)
+            else:
+                can_fill = (source_id == tile_id)
+
+            replacement_tile = '-'.join(new_id)
 
         tile_id = '-'.join(tile_id)
         source_id = '-'.join(source_id)
@@ -179,7 +183,7 @@ class LevelData:
         height = self.getHeight()
         changeHeight = newHeight - height
         changeWidth = newWidth - width
-        
+
         #Resize the height first, resizing from the middle is done by resizing the top then bottom
         if anchorPointSplit[0].capitalize() == "Middle":
             addTop = math.ceil(changeHeight / 2)

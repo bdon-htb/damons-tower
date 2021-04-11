@@ -122,8 +122,10 @@ class LevelData:
         empty_id = '0-0-{}'.format(cfg.EMPTY_TILE_ID)
         self.setTile(tile_index, empty_id, levelName)
 
-    def fillTiles(self, tile_index: int, source_id: str, new_id: str, levelName=None, fill_indexes=None):
+    def fillTiles(self, tile_index: int, source_id: str, new_id: str, levelName=None, fill_indexes=None, history=set()):
         """Recursively fill the tiles of the array.
+
+        levelName is an optional parameter to specify the level being filled. (default is active level).
 
         fill_indexes is an optional pair of integers in the format (start, end)
         that tells the function to only check if source_id and tile_id are equal
@@ -131,6 +133,8 @@ class LevelData:
 
         If fill_indexes is not specified then the function just checks that the
         full ids are equal.
+
+        history is for optimization. Do change the value for it.
         """
 
         tile_id = self.getTileData(levelName)[tile_index]
@@ -162,18 +166,19 @@ class LevelData:
         x, y = self.get2DFrom1D(tile_index, array_width)
         if source_id != new_id and can_fill:
             self.setTile(tile_index, replacement_tile, levelName)
-            if y - 1 >= 0:
+            history.add((x, y))
+            if y - 1 >= 0 and (x, y - 1) not in history:
                 index_above = self.get1DFrom2D(x, y - 1, array_width)
-                self.fillTiles(index_above, source_id, new_id, levelName, fill_indexes)
-            if x + 1 <= array_width - 1:
+                self.fillTiles(index_above, source_id, new_id, levelName, fill_indexes, history)
+            if x + 1 <= array_width - 1 and (x + 1, y) not in history:
                 index_right = self.get1DFrom2D(x + 1, y, array_width)
-                self.fillTiles(index_right, source_id, new_id, levelName, fill_indexes)
-            if y + 1 <= array_height - 1:
+                self.fillTiles(index_right, source_id, new_id, levelName, fill_indexes, history)
+            if y + 1 <= array_height - 1 and (x, y + 1) not in history:
                 index_below = self.get1DFrom2D(x, y + 1, array_width)
-                self.fillTiles(index_below, source_id, new_id, levelName, fill_indexes)
-            if x - 1 >= 0:
+                self.fillTiles(index_below, source_id, new_id, levelName, fill_indexes, history)
+            if x - 1 >= 0 and (x - 1, y) not in history:
                 index_left = self.get1DFrom2D(x - 1, y, array_width)
-                self.fillTiles(index_left, source_id, new_id, levelName, fill_indexes)
+                self.fillTiles(index_left, source_id, new_id, levelName, fill_indexes, history)
 
     def resizeTileArray(self, anchorPoint: str, newWidth: int, newHeight: int):
         #These are variables needed to resize the level

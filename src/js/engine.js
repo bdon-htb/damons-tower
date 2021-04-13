@@ -65,6 +65,7 @@ function Engine(htmlDOM){
   this.assetLoader = new AssetLoader(this);
   this.renderer = new Renderer(this);
   this.inputManager = new InputManager(this);
+  this.timerManager = new TimerManager(this);
 
   this.app = new Game(this); // Create the game itself. Note that it must be created AFTER the components.
 
@@ -501,6 +502,10 @@ function Timer(timeStamp, length){
   this.complete = false;
 };
 
+// TODO:
+// - Implement resetTimer
+// - Write a comment describing what the TimerManager is.
+// - Rewrite the timer code in logic.js to leverage timerManager in engine.
 function TimerManager(parent){
   this.parent = parent;
   this.activeTimers = new Map();

@@ -499,4 +499,75 @@ function Timer(timeStamp, length){
   this.length = length;
   this.stop = timeStamp + length;
   this.complete = false;
-}
+};
+
+function TimerManager(parent){
+  this.parent = parent;
+  this.activeTimers = new Map();
+  // Store the most recently used generic id. For internal usage.
+  this._genericID = 0
+};
+
+TimerManager.prototype._getTimeStamp = function(){
+  return this.parent.frameData["timeStamp"];
+};
+
+TimerManager.prototype._getGenericID = function(){
+  let id = this._genericID;
+  this._genericID += 1;
+  return 'timer_' + id.toString();
+};
+
+// Some of these methods dp not check that the timer already exists, so make
+// sure it does before using them.
+TimerManager.prototype._getTimer = function(timerName){
+  return this.activeTimers.get(timerName);
+};
+
+TimerManager.prototype._removeTimer = function(timerName){
+  this.activeTimers.delete(timerName);
+};
+
+TimerManager.prototype._getTimerComplete = function(timerName, deleteTimer=false){
+  let getTimerFunc = this._getTimer.bind(this);
+  let timer = getTimerFunc(timerName);
+  let result =  timer.complete;
+
+  if(result === true){
+    let deleteTimer = this._removeTimer.bind(this);
+    deleteTimer();
+  }
+  return result
+};
+
+// Make sure this is called after frameData in Engine is updated.
+TimerManager.prototype.updateTimers = function(){
+  let getTimeStamp = this._getTimeStamp.bind(this)
+  let timeStamp = getTimeStamp()
+
+  for(const timer of this.activeTimers.values()){
+    if(timeStamp > timer.stop){timer.complete = true}
+  };
+};
+
+// Set the timer and return its id in activeTimers
+TimerManager.prototype.setTimer = function(timerName=null){
+  let idGetterFunc = this._getGenericID.bind(this)
+
+  let timer = new Timer();
+  let id = (timeName === null) ? idGetterFunc() : timerName;
+  this.activeTimers.set(timerName, timer);
+
+  return id
+};
+
+// Checks if timer is complete. Can optionally set whether complete timers
+// should be removed from the map or not.
+TimerManager.prototype.isComplete = function(timerName, deleteTimer=true){
+  if(this.activeTimers.has(timerName) === false){
+    return false
+  } else {
+    getCompleteFunc = this._getTimerComplete.bind(this)
+    return getCompleteFunc(timerName, deleteTimer)
+  };
+};

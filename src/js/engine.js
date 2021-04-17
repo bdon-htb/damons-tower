@@ -323,19 +323,6 @@ Engine.prototype.getInputDevice = function(deviceName){
   } else console.error(`Error getting input device! ${deviceName} does not exist.`);
 };
 
-// ======================
-// Timer related methods.
-// ======================
-Engine.prototype.updateTimer = function(timer, timeStamp){
-  if(timeStamp > timer.stop){timer.complete = true}
-};
-
-Engine.prototype.resetTimer = function(timer, timeStamp){
-  timer.start = timeStamp;
-  timer.stop = timeStamp + timer.length;
-  timer.complete = false;
-};
-
 // ================
 // Private methods.
 // ================

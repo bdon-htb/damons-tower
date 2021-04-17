@@ -7,7 +7,7 @@
  * Custom scene object. Will essentially represent a level in the game.
  *
 */
-function Scene(engine, spriteSheet, sceneData){
+function Scene(spriteSheet, sceneData){
   this.name = sceneData.name;
   this.spriteSheet = spriteSheet; // Shared spriteSheet of all the tiles in the scene.
   this.tileMap = new TileMap(sceneData.width, sceneData.height, sceneData.tileData);
@@ -225,13 +225,16 @@ function Rect(topLeft, width, height=undefined){
  * Custom controller class. Responsible for converting input data into
  * useful commands. The controller is a uniform interface for any input
  * device to communicate with the game.
+ * engine is a reference to the engine. It's needed to properly track
+ * timers.
  * mode is a string identifier that dictates how the controller parse
  * input events.
  * AKA "InputPattern" Manager.
  * Modes:
  * - keyboard = mouse & keyboard.
 */
-function Controller(mode="default"){
+function Controller(engine, mode="default"){
+  this.engine = engine;
   this._allModes = ["keyboard"]; // Mostly for documentation purposes.
   this._defaultMode = this._allModes[0];
   this.mode = (mode === "default") ? this._defaultMode : mode;
@@ -259,10 +262,8 @@ Controller.prototype.addCommands = function(e){
   } else this.commands.push(e);
 };
 
-// Gets all inputs from active devices (based on mode);
-// Returns an array where the first item is the actual inputs and the second is the timestamp.
+// Gets and returns all inputs from active devices (based on mode);
 Controller.prototype.getInputs = function(events, data){
-  let timeStamp = data["timeStamp"]; // Get the timeStamp of the current frame.
   let inputs = []; // Inputs detected this frame.
 
   if(this.mode === "keyboard" && events.get("inputEvents").has("keyboard")){
@@ -273,7 +274,7 @@ Controller.prototype.getInputs = function(events, data){
     inputs = inputs.concat(m.get("keyUp").map(x => "keyUp-" + x));
   };
 
-  return [inputs, timeStamp];
+  return inputs;
 };
 
 // ==============================
@@ -282,16 +283,21 @@ Controller.prototype.getInputs = function(events, data){
 
 // Should only be called once on startup.
 // Create InputPatterns from the information in inputs.json and store them in Controller.
-Controller.prototype.createPatterns = function(engine, timeStamp){
+Controller.prototype.createPatterns = function(timeStamp){
+  let engine = this.engine
   let patternData = engine.assets.get(engine.inputsKey); // Get the input commands from engine assets.
   for(const [name, obj] of patternData){
-    let p = new InputPattern(name, obj, timeStamp);
+    let p = new InputPattern(name, obj);
+    // Sets a timer with id == pattern name.
+    engine.timerManager.setTimer(p.timeLimit, name)
     this.patterns.set(name, p);
   };
 };
 
-Controller.prototype.resetPattern = function(inputPattern, timeStamp){
-  Engine.prototype.resetTimer(inputPattern.timer, timeStamp);
+Controller.prototype.resetPattern = function(inputPattern){
+  let engine = this.engine
+
+  engine.timerManager.resetTimer(inputPattern.name);
   inputPattern.state = inputPattern._initialState;
 };
 
@@ -300,12 +306,13 @@ Controller.prototype.patternActive = function(inputPattern){
 };
 
 // Update the state of all InputPattern objects.
-Controller.prototype.updatePatterns = function(inputs, timeStamp){
+Controller.prototype.updatePatterns = function(inputs){
+  let engine = this.engine
   for(const [name, p] of this.patterns){
-    Engine.prototype.updateTimer(p.timer, timeStamp); // Check for timeLimit
-    if(this.patternActive(p) === true && p.timer.complete === true){
+    let timerComplete = engine.timerManager.isComplete(name, false);
+    if(this.patternActive(p) === true && timerComplete === true){
       console.log("reset")
-      this.resetPattern(p, timeStamp)
+      this.resetPattern(p)
     };
 
     inputs.forEach(i => {
@@ -314,7 +321,7 @@ Controller.prototype.updatePatterns = function(inputs, timeStamp){
         if(commandInputted === true){
           this.commands.push(name);
           console.log(`COMMAND INPUTTED! | COMMAND: ${name}`)
-          this.resetPattern(p, timeStamp);
+          this.resetPattern(p);
         };
       };
     });
@@ -351,7 +358,7 @@ Controller.prototype.nextState = function(p){
 };
 
 // Take a input map from engine.assets.inputCommands and convert to a pattern.
-function InputPattern(name, inputData, timeStamp){
+function InputPattern(name, inputData){
   this._defaultTimeLimit = 200; // In miliseconds.
   this._initialState = -1;
 
@@ -361,5 +368,4 @@ function InputPattern(name, inputData, timeStamp){
   this.pattern = inputData["pattern"]; // There's no check, meaning that this must be explicitly defined.
 
   this.state = this._initialState; // The index of the current input of the active pattern. Starts at 0.
-  this.timer = new Timer(timeStamp, this.timeLimit);
 };

@@ -80,6 +80,7 @@ Engine.prototype.draw = function(data){
 };
 
 Engine.prototype.update = function(data){
+  this.timerManager.updateTimers();
   this.inputManager.captureInputs();
   // this.tester.testUpdate(data);
   this.app.update();
@@ -495,7 +496,8 @@ StateMachine.prototype._callTransitionMethod = function(stateName, type){
  * Not necessarily a true timer, just has a start and stop time.
  * It is up to whoever using them to properly check them every frame.
 */
-function Timer(timeStamp, length){
+function Timer(id, timeStamp, length){
+  this.id = id;
   this.start = timeStamp;
   this.length = length;
   this.stop = timeStamp + length;
@@ -504,11 +506,15 @@ function Timer(timeStamp, length){
 
 // TODO:
 // - Implement resetTimer
-// - Write a comment describing what the TimerManager is.
 // - Rewrite the timer code in logic.js to leverage timerManager in engine.
+
+/**
+  * Time manager class. A simple interface for setting, checking, and updating
+  * multiple timers.
+*/
 function TimerManager(parent){
-  this.parent = parent;
-  this.activeTimers = new Map();
+  this.parent = parent; // A reference to engine.
+  this.allTimers = new Map();
   // Store the most recently used generic id. For internal usage.
   this._genericID = 0
 };
@@ -523,56 +529,77 @@ TimerManager.prototype._getGenericID = function(){
   return 'timer_' + id.toString();
 };
 
-// Some of these methods dp not check that the timer already exists, so make
-// sure it does before using them.
+// The private methods (with an underscore) do not chec if timerName
+// exists in this.allTimers or not.
 TimerManager.prototype._getTimer = function(timerName){
-  return this.activeTimers.get(timerName);
+  return this.allTimers.get(timerName);
 };
 
 TimerManager.prototype._removeTimer = function(timerName){
-  this.activeTimers.delete(timerName);
+  this.allTimers.delete(timerName);
 };
 
+TimerManager.prototype._resetTimerAttributes = function(timerName){
+  let getTimerFunc = this._getTimer.bind(this)
+  let getTimeStampFunc = this._getTimeStamp.bind(this)
+  timer = getTimerFunc(timerName);
+  currentTimeStamp = getTimeStampFunc();
+
+  timer.start = currentTimeStamp;
+  timer.stop = currentTimeStamp + timer.length;
+  timer.complete = false;
+
+}
+// Returns whether the timer is inactive / completed (bool)
+// if deleteTimer is true, then the timer will be deleted after
 TimerManager.prototype._getTimerComplete = function(timerName, deleteTimer=false){
-  let getTimerFunc = this._getTimer.bind(this);
+  let getTimerFunc = this._getTimer.bind(this)
   let timer = getTimerFunc(timerName);
   let result =  timer.complete;
 
-  if(result === true){
-    let deleteTimer = this._removeTimer.bind(this);
-    deleteTimer();
-  }
-  return result
+  if(result === true && deleteTimer === true){
+    let deleteFunc = this._removeTimer.bind(this);
+    deleteFunc();
+  };
+  return result;
 };
 
 // Make sure this is called after frameData in Engine is updated.
 TimerManager.prototype.updateTimers = function(){
-  let getTimeStamp = this._getTimeStamp.bind(this)
-  let timeStamp = getTimeStamp()
+  let getTimeStampFunc = this._getTimeStamp.bind(this);
+  let timeStamp = getTimeStampFunc();
 
-  for(const timer of this.activeTimers.values()){
+  for(const timer of this.allTimers.values()){
     if(timeStamp > timer.stop){timer.complete = true}
   };
 };
 
-// Set the timer and return its id in activeTimers
-TimerManager.prototype.setTimer = function(timerName=null){
-  let idGetterFunc = this._getGenericID.bind(this)
+// Set the timer and return its id in allTimers
+TimerManager.prototype.setTimer = function(length, timerName=null){
+  let idGetterFunc = this._getGenericID.bind(this);
+  let getTimeStampFunc = this._getTimeStamp.bind(this);
 
-  let timer = new Timer();
-  let id = (timeName === null) ? idGetterFunc() : timerName;
-  this.activeTimers.set(timerName, timer);
+  let id = (timerName === null) ? idGetterFunc() : timerName;
+  let timer = new Timer(id, getTimeStampFunc(), length);
+  this.allTimers.set(timerName, timer);
 
-  return id
+  return id;
+};
+
+TimerManager.prototype.resetTimer = function(timerName){
+  if(this.allTimers.has(timerName) === true){
+    resetTimerFunc = this._resetTimerAttributes.bind(this);
+    resetTimerFunc(timerName);
+  };
 };
 
 // Checks if timer is complete. Can optionally set whether complete timers
 // should be removed from the map or not.
 TimerManager.prototype.isComplete = function(timerName, deleteTimer=true){
-  if(this.activeTimers.has(timerName) === false){
-    return false
+  if(this.allTimers.has(timerName) === false){
+    return false;
   } else {
-    getCompleteFunc = this._getTimerComplete.bind(this)
-    return getCompleteFunc(timerName, deleteTimer)
+    let getCompleteFunc = this._getTimerComplete.bind(this);
+    return getCompleteFunc(timerName, deleteTimer);
   };
 };

@@ -20,7 +20,7 @@ function Game(engine){
   this._emptyGSO = Object.assign({}, this.gameStateObject);
 
   // Create game components.
-  this.controller = new Controller();
+  this.controller = new Controller(engine);
 
   let allStates = {
     "starting": null,
@@ -56,7 +56,7 @@ Game.prototype.update = function(){
 
   switch(currentState){
     case "starting": // For loading stuff specific to the game.
-      this.controller.createPatterns(this.engine, data["timeStamp"]);
+      this.controller.createPatterns(data["timeStamp"]);
       this.stateMachine.changeState("mainMenu")
       break;
     case "mainMenu":
@@ -67,8 +67,8 @@ Game.prototype.update = function(){
       let scene = this.gameStateObject["scene"];
       if(this.controller.hasCommands() === true){this.controller.clearCommands()}; // Clear any leftover commands.
       let inputData = this.controller.getInputs(events, data);
-      this.controller.addCommands(inputData[0]); // Raw input data is added to command stack.
-      this.controller.updatePatterns(inputData[0], inputData[1]); // Check for complex command inputs.
+      this.controller.addCommands(inputData); // Raw input data is added to command stack.
+      this.controller.updatePatterns(inputData); // Check for complex command inputs.
       this._updateLevel(scene);
       let level = this.gameStateObject["scene"];
       let player = this.gameStateObject["scene"].getEntity("player");
@@ -128,7 +128,7 @@ Game.prototype._loadMenu = function(menuName){
 // Set the gameStateObject's scene.
 Game.prototype._loadLevel = function(levelData){
   let levelSpriteSheet = this.engine.renderer.getSheetFromId(levelData.spriteSheet);
-  let level = new Scene(this.engine, levelSpriteSheet, levelData);
+  let level = new Scene(levelSpriteSheet, levelData);
   level.camera.setup(0, 0, this.engine.windowWidth, this.engine.windowHeight);
   this.gameStateObject["scene"] = level;
 };

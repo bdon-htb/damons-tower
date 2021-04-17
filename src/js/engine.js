@@ -491,10 +491,6 @@ function Timer(id, timeStamp, length){
   this.complete = false;
 };
 
-// TODO:
-// - Implement resetTimer
-// - Rewrite the timer code in logic.js to leverage timerManager in engine.
-
 /**
   * Time manager class. A simple interface for setting, checking, and updating
   * multiple timers.

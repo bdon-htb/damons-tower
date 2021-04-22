@@ -182,7 +182,7 @@ Renderer.prototype.drawTiles = function(scene){
 // =====================
 
 Renderer.prototype.drawMenu = function(menu){
-  menu.entities.forEach(e => this.drawGUIObject(e));
+  menu.guiObjects.forEach(e => this.drawGUIObject(e));
 };
 
 // Shorthand method.
@@ -199,17 +199,34 @@ Renderer.prototype.drawGUIObject = function(entity){
   };
 };
 
-Renderer.prototype.setGUIGraphic = function(entity){
+Renderer.prototype.createGUIGraphic = function(entity){
+  let graphic;
+  let createGraphicFunc;
   switch(entity.constructor){
     case Label:
-      this.setLabelGraphic(entity);
+      createGraphicFunc = this.createLabelGraphic.bind(this);
       break;
     case Button:
-      this.setButtonGraphic(entity);
+      createGraphicFunc = this.createButtonGraphic.bind(this);
       break;
     default:
       console.error(`Error while trying to create the GUIObject's graphic" ${entity} is an invalid GUIObject.`);
   };
+  return createGraphicFunc(entity)
+};
+
+Renderer.prototype.setGUIGraphic = function(entity){
+  let createGraphicFunc = this.createGUIGraphic.bind(this);
+  entity.graphic = createGraphicFunc(entity);
+};
+
+// Calculate and return the size of the entity by creating a dummy graphic.
+Renderer.prototype.getEntitySize = function(entity){
+  let createGraphicFunc = this.createGUIGraphic.bind(this);
+
+  let dummy = createGraphicFunc(entity);
+  this.textureManager.addToPool(dummy)
+  return [dummy.width, dummy.height];
 };
 
 Renderer.prototype.drawLabel = function(label){
@@ -219,11 +236,12 @@ Renderer.prototype.drawLabel = function(label){
   this.draw(label.graphic);
 };
 
-Renderer.prototype.setLabelGraphic = function(label){
+Renderer.prototype.createLabelGraphic = function(label){
   let message = label.text;
-  let style = this.textStyles[label.textStyle];
+  let style = label.attributes.has("style") ? label.attributes.get("style") : "default";
+  style = this.textStyles[style];
   let text = new PIXI.Text(message, style);
-  label.graphic = text;
+  return text
 };
 
 Renderer.prototype.drawButton = function(button){
@@ -233,18 +251,19 @@ Renderer.prototype.drawButton = function(button){
   this.draw(button.graphic);
 };
 
-Renderer.prototype.setButtonGraphic = function(button){
+Renderer.prototype.createButtonGraphic = function(button){
   let minimumWidth = 150;
   let minimumHeight = 50;
   let container = new PIXI.Container();
+  let textStyle = button.attributes.has("textStyle") ? label.attributes.get("textStyle") : "default";
+  let buttonStyle = button.attributes.has("buttonStyle") ? label.attributes.get("buttonStyle") : "default";
 
   // Create label component.
   let message = button.text;
-  let textStyle = this.textStyles[button.textStyle];
-  let text = new PIXI.Text(message, textStyle);
+  let text = new PIXI.Text(message, this.textStyles[textStyle]);
 
   // Create button component.
-  let rectangle = this.configureButtonRect(button.style);
+  let rectangle = this.configureButtonRect(buttonStyle);
   let rectangleWidth = (text.width < minimumWidth) ? minimumWidth : text.width;
   let rectangleHeight = (text.height < minimumHeight) ? minimumHeight: text.height;
   rectangle.drawRect(0, 0, rectangleWidth, rectangleHeight);
@@ -258,7 +277,7 @@ Renderer.prototype.setButtonGraphic = function(button){
   container.addChild(rectangle);
   container.addChild(text);
 
-  button.graphic = container;
+  return container;
 };
 
 // TODO: Implement basic styling to make it look cleaner.

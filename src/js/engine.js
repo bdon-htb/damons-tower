@@ -66,6 +66,7 @@ function Engine(htmlDOM){
   this.renderer = new Renderer(this);
   this.inputManager = new InputManager(this);
   this.timerManager = new TimerManager(this);
+  this.guiManager = new GUIManager(this);
 
   this.app = new Game(this); // Create the game itself. Note that it must be created AFTER the components.
 
@@ -214,10 +215,10 @@ Engine.prototype.getXMLType = function(data){
   } else console.error(`XML file's header has no type declared. Header: ${headerTag}`);
 };
 
-// Puts all the xml children one level under into a map.
+// Gets all xml children one level underneath tag and return them as a map.
 // Note: This function only works properly if all children tags are unique.
 // Otherwise it'll overwrite tags with the same name due to the nature of Map's set method.
-Engine.prototype.getXMLChildren = function(tag, overwrite=false){
+Engine.prototype.getXMLChildren = function(tag){
   let children = new Map();
   for(const child of tag.children){
     children.set(child.tagName, child);
@@ -423,12 +424,14 @@ AssetLoader.prototype.loadXML = function(data, success){
 };
 
 AssetLoader.prototype.loadMenu = function(data, success){
-  let menu = new Menu(this.parent, data);
-  let menuKey = this.parent.menuKey;
-  if(this.parent.assets.has(menuKey) === false){
-    this.parent.assets.set(menuKey, new Map()); // If first time loading menu, create the map.
+  let engine = this.parent;
+  // let menu = new Menu(this.parent, data);
+  let menu = engine.guiManager.createMenuFromData(data);
+  let menuKey = engine.menuKey;
+  if(engine.assets.has(menuKey) === false){
+    engine.assets.set(menuKey, new Map()); // If first time loading menu, create the initial map.
   };
-  this.parent.assets.get(menuKey).set(menu.name, menu);
+  engine.assets.get(menuKey).set(menu.name, menu);
 };
 
 /**

@@ -61,7 +61,9 @@ Game.prototype.update = function(){
       break;
     case "mainMenu":
       if(events.get("inputEvents").size > 0){
-        this.gameStateObject["menu"].checkClicks()};
+        let menu = this.gameStateObject["menu"]
+        this.engine.guiManager.checkClicks(menu)
+      };
       break;
     case "inLevel":
       let scene = this.gameStateObject["scene"];
@@ -121,7 +123,6 @@ Game.prototype._loadMenu = function(menuName){
 
   if(gameStateObject["menu"] === undefined || gameStateObject["menu"].name !== menuName){
     gameStateObject["menu"] = this.engine.getLoadedAsset("menus").get(menuName);
-    gameStateObject["menu"].layout.organize();
   };
 };
 

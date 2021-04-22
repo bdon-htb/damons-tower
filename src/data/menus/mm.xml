@@ -6,7 +6,7 @@
       <layout>floatLayout</layout>
   </header>
   <menu>
-      <label text="This is a test" x="10" y="20"></label>
-      <button text="This is also a test" x="50" y="80" callback="startGame"></button>
+      <label text="Development build" x="0" y="0"></label>
+      <button text="Start Game" x="400" y="275" callback="startGame"></button>
   </menu>
 </file>

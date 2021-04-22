@@ -66,6 +66,7 @@ function Engine(htmlDOM){
   this.renderer = new Renderer(this);
   this.inputManager = new InputManager(this);
   this.timerManager = new TimerManager(this);
+  this.guiManager = new GUIManager(this);
 
   this.app = new Game(this); // Create the game itself. Note that it must be created AFTER the components.
 
@@ -430,7 +431,7 @@ AssetLoader.prototype.loadMenu = function(data, success){
   if(engine.assets.has(menuKey) === false){
     engine.assets.set(menuKey, new Map()); // If first time loading menu, create the initial map.
   };
-  engine.parent.assets.get(menuKey).set(menu.name, menu);
+  engine.assets.get(menuKey).set(menu.name, menu);
 };
 
 /**

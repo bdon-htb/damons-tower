@@ -24,7 +24,7 @@ GUIManager.prototype._mouseOverGUIObject = function(mouse, guiObject){
 
 // Note to self: If I ever implement other layouts, objects will need to be positioning.
 GUIManager.prototype._createGUIObject = function(objectTag){
-  let objectAttributes = this.getXMLAttributes(labelTag);
+  let objectAttributes = this.getXMLAttributes(objectTag);
 
   let x = objectAttributes.has("x") ? Number(objectAttributes.get("x")) : 0;
   let y = objectAttributes.has("y") ? Number(objectAttributes.get("y")) : 0;
@@ -52,7 +52,7 @@ GUIManager.prototype._createLabel = function(labelTag){
 };
 
 GUIManager.prototype._createButton = function(buttonTag){
-  let createFunc = this._createLabelObject.bind(this);
+  let createFunc = this._createLabel.bind(this);
   let parentObj = createFunc(buttonTag);
   let parentAttributes = parentObj.attributes
 
@@ -64,6 +64,7 @@ GUIManager.prototype._createButton = function(buttonTag){
 
 // Return an array of all gui objects in the menu.
 GUIManager.prototype._createGUIObjects = function(menuTag){
+  let renderer = this.parent.renderer;
   let guiObjectArray = []
 
   for(const child of menuTag.children){
@@ -83,10 +84,21 @@ GUIManager.prototype._createGUIObjects = function(menuTag){
     };
 
     guiObject = createFunc(child);
+
+    renderer.setGUIGraphic(guiObject);
+
+    // Update dimensions if there were any graphical changes.
+    guiObject.width = guiObject.graphic.width;
+    guiObject.height = guiObject.graphic.height;
+
     guiObjectArray.push(guiObject);
   };
 
   return guiObjectArray;
+};
+
+GUIManager.prototype.setMenuGraphics = function(){
+
 };
 
 // Parse menu data and return menu object based on it.
@@ -117,7 +129,7 @@ GUIManager.prototype.executeCallback = function(entity){
   let callback = this.parent.callbacks[callbackName];
   if(callback !== undefined){
     callback();
-  } else console.error(`Error executing callback: ${callName} is not a valid callback.`);
+  } else console.error(`Error executing callback: ${callbackName} is not a valid callback.`);
 };
 
 // Mouse event for whenever it moves.
@@ -137,13 +149,13 @@ GUIManager.prototype.checkHover = function(menu){
 // Mouse event for whenever a click is detected
 GUIManager.prototype.checkClicks = function(menu){
   let engine = this.parent;
-  let hoverCheckFunc = this._mouseInButton.bind(this);
+  let hoverCheckFunc = this._mouseOverGUIObject.bind(this);
   let inputs = engine.getInputEvents();
   let mouse = engine.getInputDevice("mouse");
 
   if(inputs.get("mouse").includes("leftClick")){
     for(const guiObject of menu.guiObjects){
-      if(guiObject.constructor === Button && hoverCheckFunc(mouse, button) === true){
+      if(guiObject.constructor === Button && hoverCheckFunc(mouse, guiObject) === true){
         this.executeCallback(guiObject);
         break;  // I'm going to assume that only one button will be clicked at a time.
       };
@@ -159,9 +171,8 @@ function Menu(name, layoutType, layoutSettings, guiObjects){
   this.name = name;
   this.layoutType = layoutType;
   this.layoutSettings = layoutSettings;
-  this.guiObjects = [];
-  this.graphic;
-}
+  this.guiObjects = guiObjects;
+};
 
 /**
  * Parent class for all gui objects.
@@ -175,14 +186,15 @@ function GUIObject(x, y, width, height, attributes){
   this.width = width;
   this.height = height;
   this.attributes = attributes;
+  this.graphic = null;
 };
 
 function Label(guiObject, text){
-  this.assign(this, guiObject);
+  Object.assign(this, guiObject);
   this.text = text;
 };
 
 function Button(labelObject, callback){
-  this.assign(this, labelObject);
+  Object.assign(this, labelObject);
   this.callback = callback;
 };

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<file>
+  <header>
+    <type>menu</type>
+    <name>mainMenu</name>
+    <layout>gridLayout</layout>
+    <rows>3</rows>
+    <cols>3</cols>
+  </header>
+  <menu spaceBetween="10">
+    <label row="1" col="1" pin="center">
+      <text>Damon's Tower</text>
+    </label>
+    <button row="1" col="1" pin="center">
+      <text>Play</text>
+      <callback>startGame</callback>
+    </button>
+    <button row="1" col="1" pin="center">
+      <text>Options</text>
+      <callback>openOptions</callback>
+    </button>
+    <button row="1" col="1" pin="center">
+      <text>Credits</text>
+      <callback>openCredits</callback>
+    </button>
+    <label row="2" col="2" pin="bottomRight">
+      <text>development build</text>
+    </label>
+  </menu>
+</file>

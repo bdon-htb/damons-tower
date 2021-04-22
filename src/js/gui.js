@@ -15,6 +15,13 @@ function GUIManager(parent){
   this.getXMLAttributes = parent.getXMLAttributes;
 };
 
+// Return True if the mouse is hovering over a gui object.
+GUIManager.prototype._mouseOverGUIObject = function(mouse, guiObject){
+  let engine = this.parent;
+  let rect = new Rect([guiObject.x, guiObject.y], guiObject.width, guiObject.height);
+  return engine.pointInRect(mouse.x, mouse.y, rect);
+};
+
 // Note to self: If I ever implement other layouts, objects will need to be positioning.
 GUIManager.prototype._createGUIObject = function(objectTag){
   let objectAttributes = this.getXMLAttributes(labelTag);
@@ -105,6 +112,45 @@ GUIManager.prototype.createMenuFromData = function(data){
   return menu
 };
 
+GUIManager.prototype.executeCallback = function(entity){
+  let callbackName = entity.callback;
+  let callback = this.parent.callbacks[callbackName];
+  if(callback !== undefined){
+    callback();
+  } else console.error(`Error executing callback: ${callName} is not a valid callback.`);
+};
+
+// Mouse event for whenever it moves.
+/*
+Will probably need this once I decide to implement hover functionality for buttons.
+GUIManager.prototype.checkHover = function(menu){
+  let engine = this.parent;
+  let hoverCheckFunc = this._mouseInButton.bind(this);
+  let mouse = engine.getInputDevice("mouse");
+
+  for(const guiObject of menu.guiObjects){
+    ... do stuff...
+  };
+};
+*/
+
+// Mouse event for whenever a click is detected
+GUIManager.prototype.checkClicks = function(menu){
+  let engine = this.parent;
+  let hoverCheckFunc = this._mouseInButton.bind(this);
+  let inputs = engine.getInputEvents();
+  let mouse = engine.getInputDevice("mouse");
+
+  if(inputs.get("mouse").includes("leftClick")){
+    for(const guiObject of menu.guiObjects){
+      if(guiObject.constructor === Button && hoverCheckFunc(mouse, button) === true){
+        this.executeCallback(guiObject);
+        break;  // I'm going to assume that only one button will be clicked at a time.
+      };
+    };
+  };
+};
+
 /**
  * Menu class represents a single instance of a menu.
  * Will contain gui objects and layout information.
@@ -114,6 +160,7 @@ function Menu(name, layoutType, layoutSettings, guiObjects){
   this.layoutType = layoutType;
   this.layoutSettings = layoutSettings;
   this.guiObjects = [];
+  this.graphic;
 }
 
 /**

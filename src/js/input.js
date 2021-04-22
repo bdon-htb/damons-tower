@@ -210,6 +210,8 @@ Mouse.prototype.removeListeners = function(element){
   element.removeEventListener("mousedown", this.mouseDownHandler.bind(this), false);
   element.removeEventListener("mouseup", this.mouseUpHandler.bind(this), false);
   element.removeEventListener("mousemove", this.mouseMoveHandler.bind(this), false);
+  element.addEventListener("click", this.mouseClickHandler.bind(this, "leftClick"));
+  element.addEventListener("auxclick", this.mouseClickHandler.bind(this, "rightClick"));  
   element.addEventListener("contextmenu", this.disableDefault.bind(this), false);
 };
 

@@ -3,11 +3,9 @@
   <header>
       <type>menu</type>
       <name>testMenu</name>
-      <layout>VBoxLayout</layout>
+      <layout>floatLayout</layout>
   </header>
   <menu>
-      <label>
-        <text>This is a test</text>
-      </label>
+      <label text="This is a test" x="30" y="20" width="50" height="60"></label>
   </menu>
 </file>

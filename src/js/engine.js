@@ -423,12 +423,9 @@ AssetLoader.prototype.loadXML = function(data, success){
 };
 
 AssetLoader.prototype.loadMenu = function(data, success){
-  let engine = this.parent
-  console.log(data)
-  console.log(data.constructor)
-  console.log()
+  let engine = this.parent;
   // let menu = new Menu(this.parent, data);
-  let menu = engine.guiManager.getMenuFromData(data);
+  let menu = engine.guiManager.createMenuFromData(data);
   let menuKey = engine.menuKey;
   if(engine.assets.has(menuKey) === false){
     engine.assets.set(menuKey, new Map()); // If first time loading menu, create the initial map.

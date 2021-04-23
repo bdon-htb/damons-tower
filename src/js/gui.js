@@ -133,18 +133,17 @@ GUIManager.prototype.executeCallback = function(entity){
 };
 
 // Mouse event for whenever it moves.
-/*
-Will probably need this once I decide to implement hover functionality for buttons.
 GUIManager.prototype.checkHover = function(menu){
   let engine = this.parent;
-  let hoverCheckFunc = this._mouseInButton.bind(this);
+  let hoverCheckFunc = this._mouseOverGUIObject.bind(this);
   let mouse = engine.getInputDevice("mouse");
 
   for(const guiObject of menu.guiObjects){
-    ... do stuff...
+    if(guiObject.constructor === Button && hoverCheckFunc(mouse, guiObject) === true){
+      guiObject.state = "hover"
+    } else guiObject.state = "default";
   };
 };
-*/
 
 // Mouse event for whenever a click is detected
 GUIManager.prototype.checkClicks = function(menu){
@@ -187,6 +186,7 @@ function GUIObject(x, y, width, height, attributes){
   this.height = height;
   this.attributes = attributes;
   this.graphic = null;
+  this.state = "default"
 };
 
 function Label(guiObject, text){
@@ -197,4 +197,21 @@ function Label(guiObject, text){
 function Button(labelObject, callback){
   Object.assign(this, labelObject);
   this.callback = callback;
+  this.overlayGraphic = null;
+};
+
+/**
+ * Custom button style class for guis.
+ * styleObj is an optional object parameter to add / overwrite
+ * the default properties.
+*/
+function ButtonStyle(styleObj){
+  this.color = "0xFFBF75";
+  this.borderColor = "0xCA826C";
+  this.borderThickness = 2;
+  this.alpha = 1;
+
+  if(styleObj !== undefined){
+    Object.assign(styleObj)
+  };
 };

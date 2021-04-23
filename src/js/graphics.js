@@ -11,6 +11,7 @@ function Renderer(parent){
   // Pixi.js loader alias.
   this.loader = new PIXI.Loader();
   this.createTextStyles();
+  this.createButtonStyles();
   this.verifyAPI();
   this.createApp();
   this.textureManager = new TextureManager(this);
@@ -55,6 +56,77 @@ Renderer.prototype.createTextStyles = function(){
       fontFamily: "Bitmgothic",
       fontSize: 26})
     };
+};
+
+Renderer.prototype.createButtonStyles = function(){
+  this.buttonStyles = {
+    "default": new ButtonStyle()
+  };
+};
+
+Renderer.prototype.brightenColor = function(hexString, percentage){
+  let colour;
+  let difference;
+  let rgbArray = this.hex2RGB(hexString);
+
+  for (var i = 0; i < rgbArray.length; i++) {
+    colour = rgbArray[i]
+    difference = Math.floor((255 - colour) * (percentage / 100))
+    colour += difference
+
+    if(colour > 255){
+      colour = 255
+    }
+    else if(colour < 0){
+      colour = 0
+    }
+    rgbArray[i] = colour;
+  };
+  return this.rgb2Hex(rgbArray[0], rgbArray[1], rgbArray[2]);
+};
+
+
+Renderer.prototype.darkenColor = function(hexString, percentage){
+  let colour;
+  let rgbArray = this.hex2RGB(hexString);
+
+  for (var i = 0; i < rgbArray.length; i++) {
+    colour = rgbArray[i]
+    colour = Math.floor(colour * (percentage / 100))
+
+    if(colour > 255){
+      colour = 255
+    }
+    else if(colour < 0){
+      colour = 0
+    }
+    rgbArray[i] = colour;
+  };
+  return this.rgb2Hex(rgbArray[0], rgbArray[1], rgbArray[2])
+};
+
+Renderer.prototype.rgb2Hex = function(red, green, blue){
+  let hexString = '';
+
+  for(let colour of [red, green, blue]){
+    colour = Number(colour).toString(16);
+    if(colour.length < 2){colour = "0" + colour};
+    hexString += colour
+  };
+  return '#' + hexString;
+};
+
+Renderer.prototype.hex2RGB = function(hexString){
+  hexString = (hexString).replace("0x", "").replace("#", "")
+  red = hexString.slice(0, 2);
+  green = hexString.slice(2, 4);
+  blue = hexString.slice(4, 6);
+
+  rgbArray = [red, green, blue];
+  for (var i = 0; i < rgbArray.length; i++) {
+    rgbArray[i] = parseInt(rgbArray[i], 16);
+  };
+  return rgbArray;
 };
 
 // ========================
@@ -193,6 +265,9 @@ Renderer.prototype.drawGUIObject = function(entity){
       break;
     case Button:
       this.drawButton(entity);
+      if(entity.state === "hover"){
+        this.drawButtonOverlay(entity)
+      };
       break;
     default:
       console.error(`Error when trying to draw GUIObject: ${entity} is an invalid GUIObject.`);
@@ -218,6 +293,10 @@ Renderer.prototype.createGUIGraphic = function(entity){
 Renderer.prototype.setGUIGraphic = function(entity){
   let createGraphicFunc = this.createGUIGraphic.bind(this);
   entity.graphic = createGraphicFunc(entity);
+
+  if(entity.constructor === Button){
+    entity.overlayGraphic = this.createButtonOverlay(entity);
+  };
 };
 
 // Calculate and return the size of the entity by creating a dummy graphic.
@@ -251,7 +330,28 @@ Renderer.prototype.drawButton = function(button){
   this.draw(button.graphic);
 };
 
-Renderer.prototype.createButtonGraphic = function(button){
+Renderer.prototype.drawButtonOverlay = function(button){
+  let overlayGraphic = button.overlayGraphic;
+  overlayGraphic.setTransform(button.x, button.y);
+  this.draw(overlayGraphic);
+};
+
+Renderer.prototype.createButtonOverlay = function(button){
+  let buttonStyle = button.attributes.has("buttonStyle") ? label.attributes.get("buttonStyle") : "default";
+
+  let overlayStyle = new ButtonStyle(this.buttonStyles[buttonStyle]);
+  overlayStyle.color = this.brightenColor(overlayStyle.color, 20);
+  overlayStyle.color = (overlayStyle.color).replace("#", "0x")
+
+  overlayStyle.borderColor = this.brightenColor(overlayStyle.borderColor, 20);
+  overlayStyle.borderColor = (overlayStyle.borderColor).replace("#", "0x")
+  let overlayRect = this.configureButtonRect(overlayStyle);
+  let overlay = this.createButtonGraphic(button, overlayRect);
+  return overlay;
+};
+
+// Create the button graphic. rectangle is an OPTIONAL parameter.
+Renderer.prototype.createButtonGraphic = function(button, rectangle){
   let minimumWidth = 150;
   let minimumHeight = 50;
   let container = new PIXI.Container();
@@ -263,7 +363,11 @@ Renderer.prototype.createButtonGraphic = function(button){
   let text = new PIXI.Text(message, this.textStyles[textStyle]);
 
   // Create button component.
-  let rectangle = this.configureButtonRect(buttonStyle);
+
+  if(rectangle === undefined){
+    rectangle = this.configureButtonRect(this.buttonStyles[buttonStyle]);
+  };
+
   let rectangleWidth = (text.width < minimumWidth) ? minimumWidth : text.width;
   let rectangleHeight = (text.height < minimumHeight) ? minimumHeight: text.height;
   rectangle.drawRect(0, 0, rectangleWidth, rectangleHeight);
@@ -283,12 +387,8 @@ Renderer.prototype.createButtonGraphic = function(button){
 // TODO: Implement basic styling to make it look cleaner.
 Renderer.prototype.configureButtonRect = function(buttonStyle){
   let rectangle = new PIXI.Graphics();
-  let colour;
-  if(buttonStyle === "default"){
-    colour = 0xFFBF75;
-    rectangle.lineStyle(2, 0xCA826C, 1);
-  } else console.error(`Error configuring button rectangle: {buttonStyle} is not a valid button style.`);
-  rectangle.beginFill(colour);
+  rectangle.lineStyle(buttonStyle.borderThickness, buttonStyle.borderColor, buttonStyle.alpha)
+  rectangle.beginFill(buttonStyle.color);
   return rectangle;
 };
 

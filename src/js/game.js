@@ -60,8 +60,9 @@ Game.prototype.update = function(){
       this.stateMachine.changeState("mainMenu")
       break;
     case "mainMenu":
+      let menu = this.gameStateObject["menu"]
+      this.engine.guiManager.checkHover(menu);
       if(events.get("inputEvents").size > 0){
-        let menu = this.gameStateObject["menu"]
         this.engine.guiManager.checkClicks(menu)
       };
       break;
@@ -91,7 +92,8 @@ Game.prototype.draw = function(){
     case "starting":
       break;
     case "mainMenu":
-      renderer.drawMenu(this.gameStateObject["menu"]);
+      let menu = this.gameStateObject["menu"]
+      renderer.drawMenu(menu);
       break;
     case "inLevel":
       let level = this.gameStateObject["scene"];

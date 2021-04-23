@@ -13,7 +13,7 @@ function Engine(htmlDOM){
   this.context = htmlDOM
   this.FPS = 60; // Intended fps.
   this.windowWidth = 960;
-  this.windowHeight = 640;
+  this.windowHeight = 540;
   // Should be a whole number; determines sprite render size.
   this.scale = 3;
   // Canvas background colour.

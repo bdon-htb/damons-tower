@@ -18,7 +18,23 @@ function GUIManager(parent){
 // Return True if the mouse is hovering over a gui object.
 GUIManager.prototype._mouseOverGUIObject = function(mouse, guiObject){
   let engine = this.parent;
-  let rect = new Rect([guiObject.x, guiObject.y], guiObject.width, guiObject.height);
+
+  // Account for fullscreen / screen resizing.
+  let screenSize = engine.renderer.getScreenSize();
+  let screenWidth = screenSize[0];
+  let screenHeight = screenSize[1];
+
+  let horizontalRatio = (screenWidth / engine.windowWidth);
+  let verticalRatio = (screenHeight / engine.windowHeight);
+
+  let scaledX = guiObject.x * horizontalRatio;
+  let scaledY = guiObject.y * verticalRatio;
+  let scaledWidth = guiObject.width * horizontalRatio;
+  let scaledHeight = guiObject.height * verticalRatio
+
+  let scaledWith = guiObject.width
+
+  let rect = new Rect([scaledX, scaledY], scaledWidth, scaledHeight);
   return engine.pointInRect(mouse.x, mouse.y, rect);
 };
 

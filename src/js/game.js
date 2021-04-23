@@ -42,7 +42,9 @@ function Game(engine){
   this.callbacks = {
     "startGame":  this.stateMachine.changeState.bind(this.stateMachine,"inLevel"),
     "openOptions": this.stateMachine.changeState.bind(this.stateMachine, "options"),
-    "openCredits": this.stateMachine.changeState.bind(this.stateMachine, "credits")
+    "openCredits": this.stateMachine.changeState.bind(this.stateMachine, "credits"),
+    "resizeTest": this.renderer.requestFullscreen.bind(this.renderer),
+    "resizeTest2": this.renderer.requestFullscreen.bind(this.renderer)
   };
 };
 

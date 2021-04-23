@@ -16,6 +16,8 @@ function Renderer(parent){
   this.createApp();
   this.textureManager = new TextureManager(this);
   this.animationManager = new AnimationManager(this);
+  this.addListeners(this.parent.context);
+  this.isFullscreen = false;
 };
 
 Renderer.prototype.verifyAPI = function(){
@@ -63,6 +65,29 @@ Renderer.prototype.createButtonStyles = function(){
     "default": new ButtonStyle()
   };
 };
+
+Renderer.prototype.addListeners = function(element){
+  element.addEventListener("fullscreenchange", this.fullScreenHandler.bind(this));
+};
+
+// Get the size of the renderer view.
+Renderer.prototype.getScreenSize = function(){
+  if(this.isFullscreen === true){
+    return [window.screen.width, window.screen.height]
+  } else return [this.app.renderer.width, this.app.renderer.height]
+};
+
+Renderer.prototype.resizeScreen = function(newWidth, newHeight){
+  this.app.renderer.resize(newWidth, newHeight);
+};
+
+Renderer.prototype.requestFullscreen = function(){
+  this.parent.context.requestFullscreen();
+};
+
+Renderer.prototype.fullScreenHandler = function(){
+  this.isFullscreen = !this.isFullscreen // Update flag.
+}
 
 Renderer.prototype.brightenColor = function(hexString, percentage){
   let colour;

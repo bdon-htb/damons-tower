@@ -18,6 +18,9 @@ function Renderer(parent){
   this.animationManager = new AnimationManager(this);
   this.addListeners(this.parent.context);
   this.isFullscreen = false;
+  // Screen ratio compared to intended size.
+  this.horizontalRatio = 1;
+  this.verticalRatio = 1;
 };
 
 Renderer.prototype.verifyAPI = function(){
@@ -78,6 +81,8 @@ Renderer.prototype.getScreenSize = function(){
 };
 
 Renderer.prototype.resizeScreen = function(newWidth, newHeight){
+  this.horizontalRatio = newWidth / this.parent.windowWidth;
+  this.verticalRatio = newHeight / this.parent.windowHeight;
   this.app.renderer.resize(newWidth, newHeight);
 };
 
@@ -180,6 +185,14 @@ Renderer.prototype.draw = function(child){
   this.app.stage.addChild(child);
 };
 
+// scale child to appropriate size.
+Renderer.prototype.scale = function(child){
+  let scaledX = child.x * this.horizontalRatio;
+  let scaledY = child.y * this.verticalRatio;
+  child = child.setTransform(scaledX, scaledY, this.horizontalRatio, this.verticalRatio)
+  return child;
+};
+
 // Clear the screen.
 Renderer.prototype.clear = function(){
   if(this.textureManager.pool.size > 0){
@@ -198,6 +211,7 @@ Renderer.prototype.drawText = function(msg, x=0, y=0, style=this.textStyles.debu
     this.textureManager.addToPool(message);
   };
   message.position.set(x, y);
+  message = this.scale(message);
   this.draw(message);
 };
 
@@ -207,6 +221,7 @@ Renderer.prototype.drawRect = function(colour, x, y, width, height){
   rectangle.drawRect(x, y, width, height);
   rectangle.endFill();
   this.textureManager.addToPool(rectangle);
+  rectangle = this.scale(rectangle);
   this.draw(rectangle);
 };
 
@@ -216,21 +231,21 @@ Renderer.prototype.drawLine = function(colour, startX, startY, endX, endY, thick
   line.moveTo(startX, startY);
   line.lineTo(endX, endY);
   this.textureManager.addToPool(line);
+  line = this.scale(line);
   this.draw(line);
 }
 
 // Draws sprite from spritesheet only!
 Renderer.prototype.drawSprite = function(sprite, x=0, y=0){
-  if(this.parent.scale > 1){
-    let scaleFunc = this.scaleSprite.bind(this);
-    sprite = scaleFunc(sprite);
-  };
-  sprite.position.set(x, y);
+  let spriteScale = this.parent.spriteScale;
+  sprite.width = sprite.texture.width * spriteScale * this.horizontalRatio;
+  sprite.height = sprite.texture.width * spriteScale * this.verticalRatio;
+  sprite.position.set(x * this.horizontalRatio, y * this.verticalRatio);
   this.draw(sprite);
 };
 
 Renderer.prototype.scaleSprite = function(sprite){
-  let scale = this.parent.scale;
+  let scale = this.parent.spriteScale;
   sprite.width = sprite.texture.width * scale;
   sprite.height = sprite.texture.width * scale;
   return sprite;
@@ -257,12 +272,12 @@ Renderer.prototype.drawTiles = function(scene){
     };
 
     coords = tileMap.convertPos(index); // Convert -> 2d;
-    pos_X = coords[0] * spriteSheet.spriteSize * this.parent.scale;
-    pos_Y = coords[1] * spriteSheet.spriteSize * this.parent.scale;
+    pos_X = coords[0] * spriteSheet.spriteSize * this.parent.spriteScale;
+    pos_Y = coords[1] * spriteSheet.spriteSize * this.parent.spriteScale;
     newPosArray = camera.getRelative(pos_X, pos_Y);
     pos_X = newPosArray[0];
     pos_Y = newPosArray[1];
-    let tileRect = new Rect([pos_X, pos_Y], spriteSheet.spriteSize * this.parent.scale);
+    let tileRect = new Rect([pos_X, pos_Y], spriteSheet.spriteSize * this.parent.spriteScale);
 
     if(camera.rectInView(tileRect) === true){
       spriteIndexArray = tileMap.getSpriteIndex(index);
@@ -284,19 +299,14 @@ Renderer.prototype.drawMenu = function(menu){
 
 // Shorthand method.
 Renderer.prototype.drawGUIObject = function(entity){
-  switch(entity.constructor){
-    case Label:
-      this.drawLabel(entity);
-      break;
-    case Button:
-      this.drawButton(entity);
-      if(entity.state === "hover"){
-        this.drawButtonOverlay(entity)
-      };
-      break;
-    default:
-      console.error(`Error when trying to draw GUIObject: ${entity} is an invalid GUIObject.`);
-  };
+  let graphic;
+  if(entity.constructor === Button && entity.state === "hover"){
+    graphic = this.createButtonOverlay(entity);
+  } else graphic = this.createGUIGraphic(entity);
+  graphic.position.set(entity.x, entity.y)
+  graphic = this.scale(graphic);
+  this.textureManager.addToPool(graphic);
+  this.draw(graphic);
 };
 
 Renderer.prototype.createGUIGraphic = function(entity){
@@ -315,15 +325,6 @@ Renderer.prototype.createGUIGraphic = function(entity){
   return createGraphicFunc(entity)
 };
 
-Renderer.prototype.setGUIGraphic = function(entity){
-  let createGraphicFunc = this.createGUIGraphic.bind(this);
-  entity.graphic = createGraphicFunc(entity);
-
-  if(entity.constructor === Button){
-    entity.overlayGraphic = this.createButtonOverlay(entity);
-  };
-};
-
 // Calculate and return the size of the entity by creating a dummy graphic.
 Renderer.prototype.getEntitySize = function(entity){
   let createGraphicFunc = this.createGUIGraphic.bind(this);
@@ -333,32 +334,12 @@ Renderer.prototype.getEntitySize = function(entity){
   return [dummy.width, dummy.height];
 };
 
-Renderer.prototype.drawLabel = function(label){
-  if(label.graphic.x !== label.x || label.graphic.y !== label.y){
-    label.graphic.position.set(label.x, label.y);
-  };
-  this.draw(label.graphic);
-};
-
 Renderer.prototype.createLabelGraphic = function(label){
   let message = label.text;
   let style = label.attributes.has("style") ? label.attributes.get("style") : "default";
   style = this.textStyles[style];
   let text = new PIXI.Text(message, style);
   return text
-};
-
-Renderer.prototype.drawButton = function(button){
-  if(button.graphic.x !== button.x || button.graphic.y !== button.y){
-    button.graphic.setTransform(button.x, button.y);
-  };
-  this.draw(button.graphic);
-};
-
-Renderer.prototype.drawButtonOverlay = function(button){
-  let overlayGraphic = button.overlayGraphic;
-  overlayGraphic.setTransform(button.x, button.y);
-  this.draw(overlayGraphic);
 };
 
 Renderer.prototype.createButtonOverlay = function(button){

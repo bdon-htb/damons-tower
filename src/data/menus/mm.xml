@@ -9,6 +9,7 @@
       <label text="Development build" x="0" y="0"></label>
       <button text="Start Game" x="400" y="275" callback="startGame"></button>
       <button text="Toggle Fullscreen" x="600" y="400" callback="resizeTest"></button>
-      <button text="Resize Test 2" x="200" y="400" callback="resizeTest2"></button>
+      <button text="1280x720" x="200" y="400" callback="resizeTest2"></button>
+      <button text="960x540" x="200" y="210" callback="resizeTest3"></button>
   </menu>
 </file>

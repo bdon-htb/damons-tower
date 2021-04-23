@@ -44,7 +44,8 @@ function Game(engine){
     "openOptions": this.stateMachine.changeState.bind(this.stateMachine, "options"),
     "openCredits": this.stateMachine.changeState.bind(this.stateMachine, "credits"),
     "resizeTest": this.renderer.requestFullscreen.bind(this.renderer),
-    "resizeTest2": this.renderer.requestFullscreen.bind(this.renderer)
+    "resizeTest2": this.renderer.resizeScreen.bind(this.renderer, 1280, 720),
+    "resizeTest3": this.renderer.resizeScreen.bind(this.renderer, 960, 540)
   };
 };
 

@@ -20,12 +20,8 @@ GUIManager.prototype._mouseOverGUIObject = function(mouse, guiObject){
   let engine = this.parent;
 
   // Account for fullscreen / screen resizing.
-  let screenSize = engine.renderer.getScreenSize();
-  let screenWidth = screenSize[0];
-  let screenHeight = screenSize[1];
-
-  let horizontalRatio = (screenWidth / engine.windowWidth);
-  let verticalRatio = (screenHeight / engine.windowHeight);
+  let horizontalRatio = engine.renderer.horizontalRatio;
+  let verticalRatio = engine.renderer.verticalRatio;
 
   let scaledX = guiObject.x * horizontalRatio;
   let scaledY = guiObject.y * verticalRatio;
@@ -101,11 +97,10 @@ GUIManager.prototype._createGUIObjects = function(menuTag){
 
     guiObject = createFunc(child);
 
-    renderer.setGUIGraphic(guiObject);
-
     // Update dimensions if there were any graphical changes.
-    guiObject.width = guiObject.graphic.width;
-    guiObject.height = guiObject.graphic.height;
+    let size = renderer.getEntitySize(guiObject)
+    guiObject.width = size[0];
+    guiObject.height = size[1];
 
     guiObjectArray.push(guiObject);
   };
@@ -113,9 +108,6 @@ GUIManager.prototype._createGUIObjects = function(menuTag){
   return guiObjectArray;
 };
 
-GUIManager.prototype.setMenuGraphics = function(){
-
-};
 
 // Parse menu data and return menu object based on it.
 // data is a XMLDocument object.
@@ -201,7 +193,6 @@ function GUIObject(x, y, width, height, attributes){
   this.width = width;
   this.height = height;
   this.attributes = attributes;
-  this.graphic = null;
   this.state = "default"
 };
 
@@ -213,7 +204,6 @@ function Label(guiObject, text){
 function Button(labelObject, callback){
   Object.assign(this, labelObject);
   this.callback = callback;
-  this.overlayGraphic = null;
 };
 
 /**

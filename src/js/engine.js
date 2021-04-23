@@ -15,7 +15,7 @@ function Engine(htmlDOM){
   this.windowWidth = 960;
   this.windowHeight = 540;
   // Should be a whole number; determines sprite render size.
-  this.scale = 3;
+  this.spriteScale = 3;
   // Canvas background colour.
   this.backgroundColor = 0xB8D5EE;
 

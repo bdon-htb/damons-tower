@@ -24,7 +24,7 @@ function Game(engine){
 
   let allStates = {
     "starting": null,
-    "mainMenu": [this._loadMenu.bind(this, "mainMenu"), this._clearGameStateObject.bind(this)],
+    "mainMenu": [this._loadMenu.bind(this, "debugMenu"), this._clearGameStateObject.bind(this)],
     "inLevel": [this._loadTestLevel.bind(this), this._clearGameStateObject.bind(this)],
     "options": null,
     "credits": null,

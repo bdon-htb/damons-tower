@@ -1,0 +1,56 @@
+In js-roguelite, the largest "unit" of a gui is a menu. All
+gui-related entities / objects for a particular menu are contained in it.
+All menu information is stored and read from .xml files. The current basic
+template looks something like:
+
+<?xml version="1.0" encoding="UTF-8"?>
+<file>
+  <header>
+      <type></type>
+      <name></name>
+      <layout></layout>
+  </header>
+  <menu>
+      [insert gui objects here]
+  </menu>
+</file>
+
+The file starts with xml metadata which tells the parser how to parse the
+information. From there, everything related to the file is kept within the
+<file> tag.
+
+The <header> file contains general "file settings". All .xml files must
+contain the <type> tag (in case I decide to use .xml for any other reason) and
+all menu .xml files must include <name> and <layout> tags.
+
+The <menu> tag contains all gui objects.
+
+Currently menus support the following layouts:
+
+- floatLayout (can place anywhere, position must be specified per entity)
+  NOTE: coordinates for floatLayout are relative to the engine's
+  default screen resolution (currently. 960x540). In other words,
+  0 <= x <= 960 and 0 <= y <= 540 (unless you want stuff being cut off). The
+  engine scales these values to other screen sizes automatically.
+
+Here's a list of all currently supported gui entities and their attributes.
+It can be assumed that attributes without descriptions inherit their
+functionality from its first definition:
+
+- label (displays text)
+  attributes:
+    text: displays text
+    x: object's x position on the menu screen.
+    y: object's y position on the menu screen.
+    style: string value that determines how the text will be styled. see
+           Renderer.prototype.createTextStyles in graphics.js for a list
+           of available styles.
+
+- button (can display text with callback functionality)
+  attributes:
+    text:
+    x:
+    y:
+    textStyle: similar to label's style attribute, sets the style of the
+               button's text.
+    buttonStyle: defines how buttons are styled. See Renderer.prototype.createButtonStyles.

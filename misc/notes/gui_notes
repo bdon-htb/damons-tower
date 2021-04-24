@@ -42,7 +42,7 @@ functionality from its first definition:
     text: displays text
     x: object's x position on the menu screen.
     y: object's y position on the menu screen.
-    style: string value that determines how the text will be styled. see
+    style: string value that indicates how the text should be styled. see
            Renderer.prototype.createTextStyles in graphics.js for a list
            of available styles.
 
@@ -54,3 +54,5 @@ functionality from its first definition:
     textStyle: similar to label's style attribute, sets the style of the
                button's text.
     buttonStyle: defines how buttons are styled. See Renderer.prototype.createButtonStyles.
+    callback: string value that indicates which callback function should be fired on
+              button click. See Game.callbacks in game.js.

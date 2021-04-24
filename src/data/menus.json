@@ -1,6 +1,6 @@
 {
   "menuData": {
-    "mainMenu": "mm.xml"
+    "mainMenu": "mm.xml",
     "debugMenu": "mm2.xml"
   }
 }

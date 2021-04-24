@@ -91,8 +91,8 @@ Renderer.prototype.requestFullscreen = function(){
 };
 
 Renderer.prototype.fullScreenHandler = function(){
-  this.isFullscreen = !this.isFullscreen // Update flag.
-}
+  this.isFullscreen = !this.isFullscreen; // Update flag.
+};
 
 Renderer.prototype.brightenColor = function(hexString, percentage){
   let colour;
@@ -100,15 +100,15 @@ Renderer.prototype.brightenColor = function(hexString, percentage){
   let rgbArray = this.hex2RGB(hexString);
 
   for (var i = 0; i < rgbArray.length; i++) {
-    colour = rgbArray[i]
-    difference = Math.floor((255 - colour) * (percentage / 100))
-    colour += difference
+    colour = rgbArray[i];
+    difference = Math.floor((255 - colour) * (percentage / 100));
+    colour += difference;
 
     if(colour > 255){
-      colour = 255
+      colour = 255;
     }
     else if(colour < 0){
-      colour = 0
+      colour = 0;
     }
     rgbArray[i] = colour;
   };
@@ -121,18 +121,18 @@ Renderer.prototype.darkenColor = function(hexString, percentage){
   let rgbArray = this.hex2RGB(hexString);
 
   for (var i = 0; i < rgbArray.length; i++) {
-    colour = rgbArray[i]
-    colour = Math.floor(colour * (percentage / 100))
+    colour = rgbArray[i];
+    colour = Math.floor(colour * (percentage / 100));
 
     if(colour > 255){
-      colour = 255
+      colour = 255;
     }
     else if(colour < 0){
-      colour = 0
+      colour = 0;
     }
     rgbArray[i] = colour;
   };
-  return this.rgb2Hex(rgbArray[0], rgbArray[1], rgbArray[2])
+  return this.rgb2Hex(rgbArray[0], rgbArray[1], rgbArray[2]);
 };
 
 Renderer.prototype.rgb2Hex = function(red, green, blue){

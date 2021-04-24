@@ -39,7 +39,7 @@ functionality from its first definition:
 
 - label (displays text)
   attributes:
-    text: displays text
+    text: the text the object displays.
     x: object's x position on the menu screen.
     y: object's y position on the menu screen.
     style: string value that indicates how the text should be styled. see

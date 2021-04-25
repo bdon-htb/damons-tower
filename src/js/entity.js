@@ -14,7 +14,9 @@ function Entity(id, sprite, type, state, x, y){
     "type": type,
     "state": state,
     "x": x,
-    "y": y
+    "y": y,
+    "dx": 0,
+    "dy": 0
   };
 };
 

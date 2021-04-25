@@ -12,6 +12,8 @@ function Scene(spriteSheet, sceneData){
   this.spriteSheet = spriteSheet; // Shared spriteSheet of all the tiles in the scene.
   this.tileMap = new TileMap(sceneData.width, sceneData.height, sceneData.tileData);
   this.entities = new Map();
+  this.movingEntities = new Map(); // A map of moving entities. for collision detection.
+  this.entityMovingStates = ["moving", "walking", "sprinting"];
   this.camera = new Camera();
 };
 
@@ -44,6 +46,18 @@ Scene.prototype.incrementEntityAttribute = function(id, key, amount=1){
     this.setEntityAttribute(id, key, value)
   } else console.log(`Error while increasing an entity's attribute:
   was told to increment ${value}, but it's not a number. id: ${id}. key: ${key}`);
+};
+
+Scene.prototype.setEntityActive = function(entity){
+  this.movingEntities.set(entity.id, entity);
+};
+
+Scene.prototype.removeActiveEntity = function(entity){
+  this.movingEntities.delete(entity.id);
+};
+
+Scene.prototype.refreshActiveEntities = function(){
+  this.movingEntities = new Map();
 };
 
 /**
@@ -204,21 +218,6 @@ Camera.prototype.rectInView = function(rect){
 // Get the relative position based on given coordinates.
 Camera.prototype.getRelative = function(trueX, trueY){
   return [trueX - this.topLeft[0], trueY - this.topLeft[1]];
-};
-
-/**
- * Custom rect class. Useful for getting information for rectangle calculations.
- * Note: use only for calculations. Use PIXI.Rectangle for drawing,
-*/
-function Rect(topLeft, width, height=undefined){
-  if(height === undefined){height = width};
-  this.width = width;
-  this.height = height;
-  this.topLeft = topLeft;
-
-  this.topRight = [this.topLeft[0] + this.width, this.topLeft[1]];
-  this.bottomLeft = [this.topLeft[0], this.topLeft[1] + this.height];
-  this.bottomRight = [this.topLeft[0] + this.width, this.topLeft[1] + this.height];
 };
 
 /**

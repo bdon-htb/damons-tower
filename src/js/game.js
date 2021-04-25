@@ -11,9 +11,9 @@ function Game(engine){
   this.renderer = engine.renderer;
   this.animationManager = this.renderer.animationManager;
   this.gameStateObject = {
-    "events": null, // A map of game events. Currently unused.
+    "events": new Map(), // A map of game events. Currently unused.
     "frameData": null, // The main loop data.
-    "scene": null // Current scene.
+    "scene": null, // Current scene.
   };
 
   // An empty copy of the gameStateObject for refreshing purposes.
@@ -31,7 +31,7 @@ function Game(engine){
     "paused": null,
   };
 
-  this.startingState = "starting"
+  this.startingState = "starting";
 
   // Create components.
   this.stateMachine = new StateMachine(this, allStates, this.startingState);
@@ -170,12 +170,19 @@ Game.prototype._updateFrameData = function(data){
   this.gameStateObject["frameData"] = data;
 };
 
-Game.prototype._refreshEvents = function(new_events){
+Game.prototype._refreshEvents = function(){
   this.gameStateObject["events"] = new Map();
 };
 
-Game.prototype._updateEvents = function(){
-  this.gameStateObject["events"] = new_events;
+Game.prototype._updateEvents = function(newEvents){
+  this.gameStateObject["events"] = newEvents;
+};
+
+// ===============================
+// General entity related methods.
+// ===============================
+Game.prototype._updateEntities = function(scene){
+  scene.movingEntities.forEach(entity => {});
 };
 
 // =====================

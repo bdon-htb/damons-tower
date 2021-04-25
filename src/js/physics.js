@@ -9,7 +9,10 @@ function PhysicsManager(engine){
 };
 
 PhysicsManager.prototype.calculateVelocity = function(velocity){
-  return velocity * (1/this.engine.frameData["fps"]) * this.FPS;
+  if(this.engine.frameData["fps"] === 0){
+    console.warn("fps detected as 0.")
+    return velocity;
+  } return velocity * (1/this.engine.frameData["fps"]) * this.FPS;
 };
 
 // Returns the point where a vector intersects a rect.
@@ -59,8 +62,8 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
 
   let initialTilePos = tileMap.convertIndexToCoords(tileMap.getNearestTileIndex(rayVector.p1));
   let finalTilePos = tileMap.convertIndexToCoords(tileMap.getNearestTileIndex(rayVector.p2));
-  let tileRangeX = (finalPos[0] - initialPos[0]) / tileMap.tileSize;
-  let tileRangeY = (finalPos[1] - initialPos[1]) / tileMap.tileSize;
+  let tileRangeX = Math.abs(finalTilePos[0] - initialTilePos[0]) / tileMap.tileSize;
+  let tileRangeY = Math.abs(finalTilePos[1] - initialTilePos[1]) / tileMap.tileSize;
   let tilePos;
   let tileIndex;
   let collision;
@@ -80,7 +83,7 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
   }
   else if(run === 0){ // Line is vertical.
     for(let i = 0; i < tileRangeY; i++){
-      tilePos = [initialTIlePos[0], initialPos[1] + (directionY * i)];
+      tilePos = [initialTIlePos[0], initialTilePos[1] + (directionY * i)];
       tileIndex = tileMap.convertCoordsToIndex(tilePos);
       collision = this._checkForCollision(scene, rayVector, tileIndex);
       if(collision !== null){return collision};
@@ -97,7 +100,7 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
     for(let i = 0; i < tileRangeX; i++){
       rayX = rayVector.p1[0] + (directionY * (i * tileMap.tileSize));
       rayY = (rayX * m) + b; // y = mx + b
-      tileIndex = tileMap.convertCoordsToIndex([rayX, rayY]);
+      tileIndex = tileMap.getNearestTileIndex([rayX, rayY]);
       collision = this._checkForCollision(scene, rayVector, tileIndex);
       if(collision !== null){return collision};
     };
@@ -110,9 +113,10 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
  * Note: use only for calculations. Use PIXI.Rectangle for drawing,
 */
 function Rect(topLeft, width, height=undefined){
-  if(height === undefined){height = width};
   this.width = width;
-  this.height = height;
+  if(height === undefined){
+    this.height = width
+  } else this.height = width;
   this.topLeft = topLeft;
 
   this.topRight = [this.topLeft[0] + this.width, this.topLeft[1]];

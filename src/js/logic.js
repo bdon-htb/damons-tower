@@ -30,11 +30,11 @@ Scene.prototype._createEntityRect = function(entity){
   return new Rect(entityTopLeft, entityWidth, entityHeight);
 }
 
-Scene.prototype._getTilesEntityIsIn = function(location, entity){
+Scene.prototype._getTilesEntityIsIn = function(entity){
   let entityRect = this._createEntityRect(entity);
   let encompassingTiles = new Set();
   // Check each corner to find which tile(s) the entity is currently in.
-  for(const position of [entityRect.topRight, entityRect.bottomLeft,
+  for(const position of [entityRect.topLeft, entityRect.bottomLeft,
     entityRect.topRight, entityRect.bottomRight]){
       let nearestTileIndex = this.tileMap.getNearestTileIndex(position);
       encompassingTiles.add(nearestTileIndex)
@@ -45,9 +45,9 @@ Scene.prototype._getTilesEntityIsIn = function(location, entity){
 // Adds entity to spatialHashmap
 Scene.prototype._addEntityToHashmap = function(location, entity){
   let tileGetterFunc = this._getTilesEntityIsIn.bind(this);
-  let encompassingTiles = tileGetterFunc(location, entity);
+  let encompassingTiles = tileGetterFunc(entity);
 
-  encompassingTiles.forEach(tileIdex => {
+  encompassingTiles.forEach(tileIndex => {
     if(this.spatialHashmap.has(tileIndex) === false){
       this.spatialHashmap.set(tileIndex, [entity]);
     }
@@ -61,11 +61,11 @@ Scene.prototype._addEntityToHashmap = function(location, entity){
 // Precondition: entity exists in hashmap
 Scene.prototype._removeEntityfromHashmap = function(entity){
   let tileGetterFunc = this._getTilesEntityIsIn.bind(this);
-  let location = [entity.attributes.get("x"), entity.attributes.get("y")]
-  let encompassingTiles = tileGetterFunc(location, entity);
+  let location = [entity.attributes["x"], entity.attributes["y"]]
+  let encompassingTiles = tileGetterFunc(entity);
 
-  encompassingTiles.forEach(tileIdex => {
-    let entityArray = this.spatialHashmap.get(location);
+  encompassingTiles.forEach(tileIndex => {
+    let entityArray = this.spatialHashmap.get(tileIndex);
 
     if(entityArray.length <= 1){
       this.spatialHashmap.delete(tileIndex);
@@ -79,7 +79,7 @@ Scene.prototype._removeEntityfromHashmap = function(entity){
 
 Scene.prototype.addEntity = function(entity){
   this.entities.set(entity.id, entity);
-  let location = [entity.attributes.get("x"), entity.attributes.get("y")]
+  let location = [entity.attributes["x"], entity.attributes["y"]];
   this._addEntityToHashmap(location, entity);
 };
 
@@ -105,11 +105,11 @@ Scene.prototype.setEntityAttribute = function(id, key, value){
 };
 
 // Set new x and y positions of the entity.
-Scene.prototype.moveEntity = function(entity, new_location){
+Scene.prototype.moveEntity = function(entity, newPos){
   this._removeEntityfromHashmap(entity);
-  this.setEntityAttribute(entity.id, "x", new_location[0]);
-  this.setEntityAttribute(entity.id, "y", new_location[1]);
-  this._addEntityToHashmap(new_location, entity);
+  this.setEntityAttribute(entity.id, "x", newPos[0]);
+  this.setEntityAttribute(entity.id, "y", newPos[1]);
+  this._addEntityToHashmap(newPos, entity);
 };
 
 // If the attribute is a number, increase/decrease the value by the amount.
@@ -244,8 +244,7 @@ TileMap.prototype.convertIndexToCoords = function(index, getPixelCoords=false){
   if(getPixelCoords === true){
     pos = [pos[0] * this.tileSize, pos[1] * this.tileSize]
   };
-
-  return
+  return pos
 };
 
 TileMap.prototype.convertCoordsToIndex = function(index_X, index_Y){

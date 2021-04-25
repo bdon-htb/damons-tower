@@ -140,14 +140,17 @@ Game.prototype._loadLevel = function(levelData){
 };
 
 Game.prototype._loadTestLevel = function(){
-  let spawnpoint = [0, 0];
+  let spawnpoint = [64, 64];
   let levelData = this.engine.getLoadedAsset(this.engine.levelKey).get("testLevel");
   this._loadLevel(levelData);
-  let level = this.gameStateObject["scene"];
+  let scene = this.gameStateObject["scene"];
   let player = new PlayerEntity(this.engine, this);
-  level.addEntity(player);
-  this.sceneManager.setScene(level);
-  let camera = level.camera;
+  player.attributes["x"] = spawnpoint[0];
+  player.attributes["y"] = spawnpoint[1];
+
+  scene.addEntity(player);
+  this.sceneManager.setScene(scene);
+  let camera = scene.camera;
   let posArray = [player.attributes["x"], player.attributes["y"]];
   camera.center(posArray[0], posArray[1], player.attributes["sprite"].height);
 };
@@ -158,8 +161,7 @@ Game.prototype._loadTestLevel = function(){
 Game.prototype._updateLevel = function(scene){
   let events = this.gameStateObject["events"]
   if(scene.entities.has("player") === true){
-    let player = scene.getEntity("player");
-    this._updatePlayer(player);
+    this._updatePlayer(scene);
   };
 };
 
@@ -188,15 +190,16 @@ Game.prototype._updateEntities = function(scene){
 // =====================
 // Player related methods.
 // =====================
-Game.prototype._updatePlayer = function(player){
+Game.prototype._updatePlayer = function(scene){
   let handleMove = this._handlePlayerMovement.bind(this);
   let updateAnim = this._updatePlayerAnimation.bind(this);
 
-  handleMove(player);
-  updateAnim(player);
+  handleMove(scene);
+  updateAnim(scene);
 };
 
-Game.prototype._handlePlayerMovement = function(player){
+Game.prototype._handlePlayerMovement = function(scene){
+  let player = scene.getEntity("player");
   let physicsManager = this.physicsManager;
   let frameData = this.gameStateObject["frameData"];
   let moveCommands = ["keyDown-left", "keyDown-right", "keyDown-up", "keyDown-down"];
@@ -220,31 +223,47 @@ Game.prototype._handlePlayerMovement = function(player){
     player.attributes["state"] = "idle";
   };
 
-  let velocity = (player.attributes["state"] === "sprinting") ? player.attributes["sprintSpeed"] : player.attributes["speed"];
+  if(isMoving === true){
+    let velocity = (player.attributes["state"] === "sprinting") ? player.attributes["sprintSpeed"] : player.attributes["speed"];
 
-  // Format: {"commandName": [coordinate, displacement, oppositeCommand, direction]}
-  let movMap = {
-    "keyDown-left": ["x", -velocity, "keyDown-right", "left"],
-    "keyDown-right": ["x", +velocity, "keyDown-left", "right"],
-    "keyDown-up": ["y", -velocity, "keyDown-down", "up"],
-    "keyDown-down": ["y", +velocity, "keyDown-up", "down"]
-  };
-
-  for(var i = 0; i < commands.length; i++){
-    c = commands[i];
-
-    // Prioritize the last move input and move if one is detected. This should prevent standstill by pressing opposite keys.
-    if(Object.keys(movMap).includes(c) === true && commands.slice(i, commands.length).includes(movMap[c][2]) === false){
-      coordinate = movMap[c][0]
-      displacement = physicsManager.calculateVelocity(movMap[c][1]);
-      player.attributes[coordinate] += displacement;
-      player.attributes["direction"] = movMap[c][3]
+    // Format: {"commandName": [coordinate, displacement, oppositeCommand, direction]}
+    let movMap = {
+      "keyDown-left": ["dx", -velocity, "keyDown-right", "left"],
+      "keyDown-right": ["dx", +velocity, "keyDown-left", "right"],
+      "keyDown-up": ["dy", -velocity, "keyDown-down", "up"],
+      "keyDown-down": ["dy", +velocity, "keyDown-up", "down"]
     };
+
+    let dMap = {
+      "dx": 0,
+      "dy": 0
+    };
+
+
+    for(var i = 0; i < commands.length; i++){
+      let c = commands[i];
+      // Prioritize the last move input and move if one is detected. This should prevent standstill by pressing opposite keys.
+      if(Object.keys(movMap).includes(c) === true && commands.slice(i, commands.length).includes(movMap[c][2]) === false){
+        coordinate = movMap[c][0]
+        dMap[coordinate] += physicsManager.calculateVelocity(movMap[c][1]);
+        player.attributes["direction"] = movMap[c][3]
+      };
+    };
+
+    let playerX = player.attributes["x"];
+    let playerY = player.attributes["y"];
+    let newPos = [playerX + dMap["dx"], playerY + dMap["dy"]];
+    let movVector = new Vector2D([playerX, playerY], newPos);
+
+    let collision = physicsManager.raycastCollision(movVector, scene);
+    if(collision !== null){newPos = collision};
+    scene.moveEntity(player, newPos);
   };
 };
 
-Game.prototype._updatePlayerAnimation = function(player){
+Game.prototype._updatePlayerAnimation = function(scene){
   // Can set aliases here because we we're just checking their values.
+  let player = scene.getEntity("player");
   let playerState = player.attributes["state"];
   let playerDirection = player.attributes["direction"];
   let allAnims = player.attributes["animations"];

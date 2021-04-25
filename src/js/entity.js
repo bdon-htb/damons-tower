@@ -5,8 +5,11 @@
 /**
  * Simple entity object. The base of all other entities.
  * For player, enemy, items, doors, switches, etc.
+ * note that position (x, y) represent the position of the CENTER of the Entity.
+ * wallCollider is a rect used for wall collision detection. the topLeft of the Rect
+ * is relative to the entity's CENTER position.
 */
-function Entity(id, sprite, type, state, x, y){
+function Entity(id, sprite, type, state, x, y, width, height){
   this.id = id;
   // Default attributes.
   this.attributes = {
@@ -15,8 +18,9 @@ function Entity(id, sprite, type, state, x, y){
     "state": state,
     "x": x,
     "y": y,
-    "dx": 0,
-    "dy": 0
+    "width": width,
+    "height": height,
+    "wallCollider": null
   };
 };
 
@@ -25,7 +29,7 @@ function Entity(id, sprite, type, state, x, y){
  * gameObject is NOT the gameStateObject. it is an instance of the Game class.
 */
 function PlayerEntity(engine, gameObject){
-  Entity.call(this, "player", null, "player", "idle", 0, 0);
+  Entity.call(this, "player", null, "player", "idle", 0, 0, 32, 32);
   this._allStates = [
     "idle",
     "walking",
@@ -37,6 +41,7 @@ function PlayerEntity(engine, gameObject){
     "left",
     "right"
   ];
+  this.attributes["wallCollider"] = new Rect([-7, 9], 14, 7); // position relative to topLeft: [9, 25]
   this.attributes["animations"] = new Map(); // Animations is a map of all the available animations.
   this.attributes["speed"] = 6; // Set the default player movement speed.
   this.attributes["sprintSpeed"] = this.attributes["speed"] * 2;

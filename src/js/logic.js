@@ -11,14 +11,81 @@ function Scene(spriteSheet, sceneData){
   this.name = sceneData.name;
   this.spriteSheet = spriteSheet; // Shared spriteSheet of all the tiles in the scene.
   this.tileMap = new TileMap(sceneData.width, sceneData.height, sceneData.tileData);
+  // A map of all entities in the scene. keys are entity ids. values are entity objects.
   this.entities = new Map();
-  this.movingEntities = new Map(); // A map of moving entities. for collision detection.
+  // A spatial hashmap of all entities in the scene. keys are tile positions in the map occupied by entity(s).
+  // values are an array of all entities contained in the tile.
+  this.spatialHashmap = new Map();
+  this.movingEntities = []; // An array of all entities currently moving.
   this.entityMovingStates = ["moving", "walking", "sprinting"];
   this.camera = new Camera();
 };
 
+Scene.prototype._createEntityRect = function(entity){
+  let entityWidth = entity.attributes["width"];
+  let entityHeight = entity.attributes["height"];
+  let entityX = entity.attributes["x"];
+  let entityY = entity.attributes["y"];
+  let entityTopLeft = [entityX - (entityWidth / 2), entityY - (entityHeight / 2)];
+  return new Rect(entityTopLeft, entityWidth, entityHeight);
+}
+
+Scene.prototype._getTilesEntityIsIn = function(location, entity){
+  let entityRect = this._createEntityRect(entity);
+  let encompassingTiles = new Set();
+  // Check each corner to find which tile(s) the entity is currently in.
+  for(const position of [entityRect.topRight, entityRect.bottomLeft,
+    entityRect.topRight, entityRect.bottomRight]){
+      let nearestTileIndex = this.tileMap.getNearestTileIndex(position);
+      encompassingTiles.add(nearestTileIndex)
+    };
+  return encompassingTiles;
+};
+
+// Adds entity to spatialHashmap
+Scene.prototype._addEntityToHashmap = function(location, entity){
+  let tileGetterFunc = this._getTilesEntityIsIn.bind(this);
+  let encompassingTiles = tileGetterFunc(location, entity);
+
+  encompassingTiles.forEach(tileIdex => {
+    if(this.spatialHashmap.has(tileIndex) === false){
+      this.spatialHashmap.set(tileIndex, [entity]);
+    }
+    else {
+      let entityArrray = this.spatialHashmap.get(tileIndex);
+      entityArray.push(entity);
+    }
+  });
+};
+
+// Precondition: entity exists in hashmap
+Scene.prototype._removeEntityfromHashmap = function(entity){
+  let tileGetterFunc = this._getTilesEntityIsIn.bind(this);
+  let location = [entity.attributes.get("x"), entity.attributes.get("y")]
+  let encompassingTiles = tileGetterFunc(location, entity);
+
+  encompassingTiles.forEach(tileIdex => {
+    let entityArray = this.spatialHashmap.get(location);
+
+    if(entityArray.length <= 1){
+      this.spatialHashmap.delete(tileIndex);
+    }
+    else {
+      // Remove entity from array.
+      entityArray.splice(entityArray.indexOf(entity), 1);
+    }
+  });
+};
+
 Scene.prototype.addEntity = function(entity){
   this.entities.set(entity.id, entity);
+  let location = [entity.attributes.get("x"), entity.attributes.get("y")]
+  this._addEntityToHashmap(location, entity);
+};
+
+Scene.prototype.removeEntity = function(entity){
+  this.entities.delete(entity.id);
+  this._removeEntityfromHashmap(entity);
 };
 
 Scene.prototype.getEntity = function(id){
@@ -37,27 +104,23 @@ Scene.prototype.setEntityAttribute = function(id, key, value){
   entity.attributes[key] = value;
 };
 
+// Set new x and y positions of the entity.
+Scene.prototype.moveEntity = function(entity, new_location){
+  this._removeEntityfromHashmap(entity);
+  this.setEntityAttribute(entity.id, "x", new_location[0]);
+  this.setEntityAttribute(entity.id, "y", new_location[1]);
+  this._addEntityToHashmap(new_location, entity);
+};
+
 // If the attribute is a number, increase/decrease the value by the amount.
 Scene.prototype.incrementEntityAttribute = function(id, key, amount=1){
   let entity = this.getEntity(id);
   let value = entity.attributes[key];
   if(typeof value === "number"){
     value += amount;
-    this.setEntityAttribute(id, key, value)
+    this.setEntityAttribute(id, key, value);
   } else console.log(`Error while increasing an entity's attribute:
   was told to increment ${value}, but it's not a number. id: ${id}. key: ${key}`);
-};
-
-Scene.prototype.setEntityActive = function(entity){
-  this.movingEntities.set(entity.id, entity);
-};
-
-Scene.prototype.removeActiveEntity = function(entity){
-  this.movingEntities.delete(entity.id);
-};
-
-Scene.prototype.refreshActiveEntities = function(){
-  this.movingEntities = new Map();
 };
 
 /**
@@ -92,9 +155,10 @@ SceneManager.prototype.clearHistory = function(){
    "000-FL", "000-FL", "000-FL"]
 */
 function TileMap(width, height, tiledata){
-  this.width = width,
-  this.height = height,
+  this.width = width, // tileMap width in TILES
+  this.height = height, // tileMap height in TILES.
   this.tiles = tiledata;
+  this.tileSize = 32; // Size of an individual tile in pixels.
 };
 
 TileMap.prototype.tileIsEmpty = function(tileIndex){
@@ -137,7 +201,31 @@ TileMap.prototype.getTileID = function(tileIndex){
   return id;
 };
 
+// Get the nearest TOPLEFT tile.
+// position is an object's TRUE position (i.e. in pixels).
+TileMap.prototype.getNearestTileIndex = function(position){
+  let posX = position[0]
+  let posY = position[1]
+  // Create a rect representing the tileMap in pixels.
+  let tileMapRect = new Rect([0, 0], this.width * this.tileSize, this.height * this.tileSize);
+
+  if(Engine.prototype.pointInRect(posX, posY, tileMapRect) === true){
+    let tileX = Math.floor(posX / this.tileSize);
+    let tileY = Math.floor(posY / this.tileSize);
+    let tileIndex = this.convertCoordsToIndex(tileX, tileY);
+    return tileIndex;
+  } else console.error(`${position} is out of tileMap bounds.`);
+}
+
+// Shorthand.
+// position is an object's TRUE position (i.e. in pix
+TileMap.prototype.getNearestTile = function(position){
+  let nearestTileFunc = this.getNearestTileIndex.bind(this);
+  return this.tiles[nearestTileFunc(position)];
+};
+
 // Shorthand for converting indexes to 1D/2D.
+// position is a TILE position. [col, row];
 TileMap.prototype.convertPos = function(position){
   if(Array.isArray(position) === true){
     return this.convertCoordsToIndex(position);

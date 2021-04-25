@@ -12,6 +12,10 @@ PhysicsManager.prototype.calculateVelocity = function(velocity){
   return velocity * (1/this.engine.frameData["fps"]) * this.FPS;
 };
 
+PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
+
+}
+
 /**
  * Custom rect class. Useful for getting information for rectangle calculations.
  * Note: use only for calculations. Use PIXI.Rectangle for drawing,
@@ -42,7 +46,6 @@ function Vector2D(point1, point2){
     this.p1 = [0, 0];
     this.p2 = point1;
   };
-
 };
 
 Vector2D.prototype.add = function(vector1, vector2){

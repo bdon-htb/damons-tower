@@ -212,8 +212,7 @@ TileMap.prototype.getNearestTileIndex = function(position){
   if(Engine.prototype.pointInRect(posX, posY, tileMapRect) === true){
     let tileX = Math.floor(posX / this.tileSize);
     let tileY = Math.floor(posY / this.tileSize);
-    let tileIndex = this.convertCoordsToIndex(tileX, tileY);
-    return tileIndex;
+    return this.convertCoordsToIndex(tileX, tileY);
   } else console.error(`${position} is out of tileMap bounds.`);
 }
 

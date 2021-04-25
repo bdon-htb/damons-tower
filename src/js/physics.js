@@ -12,32 +12,6 @@ PhysicsManager.prototype.calculateVelocity = function(velocity){
   return velocity * (1/this.engine.frameData["fps"]) * this.FPS;
 };
 
-// Return an array of all tile indexes the ray intersects.
-// Order is from nearest -> furthest.
-PhysicsManager.prototype._getSurroundingTiles = function(rayVector, scene){
-  let tileMap = scene.tileMap;
-  let rise = Math.ceil(rayVector.p2[1] - rayVector.p1[1]);
-  let run = Math.ceil(rayVector.p2[0] - rayVector.p1[0]);
-  let encompassingTiles = [];
-  let initialPos;
-
-  if(run === 0){ // vertical line.
-    for(let x = rayVector.p1[0]; x < rayVector.p2[0]; x += tileMap.tileSize){
-      encompassingTiles.push(tileMap.getNearestTileIndex([x, rayVector.p1[1]]));
-    };
-  }
-  else if(rise === 0){ // horizontal line.
-    for(let y = rayVector.p1[1]; y < rayVector.p2[1]; x += tileMap.tileSize){
-      encompassingTiles.push(tileMap.getNearestTileIndex([rayVector.p1[0], y]));
-    };
-  }
-  else { // diagonal.
-    let raySlope = rise / run
-  };
-
-  return encompassingTiles;
-};
-
 // Returns the point where a vector intersects a rect.
 // Returns null if hits nothing.
 // We check only TWO of the rectangle's line segments.
@@ -65,18 +39,69 @@ PhysicsManager.prototype.rectPointofCollision = function(vector, rect){
   return null;
 };
 
+PhysicsManager.prototype._checkForCollision = function(scene, rayVector, tileIndex){
+  let tileMap = scene.tileMap;
+  if(tileMap.tileIsCollidable(tileIndex) === true){
+    let tilePos = tileMap.convertIndexToCoords(tileIndex, true);
+    let tileRect = new Rect(tilePos, tileMap.tileSize);
+    return this.rectPointofCollision(rayVector, tileRect);
+  };
+};
+
 // Return the coordinates of the point where rayVector hits something in the scene.
 // Return null if the rayVector does not hit anything.
 PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
   let tileMap = scene.tileMap;
-  let encompassingTiles = this._getSurroundingTiles(rayVector, scene);
 
-  for(const tileIndex of encompassingTiles){
-    if(tileMap.tileIsCollidable(tileIndex) === true){
-      let tilePos = tileMap.convertIndexToCoords(tileIndex, true);
-      let tileRect = new Rect(tilePos, tileMap.tileSize);
-      return this.rectPointofCollision(rayVector, tileRect);
+  let positiveDirections = Vector2D.prototype.isPositive(rayVector);
+  let directionX = positiveDirections[0] === true ? 1 : -1;
+  let directionY = positiveDirections[1] === true ? 1 : -1;
+
+  let initialTilePos = tileMap.convertIndexToCoords(tileMap.getNearestTileIndex(rayVector.p1));
+  let finalTilePos = tileMap.convertIndexToCoords(tileMap.getNearestTileIndex(rayVector.p2));
+  let tileRangeX = (finalPos[0] - initialPos[0]) / tileMap.tileSize;
+  let tileRangeY = (finalPos[1] - initialPos[1]) / tileMap.tileSize;
+  let tilePos;
+  let tileIndex;
+  let collision;
+
+  // tile at each relevant x coordinate.
+  let rise = rayVector.p2[1] - rayVector.p1[1];
+  let run = rayVector.p2[0] - rayVector.p1[0];
+
+  if(rise === 0){ // Line is horizontal.
+    for(let i = 0; i < tileRangeX; i++){
+      tilePos = [initialTIlePos[0] + (directionX * i), initialPos[1]];
+      tileIndex = tileMap.convertCoordsToIndex(tilePos);
+      collision = this._checkForCollision(scene, rayVector, tileIndex);
+      if(collision !== null){return collision};
     };
+    return null;
+  }
+  else if(run === 0){ // Line is vertical.
+    for(let i = 0; i < tileRangeY; i++){
+      tilePos = [initialTIlePos[0], initialPos[1] + (directionY * i)];
+      tileIndex = tileMap.convertCoordsToIndex(tilePos);
+      collision = this._checkForCollision(scene, rayVector, tileIndex);
+      if(collision !== null){return collision};
+    };
+    return null;
+  }
+  else {
+    // Line is some sort of diagonal.
+    // For diagonals, we utilize the equation of a line and calculate the nearest.
+    let m = (rise / run)
+    let b = rayVector.p1[1] - ((rise / run) * rayVector.p1[0]) // b = y - mx
+    let rayX;
+    let rayY;
+    for(let i = 0; i < tileRangeX; i++){
+      rayX = rayVector.p1[0] + (directionY * (i * tileMap.tileSize));
+      rayY = (rayX * m) + b; // y = mx + b
+      tileIndex = tileMap.convertCoordsToIndex([rayX, rayY]);
+      collision = this._checkForCollision(scene, rayVector, tileIndex);
+      if(collision !== null){return collision};
+    };
+    return null;
   };
 };
 
@@ -110,6 +135,12 @@ function Vector2D(point1, point2){
     this.p1 = [0, 0];
     this.p2 = point1;
   };
+};
+
+// Return an array in the form [boolX, boolY] where each index
+// corresponds to whether the vector is positive or negative in that direction.
+Vector2D.prototype.isPositive = function(vector){
+  return [vector.p1[0] < vector.p2[0], vector.p1[1] < vector.p2[1]]
 };
 
 Vector2D.prototype.add = function(vector1, vector2){

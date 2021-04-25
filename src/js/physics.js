@@ -12,9 +12,73 @@ PhysicsManager.prototype.calculateVelocity = function(velocity){
   return velocity * (1/this.engine.frameData["fps"]) * this.FPS;
 };
 
-PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
+// Return an array of all tile indexes the ray intersects.
+// Order is from nearest -> furthest.
+PhysicsManager.prototype._getSurroundingTiles = function(rayVector, scene){
+  let tileMap = scene.tileMap;
+  let rise = Math.ceil(rayVector.p2[1] - rayVector.p1[1]);
+  let run = Math.ceil(rayVector.p2[0] - rayVector.p1[0]);
+  let encompassingTiles = [];
+  let initialPos;
 
-}
+  if(run === 0){ // vertical line.
+    for(let x = rayVector.p1[0]; x < rayVector.p2[0]; x += tileMap.tileSize){
+      encompassingTiles.push(tileMap.getNearestTileIndex([x, rayVector.p1[1]]));
+    };
+  }
+  else if(rise === 0){ // horizontal line.
+    for(let y = rayVector.p1[1]; y < rayVector.p2[1]; x += tileMap.tileSize){
+      encompassingTiles.push(tileMap.getNearestTileIndex([rayVector.p1[0], y]));
+    };
+  }
+  else { // diagonal.
+    let raySlope = rise / run
+  };
+
+  return encompassingTiles;
+};
+
+// Returns the point where a vector intersects a rect.
+// Returns null if hits nothing.
+// We check only TWO of the rectangle's line segments.
+// because a straight line can't hit opposite sides (unless it goes through).
+// This function assumes the vector doesn't orignate inside the rect.
+PhysicsManager.prototype.rectPointofCollision = function(vector, rect){
+  let vectorsIntersectFunc = Vector2D.prototype.vectorsIntersect;
+  let rectVeritcal;
+  let rectHorizontal;
+
+  // Check if vector originates to the left of rect topleft.
+  if(vector.p1[0] <= rect.topLeft[0]){
+    rectVeritcal = Vector2D(rect.topLeft, rect.bottomLeft);
+  } else rectVeritcal = Vector2D(rect.topRight, rect.bottomRight);
+
+  // Check if vector originates from above the rect topleft.
+  if(vector.p1[1] <= rect.topLeft[1]){
+    rectHorizontal = Vector2D(rect.topLeft, rect.topRight);
+  } else rectHorizontal = Vector2D(rect.bottomLeft, rect.bottomRight);
+
+  for(lineSegment of [rectVeritcal, rectHorizontal]){
+    let collisionPoint = vectorsIntersectFunc(vector, lineSegment);
+    if(collisionPoint !== null){return collisionPoint};
+  };
+  return null;
+};
+
+// Return the coordinates of the point where rayVector hits something in the scene.
+// Return null if the rayVector does not hit anything.
+PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
+  let tileMap = scene.tileMap;
+  let encompassingTiles = this._getSurroundingTiles(rayVector, scene);
+
+  for(const tileIndex of encompassingTiles){
+    if(tileMap.tileIsCollidable(tileIndex) === true){
+      let tilePos = tileMap.convertIndexToCoords(tileIndex, true);
+      let tileRect = new Rect(tilePos, tileMap.tileSize);
+      return this.rectPointofCollision(rayVector, tileRect);
+    };
+  };
+};
 
 /**
  * Custom rect class. Useful for getting information for rectangle calculations.

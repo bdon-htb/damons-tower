@@ -238,8 +238,15 @@ TileMap.prototype.convertPos = function(position){
 };
 
 // Moved the following over to Engine because it's a pretty widespread calculation.
-TileMap.prototype.convertIndexToCoords = function(index){
-  return Engine.prototype.convertIndexToCoords(index, this.width);
+TileMap.prototype.convertIndexToCoords = function(index, getPixelCoords=false){
+  let pos = Engine.prototype.convertIndexToCoords(index, this.width);
+
+  // Convert coordinates from "array coordinates" -> pixel coordinates.
+  if(getPixelCoords === true){
+    pos = [pos[0] * this.tileSize, pos[1] * this.tileSize]
+  };
+
+  return
 };
 
 TileMap.prototype.convertCoordsToIndex = function(index_X, index_Y){

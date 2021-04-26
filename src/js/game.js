@@ -80,7 +80,7 @@ Game.prototype.update = function(){
       let player = this.gameStateObject["scene"].getEntity("player");
       let camera = level.camera;
       let posArray = [player.attributes["x"], player.attributes["y"]]
-      camera.center(posArray[0], posArray[1], player.attributes["sprite"].height);
+      camera.center(posArray[0], posArray[1]);
       let relPosArray = camera.getRelative(posArray[0], posArray[1]);
       player.attributes["sprite"] = this.animationManager.getSprite(player.attributes["currentAnimation"]);
       this.animationManager.nextFrame(player.attributes["currentAnimation"]);
@@ -102,13 +102,17 @@ Game.prototype.draw = function(){
       let level = this.gameStateObject["scene"];
       let player = this.gameStateObject["scene"].getEntity("player");
       let camera = level.camera;
-      let posArray = [player.attributes["x"], player.attributes["y"]];
-      let relPosArray = camera.getRelative(posArray[0], posArray[1]);
+      let sceneOrigin = camera.getRelative(0, 0);
+      let playerCenter = camera.getRelative(player.attributes["x"], player.attributes["y"]);
 
       renderer.drawTiles(this.gameStateObject["scene"]);
-      this.renderer.drawSprite(player.attributes["sprite"], relPosArray[0], relPosArray[1]);
+      this.renderer.drawEntity(level, player);
+      renderer.drawRect(0xff0000, playerCenter[0], playerCenter[1], 4, 4);
+      renderer.drawRect(0xff0000, sceneOrigin[0], sceneOrigin[1], 4, 4);
       renderer.drawText(this.controller.patterns.get("doubleTap-right")["state"]);
       renderer.drawText(player.attributes["state"], 100);
+      renderer.drawText(player.attributes["x"], 450);
+      renderer.drawText(player.attributes["y"], 530);
 
       fps = this.engine.frameData["fps"];
       renderer.drawText(fps, 740);
@@ -255,8 +259,18 @@ Game.prototype._handlePlayerMovement = function(scene){
     let newPos = [playerX + dMap["dx"], playerY + dMap["dy"]];
     let movVector = new Vector2D([playerX, playerY], newPos);
 
+    if(player.attributes["x"] >= 100 && player.attributes["y"] >= 94){
+      console.log("gotcha")
+    };
+
+    /*
     let collision = physicsManager.raycastCollision(movVector, scene);
     if(collision !== null){newPos = collision};
+    if(newPos === undefined){
+      console.log(collision)
+      console.log("gotcha")
+    };
+    */
     scene.moveEntity(player, newPos);
   };
 };

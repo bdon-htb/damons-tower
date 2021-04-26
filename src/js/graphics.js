@@ -251,6 +251,17 @@ Renderer.prototype.scaleSprite = function(sprite){
   return sprite;
 };
 
+// Draw a game entity. i.e. player.
+// Remember that player coordinates represent their center values.
+Renderer.prototype.drawEntity = function(scene, gameEntity){
+  let camera = scene.camera;
+  // We subtract half width and height to get the entity's topLeft.
+  let topLeftX = gameEntity.attributes["x"] - (gameEntity.attributes["width"] / 2) * this.parent.spriteScale;
+  let topRightY = gameEntity.attributes["y"] - (gameEntity.attributes["height"] / 2) * this.parent.spriteScale;
+  let relativePos = camera.getRelative(topLeftX, topRightY);
+  this.drawSprite(gameEntity.attributes["sprite"], relativePos[0], relativePos[1]);
+};
+
 // Draws all tiles in view of the camera.
 Renderer.prototype.drawTiles = function(scene){
   let tileMap = scene.tileMap;

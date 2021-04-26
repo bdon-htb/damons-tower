@@ -62,8 +62,8 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
 
   let initialTilePos = tileMap.convertIndexToCoords(tileMap.getNearestTileIndex(rayVector.p1));
   let finalTilePos = tileMap.convertIndexToCoords(tileMap.getNearestTileIndex(rayVector.p2));
-  let tileRangeX = Math.abs(finalTilePos[0] - initialTilePos[0]) / tileMap.tileSize;
-  let tileRangeY = Math.abs(finalTilePos[1] - initialTilePos[1]) / tileMap.tileSize;
+  let tileRangeX = Math.ceil(Math.abs(finalTilePos[0] - initialTilePos[0]) / tileMap.tileSize);
+  let tileRangeY = Math.ceil(Math.abs(finalTilePos[1] - initialTilePos[1]) / tileMap.tileSize);
   let tilePos;
   let tileIndex;
   let collision;

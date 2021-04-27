@@ -191,8 +191,28 @@ Game.prototype._updateEvents = function(newEvents){
 // ===============================
 // General entity related methods.
 // ===============================
-Game.prototype._updateEntities = function(scene){
-  scene.movingEntities.forEach(entity => {});
+
+// Checks for collision from point (x, y) to point (x + dx, y + dy)
+// If there is a collision point, return that point. Otherwise return
+// (x + dx, y + dy).
+Game.prototype._handleCollision = function(x, y, dx, dy, scene){
+  let newPos;
+  let movVector = new Vector2D([x, y], [x + dx, y + dy]);
+
+  let positiveDirections = Vector2D.prototype.isPositive(movVector);
+  let directionX = positiveDirections[0] === true ? 1 : -1;
+  let directionY = positiveDirections[1] === true ? 1 : -1;
+
+  let collision = this.physicsManager.raycastCollision(movVector, scene);
+  if(collision !== null){
+    collision[0] = (collision[0] === x) ? x : collision[0] - (1 * directionX);
+    collision[1] = (collision[1] === y) ? y : collision[1] - (1 * directionY);
+    newPos = collision;
+  }
+  else { // No collision so we just go the full distance.
+    newPos = [movVector.p2[0], movVector.p2[1]];
+  };
+  return newPos;
 };
 
 // =====================
@@ -258,18 +278,7 @@ Game.prototype._handlePlayerMovement = function(scene){
       };
     };
 
-    let playerX = player.attributes["x"];
-    let playerY = player.attributes["y"];
-    let newPos = [playerX + dMap["dx"], playerY + dMap["dy"]];
-    let movVector = new Vector2D([playerX, playerY], newPos);
-
-    let collision = physicsManager.raycastCollision(movVector, scene);
-    if(collision !== null){
-      collision[0] = (collision[0] === playerX) ? playerX : collision[0] - 1;
-      collision[1] = (collision[1] === playerY) ? playerY : collision[1] - 1;
-      newPos = collision;
-    };
-
+    let newPos = this._handleCollision(player.attributes["x"], player.attributes["y"], dMap["dx"], dMap["dy"], scene);
     scene.moveEntity(player, newPos);
   };
 };

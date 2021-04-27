@@ -251,7 +251,7 @@ Engine.prototype.convertIndexToCoords = function(index, arrayWidth){
 
 // Convert the coords of a 2d array to the 1d index equivalent.
 Engine.prototype.convertCoordsToIndex = function(index_X, index_Y, arrayWidth){
-  return index_X * arrayWidth + index_Y;
+  return index_Y * arrayWidth + index_X;
 };
 
 Engine.prototype.inBetween = function(value, lower, upper, inclusive=false){

@@ -117,7 +117,6 @@ Game.prototype.draw = function(){
       renderer.drawText(player.attributes["state"], 100);
       renderer.drawText(player.attributes["x"], 450);
       renderer.drawText(player.attributes["y"], 530);
-      console.log(level.spatialHashmap)
 
       fps = this.engine.frameData["fps"];
       renderer.drawText(fps, 740);
@@ -149,7 +148,7 @@ Game.prototype._loadLevel = function(levelData){
 };
 
 Game.prototype._loadTestLevel = function(){
-  let spawnpoint = [16, 16];
+  let spawnpoint = [16 + 32, 16 + 32];
   let levelData = this.engine.getLoadedAsset(this.engine.levelKey).get("testLevel");
   this._loadLevel(levelData);
   let scene = this.gameStateObject["scene"];
@@ -264,14 +263,13 @@ Game.prototype._handlePlayerMovement = function(scene){
     let newPos = [playerX + dMap["dx"], playerY + dMap["dy"]];
     let movVector = new Vector2D([playerX, playerY], newPos);
 
-    /*
     let collision = physicsManager.raycastCollision(movVector, scene);
-    if(collision !== null){newPos = collision};
-    if(newPos === undefined){
-      console.log(collision)
-      console.log("gotcha")
+    if(collision !== null){
+      collision[0] = (collision[0] === playerX) ? playerX : collision[0] - 1;
+      collision[1] = (collision[1] === playerY) ? playerY : collision[1] - 1;
+      newPos = collision;
     };
-    */
+
     scene.moveEntity(player, newPos);
   };
 };

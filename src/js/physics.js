@@ -27,13 +27,13 @@ PhysicsManager.prototype.rectPointofCollision = function(vector, rect){
 
   // Check if vector originates to the left of rect topleft.
   if(vector.p1[0] <= rect.topLeft[0]){
-    rectVeritcal = Vector2D(rect.topLeft, rect.bottomLeft);
-  } else rectVeritcal = Vector2D(rect.topRight, rect.bottomRight);
+    rectVeritcal = new Vector2D(rect.topLeft, rect.bottomLeft);
+  } else rectVeritcal = new Vector2D(rect.topRight, rect.bottomRight);
 
   // Check if vector originates from above the rect topleft.
   if(vector.p1[1] <= rect.topLeft[1]){
-    rectHorizontal = Vector2D(rect.topLeft, rect.topRight);
-  } else rectHorizontal = Vector2D(rect.bottomLeft, rect.bottomRight);
+    rectHorizontal = new Vector2D(rect.topLeft, rect.topRight);
+  } else rectHorizontal = new Vector2D(rect.bottomLeft, rect.bottomRight);
 
   for(lineSegment of [rectVeritcal, rectHorizontal]){
     let collisionPoint = vectorsIntersectFunc(vector, lineSegment);
@@ -49,6 +49,7 @@ PhysicsManager.prototype._checkForCollision = function(scene, rayVector, tileInd
     let tileRect = new Rect(tilePos, tileMap.tileSize);
     return this.rectPointofCollision(rayVector, tileRect);
   };
+  return null
 };
 
 // Return the coordinates of the point where rayVector hits something in the scene.
@@ -63,7 +64,9 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
   let initialTilePos = tileMap.convertIndexToCoords(tileMap.getNearestTileIndex(rayVector.p1));
   let finalTilePos = tileMap.convertIndexToCoords(tileMap.getNearestTileIndex(rayVector.p2));
   let tileRangeX = Math.ceil(Math.abs(finalTilePos[0] - initialTilePos[0]) / tileMap.tileSize);
+  if(tileRangeX === 0){tileRangeX = 1};
   let tileRangeY = Math.ceil(Math.abs(finalTilePos[1] - initialTilePos[1]) / tileMap.tileSize);
+  if(tileRangeY === 0){tileRangeY = 1};
   let tilePos;
   let tileIndex;
   let collision;
@@ -73,18 +76,18 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
   let run = rayVector.p2[0] - rayVector.p1[0];
 
   if(rise === 0){ // Line is horizontal.
-    for(let i = 0; i < tileRangeX; i++){
-      tilePos = [initialTIlePos[0] + (directionX * i), initialPos[1]];
-      tileIndex = tileMap.convertCoordsToIndex(tilePos);
+    for(let i = 1; i <= tileRangeX; i++){
+      tilePos = [initialTilePos[0] + (directionX * i), initialTilePos[1]];
+      tileIndex = tileMap.convertCoordsToIndex(tilePos[0], tilePos[1]);
       collision = this._checkForCollision(scene, rayVector, tileIndex);
       if(collision !== null){return collision};
     };
     return null;
   }
   else if(run === 0){ // Line is vertical.
-    for(let i = 0; i < tileRangeY; i++){
-      tilePos = [initialTIlePos[0], initialTilePos[1] + (directionY * i)];
-      tileIndex = tileMap.convertCoordsToIndex(tilePos);
+    for(let i = 1; i <= tileRangeY; i++){
+      tilePos = [initialTilePos[0], initialTilePos[1] + (directionY * i)];
+      tileIndex = tileMap.convertCoordsToIndex(tilePos[0], tilePos[1]);
       collision = this._checkForCollision(scene, rayVector, tileIndex);
       if(collision !== null){return collision};
     };
@@ -94,10 +97,10 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
     // Line is some sort of diagonal.
     // For diagonals, we utilize the equation of a line and calculate the nearest.
     let m = (rise / run)
-    let b = rayVector.p1[1] - ((rise / run) * rayVector.p1[0]) // b = y - mx
+    let b = rayVector.p1[1] - (m * rayVector.p1[0]) // b = y - mx
     let rayX;
     let rayY;
-    for(let i = 0; i < tileRangeX; i++){
+    for(let i = 1; i <= tileRangeX; i++){
       rayX = rayVector.p1[0] + (directionY * (i * tileMap.tileSize));
       rayY = (rayX * m) + b; // y = mx + b
       tileIndex = tileMap.getNearestTileIndex([rayX, rayY]);
@@ -200,6 +203,7 @@ Vector2D.prototype.vectorsIntersect = function(vector1, vector2){
 
   if(t >= 0 && t <= 1 && u >= 0 && u <= 1){
     intersectionPoint = vAdd(a, vScalarMultiply(r, t));
+    intersectionPoint = intersectionPoint.p2
   } else intersectionPoint = null;
   return intersectionPoint;
 };

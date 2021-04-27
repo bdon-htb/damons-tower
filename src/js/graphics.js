@@ -256,8 +256,8 @@ Renderer.prototype.scaleSprite = function(sprite){
 Renderer.prototype.drawEntity = function(scene, gameEntity){
   let camera = scene.camera;
   // We subtract half width and height to get the entity's topLeft.
-  let topLeftX = gameEntity.attributes["x"] - (gameEntity.attributes["width"] / 2) * this.parent.spriteScale;
-  let topRightY = gameEntity.attributes["y"] - (gameEntity.attributes["height"] / 2) * this.parent.spriteScale;
+  let topLeftX = (gameEntity.attributes["x"] - (gameEntity.attributes["width"] / 2)) * this.parent.spriteScale;
+  let topRightY = (gameEntity.attributes["y"] - (gameEntity.attributes["height"] / 2)) * this.parent.spriteScale;
   let relativePos = camera.getRelative(topLeftX, topRightY);
   this.drawSprite(gameEntity.attributes["sprite"], relativePos[0], relativePos[1]);
 };

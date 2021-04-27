@@ -28,22 +28,27 @@ Scene.prototype._createEntityRect = function(entity){
   let entityY = entity.attributes["y"];
   let entityTopLeft = [entityX - (entityWidth / 2), entityY - (entityHeight / 2)];
   return new Rect(entityTopLeft, entityWidth, entityHeight);
-}
+};
 
 Scene.prototype._getTilesEntityIsIn = function(entity){
+  let inBetween = Engine.prototype.inBetween;
   let entityRect = this._createEntityRect(entity);
+  let rectPositions = [entityRect.topLeft, entityRect.topRight, entityRect.bottomLeft, entityRect.bottomRight];
   let encompassingTiles = new Set();
   // Check each corner to find which tile(s) the entity is currently in.
-  for(const position of [entityRect.topLeft, entityRect.bottomLeft,
-    entityRect.topRight, entityRect.bottomRight]){
-      let nearestTileIndex = this.tileMap.getNearestTileIndex(position);
-      encompassingTiles.add(nearestTileIndex)
-    };
+  for(const p of rectPositions){
+    if(p[0] >= 0 && p[0] <= (this.tileMap.width * this.tileMap.tileSize) &&
+       p[1] >= 0 && p[1] <= (this.tileMap.height * this.tileMap.tileSize)){
+        let nearestTile = this.tileMap.getNearestTileIndex(p);
+        encompassingTiles.add(nearestTile);
+      };
+  };
+
   return encompassingTiles;
 };
 
-// Adds entity to spatialHashmap
-Scene.prototype._addEntityToHashmap = function(location, entity){
+// Adds entity to spatialHashmap at location.
+Scene.prototype._addEntityToHashmap = function(entity){
   let tileGetterFunc = this._getTilesEntityIsIn.bind(this);
   let encompassingTiles = tileGetterFunc(entity);
 
@@ -61,7 +66,6 @@ Scene.prototype._addEntityToHashmap = function(location, entity){
 // Precondition: entity exists in hashmap
 Scene.prototype._removeEntityfromHashmap = function(entity){
   let tileGetterFunc = this._getTilesEntityIsIn.bind(this);
-  let location = [entity.attributes["x"], entity.attributes["y"]]
   let encompassingTiles = tileGetterFunc(entity);
 
   encompassingTiles.forEach(tileIndex => {
@@ -80,7 +84,7 @@ Scene.prototype._removeEntityfromHashmap = function(entity){
 Scene.prototype.addEntity = function(entity){
   this.entities.set(entity.id, entity);
   let location = [entity.attributes["x"], entity.attributes["y"]];
-  this._addEntityToHashmap(location, entity);
+  this._addEntityToHashmap(entity);
 };
 
 Scene.prototype.removeEntity = function(entity){
@@ -107,12 +111,9 @@ Scene.prototype.setEntityAttribute = function(id, key, value){
 // Set new x and y positions of the entity.
 Scene.prototype.moveEntity = function(entity, newPos){
   this._removeEntityfromHashmap(entity);
-  if(newPos === undefined){
-    console.log("gotcha2")
-  };
   this.setEntityAttribute(entity.id, "x", newPos[0]);
   this.setEntityAttribute(entity.id, "y", newPos[1]);
-  this._addEntityToHashmap(newPos, entity);
+  this._addEntityToHashmap(entity);
 };
 
 // If the attribute is a number, increase/decrease the value by the amount.
@@ -274,11 +275,12 @@ function Camera(){
 };
 
 // For initializing the camera.
-Camera.prototype.setup = function(centerX, centerY, viewWidth, viewHeight){
+Camera.prototype.setup = function(centerX, centerY, viewWidth, viewHeight, spriteScale=1){
   this.centerX = centerX;
   this.centerY = centerY;
   this.viewWidth = viewWidth;
   this.viewHeight = viewHeight;
+  this.spriteScale = spriteScale;
   this.calculateTopLeft();
 };
 
@@ -298,8 +300,8 @@ Camera.prototype.setPos = function(newX, newY){
 // Center the camera based on the location of a source sprite.
 // Centers on the CENTER of the source sprite..
 Camera.prototype.center = function(sourceX, sourceY){
-  this.centerX = sourceX;
-  this.centerY = sourceY;
+  this.centerX = sourceX * this.spriteScale;
+  this.centerY = sourceY * this.spriteScale;
   this.calculateTopLeft();
 };
 

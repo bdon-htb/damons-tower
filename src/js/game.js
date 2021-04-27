@@ -103,16 +103,21 @@ Game.prototype.draw = function(){
       let player = this.gameStateObject["scene"].getEntity("player");
       let camera = level.camera;
       let sceneOrigin = camera.getRelative(0, 0);
-      let playerCenter = camera.getRelative(player.attributes["x"], player.attributes["y"]);
+      let playerCenter = this.engine.getSpriteScaledPosition(player.attributes["x"], player.attributes["y"]);
+
+      playerCenter = camera.getRelative(playerCenter[0], playerCenter[1]);
 
       renderer.drawTiles(this.gameStateObject["scene"]);
       this.renderer.drawEntity(level, player);
-      renderer.drawRect(0xff0000, playerCenter[0], playerCenter[1], 4, 4);
+      // renderer.drawRect(0xff0000, playerCenter[0], playerCenter[1], 4, 4);
+      // renderer.drawRect(0xff0000, playerCenter[0] - (16 * this.engine.spriteScale), playerCenter[1] - (16 * this.engine.spriteScale), 4, 4);
+      // renderer.drawRect(0xff0000, playerCenter[0] + (16 * this.engine.spriteScale), playerCenter[1] + (16 * this.engine.spriteScale), 4, 4);
       renderer.drawRect(0xff0000, sceneOrigin[0], sceneOrigin[1], 4, 4);
       renderer.drawText(this.controller.patterns.get("doubleTap-right")["state"]);
       renderer.drawText(player.attributes["state"], 100);
       renderer.drawText(player.attributes["x"], 450);
       renderer.drawText(player.attributes["y"], 530);
+      console.log(level.spatialHashmap)
 
       fps = this.engine.frameData["fps"];
       renderer.drawText(fps, 740);
@@ -139,12 +144,12 @@ Game.prototype._loadMenu = function(menuName){
 Game.prototype._loadLevel = function(levelData){
   let levelSpriteSheet = this.engine.renderer.getSheetFromId(levelData.spriteSheet);
   let level = new Scene(levelSpriteSheet, levelData);
-  level.camera.setup(0, 0, this.engine.windowWidth, this.engine.windowHeight);
+  level.camera.setup(0, 0, this.engine.windowWidth, this.engine.windowHeight, this.engine.spriteScale);
   this.gameStateObject["scene"] = level;
 };
 
 Game.prototype._loadTestLevel = function(){
-  let spawnpoint = [64, 64];
+  let spawnpoint = [16, 16];
   let levelData = this.engine.getLoadedAsset(this.engine.levelKey).get("testLevel");
   this._loadLevel(levelData);
   let scene = this.gameStateObject["scene"];
@@ -258,10 +263,6 @@ Game.prototype._handlePlayerMovement = function(scene){
     let playerY = player.attributes["y"];
     let newPos = [playerX + dMap["dx"], playerY + dMap["dy"]];
     let movVector = new Vector2D([playerX, playerY], newPos);
-
-    if(player.attributes["x"] >= 100 && player.attributes["y"] >= 94){
-      console.log("gotcha")
-    };
 
     /*
     let collision = physicsManager.raycastCollision(movVector, scene);

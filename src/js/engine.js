@@ -360,6 +360,14 @@ Engine.prototype._runLoadingStates = function(){
 
 };
 
+// =======================
+// Game related functions.
+// =======================
+
+Engine.prototype.getSpriteScaledPosition = function(x, y){
+  return [x * this.spriteScale, y * this.spriteScale];
+};
+
 /**
  * Custom asset loader. Is responsible for loading data file assets
  * into the game.

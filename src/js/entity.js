@@ -43,7 +43,7 @@ function PlayerEntity(engine, gameObject){
   ];
   this.attributes["wallCollider"] = new Rect([-7, 9], 14, 7); // position relative to topLeft: [9, 25]
   this.attributes["animations"] = new Map(); // Animations is a map of all the available animations.
-  this.attributes["speed"] = 6; // Set the default player movement speed.
+  this.attributes["speed"] = 3; // Set the default player movement speed.
   this.attributes["sprintSpeed"] = this.attributes["speed"] * 2;
   this.attributes["direction"] = "down";
 

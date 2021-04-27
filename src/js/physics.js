@@ -27,15 +27,15 @@ PhysicsManager.prototype.rectPointofCollision = function(vector, rect){
 
   // Check if vector originates to the left of rect topleft.
   if(vector.p1[0] <= rect.topLeft[0]){
-    rectVeritcal = new Vector2D(rect.topLeft, rect.bottomLeft);
-  } else rectVeritcal = new Vector2D(rect.topRight, rect.bottomRight);
+    rectVertical = new Vector2D(rect.topLeft, rect.bottomLeft);
+  } else rectVertical = new Vector2D(rect.topRight, rect.bottomRight);
 
   // Check if vector originates from above the rect topleft.
   if(vector.p1[1] <= rect.topLeft[1]){
     rectHorizontal = new Vector2D(rect.topLeft, rect.topRight);
   } else rectHorizontal = new Vector2D(rect.bottomLeft, rect.bottomRight);
 
-  for(lineSegment of [rectVeritcal, rectHorizontal]){
+  for(lineSegment of [rectVertical, rectHorizontal]){
     let collisionPoint = vectorsIntersectFunc(vector, lineSegment);
     if(collisionPoint !== null){return collisionPoint};
   };
@@ -49,7 +49,7 @@ PhysicsManager.prototype._checkForCollision = function(scene, rayVector, tileInd
     let tileRect = new Rect(tilePos, tileMap.tileSize);
     return this.rectPointofCollision(rayVector, tileRect);
   };
-  return null
+  return null;
 };
 
 // Return the coordinates of the point where rayVector hits something in the scene.

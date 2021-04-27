@@ -208,8 +208,8 @@ TileMap.prototype.getTileID = function(tileIndex){
 // Get the nearest TOPLEFT tile.
 // position is an object's TRUE position (i.e. in pixels).
 TileMap.prototype.getNearestTileIndex = function(position){
-  let posX = position[0]
-  let posY = position[1]
+  let posX = position[0];
+  let posY = position[1];
   // Create a rect representing the tileMap in pixels.
   let tileMapRect = new Rect([0, 0], this.width * this.tileSize, this.height * this.tileSize);
 

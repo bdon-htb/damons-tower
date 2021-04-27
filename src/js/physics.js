@@ -71,7 +71,6 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
   let tileIndex;
   let collision;
 
-  // tile at each relevant x coordinate.
   let rise = rayVector.p2[1] - rayVector.p1[1];
   let run = rayVector.p2[0] - rayVector.p1[0];
 
@@ -100,7 +99,7 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
     let b = rayVector.p1[1] - (m * rayVector.p1[0]) // b = y - mx
     let rayX;
     let rayY;
-    for(let i = 1; i <= tileRangeX; i++){
+    for(let i = 0; i <= tileRangeX; i++){
       rayX = rayVector.p1[0] + (directionY * (i * tileMap.tileSize));
       rayY = (rayX * m) + b; // y = mx + b
       tileIndex = tileMap.getNearestTileIndex([rayX, rayY]);

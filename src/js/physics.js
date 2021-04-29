@@ -22,7 +22,7 @@ PhysicsManager.prototype.calculateVelocity = function(velocity){
 // This function assumes the vector doesn't orignate inside the rect.
 PhysicsManager.prototype.rectPointofCollision = function(vector, rect){
   let vectorsIntersectFunc = Vector2D.prototype.vectorsIntersect;
-  let rectVeritcal;
+  let rectVertical;
   let rectHorizontal;
 
   // Check if vector originates to the left of rect topleft.
@@ -74,16 +74,7 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
   let rise = rayVector.p2[1] - rayVector.p1[1];
   let run = rayVector.p2[0] - rayVector.p1[0];
 
-  if(rise === 0){ // Line is horizontal.
-    for(let i = 1; i <= tileRangeX; i++){
-      tilePos = [initialTilePos[0] + (directionX * i), initialTilePos[1]];
-      tileIndex = tileMap.convertCoordsToIndex(tilePos[0], tilePos[1]);
-      collision = this._checkForCollision(scene, rayVector, tileIndex);
-      if(collision !== null){return collision};
-    };
-    return null;
-  }
-  else if(run === 0){ // Line is vertical.
+  if(run === 0){ // Line is vertical.
     for(let i = 1; i <= tileRangeY; i++){
       tilePos = [initialTilePos[0], initialTilePos[1] + (directionY * i)];
       tileIndex = tileMap.convertCoordsToIndex(tilePos[0], tilePos[1]);
@@ -96,15 +87,21 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
     // Line is some sort of diagonal.
     // For diagonals, we utilize the equation of a line and calculate the nearest.
     let m = (rise / run)
-    let b = rayVector.p1[1] - (m * rayVector.p1[0]) // b = y - mx
-    let rayX;
-    let rayY;
+    let increment = 0;
     for(let i = 0; i <= tileRangeX; i++){
-      rayX = rayVector.p1[0] + (directionY * (i * tileMap.tileSize));
-      rayY = (rayX * m) + b; // y = mx + b
-      tileIndex = tileMap.getNearestTileIndex([rayX, rayY]);
-      collision = this._checkForCollision(scene, rayVector, tileIndex);
-      if(collision !== null){return collision};
+      if (increment >= 1) {
+        tilePos = [initialTilePos[0], initialTilePos[1] + (directionY * i)];
+        tileIndex = tileMap.convertCoordsToIndex(tilePos[0], tilePos[1]);
+        collision = this._checkForCollision(scene, rayVector, tileIndex);
+        if(collision !== null){return collision};
+        increment -= 1;
+      } else {
+        tilePos = [initialTilePos[0] + (directionX * i), initialTilePos[1]];
+        tileIndex = tileMap.convertCoordsToIndex(tilePos[0], tilePos[1]);
+        collision = this._checkForCollision(scene, rayVector, tileIndex);
+        if(collision !== null){return collision};
+        increment += m;
+      };
     };
     return null;
   };

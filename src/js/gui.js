@@ -23,8 +23,8 @@ GUIManager.prototype._mouseOverGUIObject = function(mouse, guiObject){
   // Account for fullscreen / screen resizing.
   if(engine.renderer.isFullscreen === true){
     let screenSize = engine.renderer.getScreenSize()
-    horizontalRatio = (screenSize[0] / engine.windowWidth)
-    verticalRatio = (screenSize[1] / engine.windowHeight)
+    horizontalRatio = (screenSize[0] / engine.windowWidth);
+    verticalRatio = (screenSize[1] / engine.windowHeight);
   }
   else {
     horizontalRatio = engine.renderer.horizontalRatio;
@@ -34,9 +34,7 @@ GUIManager.prototype._mouseOverGUIObject = function(mouse, guiObject){
   let scaledX = guiObject.x * horizontalRatio;
   let scaledY = guiObject.y * verticalRatio;
   let scaledWidth = guiObject.width * horizontalRatio;
-  let scaledHeight = guiObject.height * verticalRatio
-
-  let scaledWith = guiObject.width
+  let scaledHeight = guiObject.height * verticalRatio;
 
   let rect = new Rect([scaledX, scaledY], scaledWidth, scaledHeight);
   return engine.pointInRect(mouse.x, mouse.y, rect);

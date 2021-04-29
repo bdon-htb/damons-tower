@@ -115,7 +115,7 @@ function Rect(topLeft, width, height=undefined){
   this.width = width;
   if(height === undefined){
     this.height = width
-  } else this.height = width;
+  } else this.height = height;
   this.topLeft = topLeft;
 
   this.topRight = [this.topLeft[0] + this.width, this.topLeft[1]];

@@ -87,8 +87,6 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
     // Line is some sort of diagonal.
     // For diagonals, we utilize the equation of a line and calculate the nearest.
     let m = Math.abs(rise / run);
-    let checkPosX = rayVector.p1[0] % 32;
-    let checkPosY = rayVector.p1[1] % 32;
     let increment;
     let increaseY = 0;
     let tileIndexX = tileMap.convertCoordsToIndex((initialTilePos[0] + (1 * directionX)), initialTilePos[1]);
@@ -102,8 +100,6 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
     } else {
       increment = 1;
     };
-    console.log("X: " + collisionX);
-    console.log("Y: " + collisionY);
     for(let i = 1; i <= tileRangeX; i++){
       if (increment >= 1) {
         increaseY += 1;

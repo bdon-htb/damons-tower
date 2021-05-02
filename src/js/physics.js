@@ -86,17 +86,35 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
   else {
     // Line is some sort of diagonal.
     // For diagonals, we utilize the equation of a line and calculate the nearest.
-    let m = (rise / run);
-    let increment = 0;
-    for(let i = 0; i <= tileRangeX; i++){
+    let m = Math.abs(rise / run);
+    let checkPosX = rayVector.p1[0] % 32;
+    let checkPosY = rayVector.p1[1] % 32;
+    let increment;
+    let increaseY = 0;
+    let tileIndexX = tileMap.convertCoordsToIndex((initialTilePos[0] + (1 * directionX)), initialTilePos[1]);
+    let tileIndexY = tileMap.convertCoordsToIndex(initialTilePos[0], (initialTilePos[1] + (1 * directionY)));
+    let collisionX = this._checkForCollision(scene, rayVector, tileIndexX);
+    let collisionY = this._checkForCollision(scene, rayVector, tileIndexY);
+    if (collisionX === null && collisionY === null) {
+      increment = 0;
+    } else if (collisionX !== null) {
+      increment = 0;
+    } else {
+      increment = 1;
+    };
+    console.log("X: " + collisionX);
+    console.log("Y: " + collisionY);
+    for(let i = 1; i <= tileRangeX; i++){
       if (increment >= 1) {
-        tilePos = [initialTilePos[0], initialTilePos[1] + (directionY * i)];
+        increaseY += 1;
+        i -= 1;
+        tilePos = [initialTilePos[0] + (directionX * i), initialTilePos[1] + (directionY * increaseY)];
         tileIndex = tileMap.convertCoordsToIndex(tilePos[0], tilePos[1]);
         collision = this._checkForCollision(scene, rayVector, tileIndex);
         if(collision !== null){return collision};
         increment -= 1;
       } else {
-        tilePos = [initialTilePos[0] + (directionX * i), initialTilePos[1]];
+        tilePos = [initialTilePos[0] + (directionX * i), initialTilePos[1] + (directionY * increaseY)];
         tileIndex = tileMap.convertCoordsToIndex(tilePos[0], tilePos[1]);
         collision = this._checkForCollision(scene, rayVector, tileIndex);
         if(collision !== null){return collision};

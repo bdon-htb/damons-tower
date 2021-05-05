@@ -56,3 +56,11 @@ functionality from its first definition:
     buttonStyle: defines how buttons are styled. See Renderer.prototype.createButtonStyles.
     callback: string value that indicates which callback function should be fired on
               button click. See Game.callbacks in game.js.
+
+- list (contains a set of its own widgets as list items)
+  attributes:
+    x:
+    y:
+    spaceBetween: number of pixels to put between listItems.
+    orientation: can be either vertical or horizontal. Tells the engine
+                 how the list widget should draw its children.

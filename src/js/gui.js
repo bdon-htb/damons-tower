@@ -80,8 +80,39 @@ GUIManager.prototype._createButton = function(buttonTag){
   return new Button(parentObj, callback);
 };
 
+GUIManager.prototype._createListWidget = function(listTag){
+  let createFunc = this._createGUIObject.bind(this);
+  let parentObj = createFunc(listTag);
+  let listAttributes = parentObj.attributes
+  let listItems = this._createAllGUIObjects(listTag);
+
+  let orientation = listAttributes.get("orientation");
+  if(["h", "v", "horizontal", "vertical"].includes(orientation) != true){
+    orientation = "v";
+    listAttributes.set("orientation", orientation);
+  };
+
+  let spaceBetween = listAttributes.has("spaceBetween") ? Number(listAttributes.get("spaceBetween")) : 0;
+
+  // Overwrite listItems positions to reflect orientation.
+  let nextX = parentObj.x;
+  let nextY = parentObj.y;
+  for(const item of listItems){
+    item.x = nextX;
+    item.y = nextY;
+
+    if(["h", "horizontal"].includes(orientation) === true){
+      nextX += item.width + spaceBetween;
+    } else nextY += item.height + spaceBetween; // assume orientation is vertical.
+  };
+
+  return new ListWidget(parentObj, listItems)
+};
+
 // Return an array of all gui objects in the menu.
-GUIManager.prototype._createGUIObjects = function(menuTag){
+// Initially designed for the menu, but can be used to fetch and create
+// guiObjects for all children in a parentTag.
+GUIManager.prototype._createAllGUIObjects = function(menuTag){
   let renderer = this.parent.renderer;
   let guiObjectArray = []
 
@@ -92,10 +123,13 @@ GUIManager.prototype._createGUIObjects = function(menuTag){
 
     switch (guiObjectName) {
       case "label":
-        createFunc = this._createLabel.bind(this)
+        createFunc = this._createLabel.bind(this);
         break;
       case "button":
-        createFunc = this._createButton.bind(this)
+        createFunc = this._createButton.bind(this);
+        break;
+      case "list":
+        createFunc = this._createListWidget.bind(this);
         break;
       default:
         console.error(`Invalid gui object tag detected. tagName: ${guiObjectName}`);
@@ -118,7 +152,7 @@ GUIManager.prototype._createGUIObjects = function(menuTag){
 // Parse menu data and return menu object based on it.
 // data is a XMLDocument object.
 GUIManager.prototype.createMenuFromData = function(data){
-  let createGUIObjectsFunc = this._createGUIObjects.bind(this);
+  let createAllGUIObjectsFunc = this._createAllGUIObjects.bind(this);
 
   let fileTag = data.children[0];
   let fileChildren = this.getXMLChildren(fileTag);
@@ -132,7 +166,7 @@ GUIManager.prototype.createMenuFromData = function(data){
   let menuLayoutSettings = this.getXMLAttributes(layoutTag);
 
   let menuTag = fileChildren.get("menu");
-  let menuGUIObjects = createGUIObjectsFunc(menuTag);
+  let menuGUIObjects = createAllGUIObjectsFunc(menuTag);
 
   let menu = new Menu(menuName, menuLayoutType, menuLayoutSettings, menuGUIObjects);
   return menu
@@ -147,34 +181,57 @@ GUIManager.prototype.executeCallback = function(entity){
 };
 
 // Mouse event for whenever it moves.
-GUIManager.prototype.checkHover = function(menu){
+GUIManager.prototype.checkHover = function(widget){
   let engine = this.parent;
   let hoverCheckFunc = this._mouseOverGUIObject.bind(this);
-  let mouse = engine.getInputDevice("mouse");
+  let recursiveFunc = this.checkHover.bind(this);
+  let mouse = engine.getInputDevice("mouse")
 
-  for(const guiObject of menu.guiObjects){
-    if(guiObject.constructor === Button && hoverCheckFunc(mouse, guiObject) === true){
-      guiObject.state = "hover"
-    } else guiObject.state = "default";
+  switch (widget.constructor) {
+    case Menu:
+      for(const guiObject of widget.guiObjects){
+        recursiveFunc(guiObject)
+      };
+      break;
+    case Button:
+      if(hoverCheckFunc(mouse, widget) === true){
+        widget.state = "hover"
+      } else widget.state = "default";
+      break;
+    case ListWidget:
+      for(const listItem of widget.listItems){
+        recursiveFunc(listItem);
+      };
   };
 };
 
 // Mouse event for whenever a click is detected
-GUIManager.prototype.checkClicks = function(menu){
+GUIManager.prototype.checkClicks = function(widget){
   let engine = this.parent;
   let hoverCheckFunc = this._mouseOverGUIObject.bind(this);
+  let recursiveFunc = this.checkClicks.bind(this);
   let inputs = engine.getInputEvents();
-  let mouse = engine.getInputDevice("mouse");
 
   if(inputs.get("mouse").includes("leftClick")){
-    for(const guiObject of menu.guiObjects){
-      if(guiObject.constructor === Button && hoverCheckFunc(mouse, guiObject) === true){
-        this.executeCallback(guiObject);
-        break;  // I'm going to assume that only one button will be clicked at a time.
-      };
+    let mouse = engine.getInputDevice("mouse");
+
+    switch (widget.constructor) {
+      case Menu:
+        for(const guiObject of widget.guiObjects){
+          recursiveFunc(guiObject)
+        };
+        break;
+      case Button:
+        if(hoverCheckFunc(mouse, widget) === true){this.executeCallback(widget)};
+        break;
+      case ListWidget:
+        for(const listItem of widget.listItems){
+          recursiveFunc(listItem);
+        };
     };
   };
 };
+
 
 /**
  * Menu class represents a single instance of a menu.
@@ -212,6 +269,10 @@ function Button(labelObject, callback){
   this.callback = callback;
 };
 
+function ListWidget(guiObject, listItems){
+  Object.assign(this, guiObject);
+  this.listItems = listItems;
+}
 /**
  * Custom button style class for guis.
  * styleObj is an optional object parameter to add / overwrite

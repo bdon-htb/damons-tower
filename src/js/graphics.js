@@ -311,9 +311,7 @@ Renderer.prototype.drawMenu = function(menu){
 // Shorthand method.
 Renderer.prototype.drawGUIObject = function(entity){
   let graphic;
-  if(entity.constructor === Button && entity.state === "hover"){
-    graphic = this.createButtonOverlay(entity);
-  } else graphic = this.createGUIGraphic(entity);
+  graphic = this.createGUIGraphic(entity);
   graphic.position.set(entity.x, entity.y)
   graphic = this.scale(graphic);
   this.textureManager.addToPool(graphic);
@@ -328,7 +326,12 @@ Renderer.prototype.createGUIGraphic = function(entity){
       createGraphicFunc = this.createLabelGraphic.bind(this);
       break;
     case Button:
-      createGraphicFunc = this.createButtonGraphic.bind(this);
+      if(entity.state === "hover"){
+        createGraphicFunc = this.createButtonOverlay.bind(this);
+      } else createGraphicFunc = this.createButtonGraphic.bind(this);
+      break;
+    case ListWidget:
+      createGraphicFunc = this.createListWidgetGraphic.bind(this);
       break;
     default:
       console.error(`Error while trying to create the GUIObject's graphic" ${entity} is an invalid GUIObject.`);
@@ -407,6 +410,29 @@ Renderer.prototype.configureButtonRect = function(buttonStyle){
   rectangle.lineStyle(buttonStyle.borderThickness, buttonStyle.borderColor, buttonStyle.alpha)
   rectangle.beginFill(buttonStyle.color);
   return rectangle;
+};
+
+Renderer.prototype.createListWidgetGraphic = function(listWidget){
+  let container = new PIXI.Container();
+  let orientation = listWidget.attributes.get("orientation");
+  let spaceBetween = listWidget.attributes.has("spaceBetween") ? Number(listWidget.attributes.get("spaceBetween")) : 0;
+
+  // Add child graphics to container.
+  let nextX = 0;
+  let nextY = 0;
+  let itemGraphic;
+  for(const item of listWidget.listItems){
+    itemGraphic = this.createGUIGraphic(item);
+    itemGraphic.position.set(nextX, nextY);
+
+    container.addChild(itemGraphic);
+
+    if(["h", "horizontal"].includes(orientation) === true){
+      nextX += itemGraphic.width + spaceBetween;
+    } else nextY += itemGraphic.height + spaceBetween; // assume orientation is vertical.
+  };
+
+  return container;
 };
 
 // Caluclates the size of the string in pixels based on PIXI text styling.

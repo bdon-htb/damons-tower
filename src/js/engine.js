@@ -32,7 +32,7 @@ function Engine(htmlDOM){
   // contains menu objects of the game's menus.
   this.menuKey = "menus";
   // contains the names of all the game's custom fonts.
-  this.fontsKey = "customFonts";
+  this.fontsKey = "fonts";
   // contains input command objects.
   this.inputsKey = "inputCommands";
 
@@ -109,7 +109,7 @@ Engine.prototype.loadAllAssets = function(){
   this.assetLoader.getAsset(dataLocation + "/" + "image.json", true); // image urls.
   this.assetLoader.getAsset(dataLocation + "/" + "animations.json", true); // animation data.
   this.assetLoader.getAsset(dataLocation + "/" + "menus.json", true); // menu filenames.
-  this.assetLoader.getAsset(dataLocation + "/" + "customFonts.json", true); // custom font names.
+  this.assetLoader.getAsset(dataLocation + "/" + "fonts.json", true); // custom font names.
   this.assetLoader.getAsset(dataLocation + "/" + "inputs.json", true); // input commands / patterns.
 
   this.assetLoader.getAsset(dataLocation + "/" + "levels.json", true); // (test) level data.
@@ -155,8 +155,7 @@ Engine.prototype.allMenusLoaded = function(){
 
 Engine.prototype.loadAllFonts = function(callback){
   let allFonts = this.assets.get(this.fontsKey);
-  allFonts = allFonts.map(font => new FontFaceObserver(font).load());
-  Promise.all(allFonts).then(callback);
+  this.renderer.loadBitmapFonts(allFonts, callback);
 };
 
 // ==========================

@@ -109,9 +109,9 @@ Game.prototype.draw = function(){
 
       renderer.drawTiles(this.gameStateObject["scene"]);
       this.renderer.drawEntity(level, player);
-      // renderer.drawRect(0xff0000, playerCenter[0], playerCenter[1], 4, 4);
-      // renderer.drawRect(0xff0000, playerCenter[0] - (16 * this.engine.spriteScale), playerCenter[1] - (16 * this.engine.spriteScale), 4, 4);
-      // renderer.drawRect(0xff0000, playerCenter[0] + (16 * this.engine.spriteScale), playerCenter[1] + (16 * this.engine.spriteScale), 4, 4);
+      renderer.drawRect(0xff0000, playerCenter[0], playerCenter[1], 4, 4);
+      renderer.drawRect(0xff0000, playerCenter[0] - (16 * this.engine.spriteScale), playerCenter[1] - (16 * this.engine.spriteScale), 4, 4);
+      renderer.drawRect(0xff0000, playerCenter[0] + (16 * this.engine.spriteScale), playerCenter[1] + (16 * this.engine.spriteScale), 4, 4);
       renderer.drawRect(0xff0000, sceneOrigin[0], sceneOrigin[1], 4, 4);
       renderer.drawText(this.controller.patterns.get("doubleTap-right")["state"]);
       renderer.drawText(player.attributes["state"], 100);

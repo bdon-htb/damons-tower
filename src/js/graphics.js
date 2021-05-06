@@ -48,6 +48,11 @@ Renderer.prototype.createTextStyles = function(){
       fontName: "EquipmentPro",
       letterSpacing: 2,
       fontSize: 32
+    },
+    "debug": {
+      fontName: "EquipmentPro",
+      letterSpacing: 2,
+      fontSize: 16
     }
   };
 };
@@ -405,24 +410,13 @@ Renderer.prototype.configureButtonRect = function(buttonStyle){
 
 Renderer.prototype.createListWidgetGraphic = function(listWidget){
   let container = new PIXI.Container();
-  let orientation = listWidget.attributes.get("orientation");
-  let spaceBetween = listWidget.attributes.has("spaceBetween") ? Number(listWidget.attributes.get("spaceBetween")) : 0;
-
   // Add child graphics to container.
-  let nextX = 0;
-  let nextY = 0;
   let itemGraphic;
   for(const item of listWidget.listItems){
     itemGraphic = this.createGUIGraphic(item);
-    itemGraphic.position.set(nextX, nextY);
-
+    itemGraphic.position.set(item.x - listWidget.x, item.y - listWidget.y);
     container.addChild(itemGraphic);
-
-    if(["h", "horizontal"].includes(orientation) === true){
-      nextX += itemGraphic.width + spaceBetween;
-    } else nextY += itemGraphic.height + spaceBetween; // assume orientation is vertical.
   };
-
   return container;
 };
 

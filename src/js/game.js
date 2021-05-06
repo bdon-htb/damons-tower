@@ -7,9 +7,14 @@
 
 function Game(engine){
   this.engine = engine;
+
   // Create aliases for engine components.
   this.renderer = engine.renderer;
   this.animationManager = this.renderer.animationManager;
+
+  this.debugModeOn = true;
+  this.debugMenu = new DebugMenu(this);
+
   this.gameStateObject = {
     "events": new Map(), // A map of game events. Currently unused.
     "frameData": null, // The main loop data.
@@ -57,6 +62,7 @@ Game.prototype.update = function(){
   let inputs = this.engine.getInputEvents();
   events.set("inputEvents", this.engine.getInputEvents());
 
+  this.debugMenu.updateVariable("game fps", this.engine.frameData["fps"]);
   switch(currentState){
     case "starting": // For loading stuff specific to the game.
       this.controller.createPatterns(data["timeStamp"]);
@@ -84,6 +90,11 @@ Game.prototype.update = function(){
       let relPosArray = camera.getRelative(posArray[0], posArray[1]);
       player.attributes["sprite"] = this.animationManager.getSprite(player.attributes["currentAnimation"]);
       this.animationManager.nextFrame(player.attributes["currentAnimation"]);
+
+      this.debugMenu.updateVariable("doubleTap-right state", this.controller.patterns.get("doubleTap-right")["state"]);
+      this.debugMenu.updateVariable("player state", player.attributes["state"]);
+      this.debugMenu.updateVariable("player x", player.attributes["x"]);
+      this.debugMenu.updateVariable("player y", player.attributes["y"]);
       break;
   };
 };
@@ -109,17 +120,14 @@ Game.prototype.draw = function(){
 
       renderer.drawTiles(this.gameStateObject["scene"]);
       this.renderer.drawEntity(level, player);
-      renderer.drawRect(0xff0000, playerCenter[0], playerCenter[1], 4, 4);
-      renderer.drawRect(0xff0000, playerCenter[0] - (16 * this.engine.spriteScale), playerCenter[1] - (16 * this.engine.spriteScale), 4, 4);
-      renderer.drawRect(0xff0000, playerCenter[0] + (16 * this.engine.spriteScale), playerCenter[1] + (16 * this.engine.spriteScale), 4, 4);
-      renderer.drawRect(0xff0000, sceneOrigin[0], sceneOrigin[1], 4, 4);
-      renderer.drawText(this.controller.patterns.get("doubleTap-right")["state"]);
-      renderer.drawText(player.attributes["state"], 100);
-      renderer.drawText(player.attributes["x"], 450);
-      renderer.drawText(player.attributes["y"], 530);
+      // renderer.drawRect(0xff0000, playerCenter[0], playerCenter[1], 4, 4);
+      // renderer.drawRect(0xff0000, playerCenter[0] - (16 * this.engine.spriteScale), playerCenter[1] - (16 * this.engine.spriteScale), 4, 4);
+      // renderer.drawRect(0xff0000, playerCenter[0] + (16 * this.engine.spriteScale), playerCenter[1] + (16 * this.engine.spriteScale), 4, 4);
+      // renderer.drawRect(0xff0000, sceneOrigin[0], sceneOrigin[1], 4, 4);
+  };
 
-      fps = this.engine.frameData["fps"];
-      renderer.drawText(fps, 740);
+  if(this.debugModeOn === true){
+    renderer.drawMenu(this.debugMenu);
   };
 };
 

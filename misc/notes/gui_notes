@@ -64,3 +64,5 @@ functionality from its first definition:
     spaceBetween: number of pixels to put between listItems.
     orientation: can be either vertical or horizontal. Tells the engine
                  how the list widget should draw its children.
+    justifyContents: determines where listItems will be positioned relative
+                 to the listWidget. Currently only "center" is supported.

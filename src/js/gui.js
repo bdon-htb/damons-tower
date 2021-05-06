@@ -103,7 +103,14 @@ GUIManager.prototype._createListWidget = function(listTag){
 
     if(["h", "horizontal"].includes(orientation) === true){
       nextX += item.width + spaceBetween;
-    } else nextY += item.height + spaceBetween; // assume orientation is vertical.
+    }
+    else {
+      // center-contents only applies for vertical orientations.
+      if(listAttributes.get("justifyContents") === "center"){
+        item.x -= item.width / 2
+      };
+      nextY += item.height + spaceBetween; // assume orientation is vertical.
+    };
   };
 
   return new ListWidget(parentObj, listItems)
@@ -276,7 +283,8 @@ function Button(labelObject, callback){
 function ListWidget(guiObject, listItems){
   Object.assign(this, guiObject);
   this.listItems = listItems;
-}
+};
+
 /**
  * Custom button style class for guis.
  * styleObj is an optional object parameter to add / overwrite
@@ -290,5 +298,115 @@ function ButtonStyle(styleObj){
 
   if(styleObj !== undefined){
     Object.assign(styleObj)
+  };
+};
+
+/**
+ * A special menu type used specifically for debugging purposes.
+*/
+function DebugMenu(parent){
+  Menu.call(this, "debugMenu", "floatLayout", new Map(), []);
+
+  this.parent = parent;
+  this.debugVariables = new Map();
+  this.textStyle = "debug"
+  this.topLeft = [760, 0];
+
+  let titleLabel = this._createLabel("Debug Display", "debug")
+  titleLabel.x = this.topLeft[0]
+  titleLabel.y = this.topLeft[1]
+  this.guiObjects.push(titleLabel);
+};
+
+DebugMenu.prototype.removeVariable = function(varName){
+  if(this.debugVariables.has(varName) === true){
+    let nameLabel = this.debugVariables.get(varName)[0];
+    let valueLabel = this.debugVariables.get(varName)[1];
+
+    // Remove objects.
+    this.guiObject.splice(this.guiObjects.indexOf(nameLabel), 1);
+    this.guiObject.splice(this.guiObjects.indexOf(valueLabel), 1);
+    this.debugVariables.delete(varName);
+  };
+
+  // Update positions.
+  this.organize();
+};
+
+DebugMenu.prototype.clear = function(){
+  this.guiObjects = [];
+  this.debugVariables.clear();
+};
+
+// TODO: Implement.
+// This function both sets and updates rows.
+DebugMenu.prototype.updateVariable = function(varName, varValue){
+
+  if(this.parent.debugModeOn === true){
+    // If varName exists, update valueLabel.
+    if(this.debugVariables.has(varName) === true){
+      let valueLabel = this.debugVariables.get(varName)[1];
+      valueLabel.text = String(varValue);
+      this._updateSize(valueLabel);
+    }
+    else {
+      // Create object.
+      let nameLabel = this._createLabel(varName + ":");
+      let valueLabel = this._createLabel(varValue);
+
+      // Add gui objects.
+      this.guiObjects.push(nameLabel);
+      this.guiObjects.push(valueLabel);
+      this.debugVariables.set(varName, [nameLabel, valueLabel]);
+
+      // Update positions.
+      this.organize();
+    };
+  };
+};
+
+DebugMenu.prototype._createLabel = function(text, textStyle=this.textStyle){
+  let labelAttributes = new Map().set("style", textStyle);
+  let label = new Label(new GUIObject(0, 0, 0, 0, labelAttributes), String(text));
+  return label;
+};
+
+DebugMenu.prototype._updateSize = function(label){
+  let renderer = this.parent.renderer;
+  let textStyle = renderer.textStyles[label.attributes.get("style")];
+  let textSize = renderer.calculateTextSize(label.text, textStyle);
+  label.width = textSize[0];
+  label.height = textSize[1];
+};
+
+// Repositions all items in gui.
+// Should be safe to assume that if we ignore the title label,
+// this.guiObjects.length should be a multiple of 2.
+DebugMenu.prototype.organize = function(){
+  let titleLabel = this.guiObjects[0];
+  let spaceBetween = 15
+
+  if(titleLabel.width === 0 || titleLabel.height === 0){
+    this._updateSize(titleLabel);
+  };
+
+  let nextY = this.topLeft[1] + titleLabel.height;
+  for(let i = 1; i < this.guiObjects.length; i += 2){
+
+    this.guiObjects[i].x = this.topLeft[0];
+    this.guiObjects[i].y = nextY;
+
+    if(this.guiObjects[i].width === 0 || this.guiObjects[i].height === 0){
+      this._updateSize(this.guiObjects[i]);
+    };
+
+    this.guiObjects[i + 1].x = this.guiObjects[i].x + this.guiObjects[i].width + spaceBetween;
+    this.guiObjects[i + 1].y = nextY;
+
+    if(this.guiObjects[i + 1].width === 0 || this.guiObjects[i + 1].height === 0){
+      this._updateSize(this.guiObjects[i + 1]);
+    };
+
+    nextY += spaceBetween
   };
 };

@@ -12,7 +12,7 @@ PhysicsManager.prototype.calculateVelocity = function(velocity){
   if(this.engine.frameData["fps"] === 0){
     console.warn("fps detected as 0.")
     return velocity;
-  } return velocity * (1/this.engine.frameData["fps"]) * this.FPS;
+  } return Math.round(velocity * (1/this.engine.frameData["fps"]) * this.FPS);
 };
 
 // Returns the point where a vector intersects a rect.

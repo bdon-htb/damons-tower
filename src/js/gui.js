@@ -109,6 +109,10 @@ GUIManager.prototype._createListWidget = function(listTag){
   return new ListWidget(parentObj, listItems)
 };
 
+GUIManager.prototype._setGUIObjectGraphic = function(guiObject){
+  let renderer = this.parent.renderer;
+};
+
 // Return an array of all gui objects in the menu.
 // Initially designed for the menu, but can be used to fetch and create
 // guiObjects for all children in a parentTag.

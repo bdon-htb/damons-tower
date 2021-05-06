@@ -10,6 +10,7 @@ function Renderer(parent){
   this.parent = parent;
   // Pixi.js loader alias.
   this.loader = new PIXI.Loader();
+  this.rendererType;
   this.createTextStyles();
   this.createButtonStyles();
   this.verifyAPI();
@@ -24,11 +25,8 @@ function Renderer(parent){
 };
 
 Renderer.prototype.verifyAPI = function(){
-  let type = "WebGL";
-  if(!PIXI.utils.isWebGLSupported()){
-    type = "canvas";
-  };
-  PIXI.utils.sayHello(type);
+  this.rendererType = (!PIXI.utils.isWebGLSupported()) ? "canvas" : "WebGL";
+  PIXI.utils.sayHello(this.rendererType);
 };
 
 Renderer.prototype.createApp = function(){
@@ -46,21 +44,21 @@ Renderer.prototype.createApp = function(){
 
 Renderer.prototype.createTextStyles = function(){
   this.textStyles = {
-    "debug": new PIXI.TextStyle({
-      fontFamily: "Arial",
-      fontSize: 36,
-      fill: "white",
-      stroke: '#ff3300',
-      strokeThickness: 4,
-      dropShadow: true,
-      dropShadowColor: "#000000",
-      dropShadowBlur: 4,
-      dropShadowAngle: Math.PI / 6,
-      dropShadowDistance: 6}),
-    "default": new PIXI.TextStyle({
-      fontFamily: "Bitmgothic",
-      fontSize: 26})
-    };
+    "default": {
+      fontName: "EquipmentPro",
+      letterSpacing: 2,
+      fontSize: 32
+    }
+  };
+};
+
+Renderer.prototype.loadBitmapFonts = function(fontsArray, callback){
+  for(const fontFile of fontsArray){
+    url = this.parent.fontLocation + '/' + fontFile;
+    this.loader.add(url);
+  };
+  this.loader.load();
+  this.loader.onComplete.add(callback);
 };
 
 Renderer.prototype.createButtonStyles = function(){
@@ -201,13 +199,13 @@ Renderer.prototype.clear = function(){
   this.app.stage.removeChildren();
 };
 
-// Drawining primitives. Not ideal for drawing per frame.
-Renderer.prototype.drawText = function(msg, x=0, y=0, style=this.textStyles.debug){
+// Drawining primitives.
+Renderer.prototype.drawText = function(msg, x=0, y=0, style="default"){
   let message;
-  if(msg.constructor === PIXI.Text){
+  if(msg.constructor === PIXI.BitmapText){
     message = msg;
   } else { // Assume message is a string.
-    message = new PIXI.Text(msg, style);
+    message = new PIXI.BitmapText(String(msg), this.textStyles[style]);
     this.textureManager.addToPool(message);
   };
   message.position.set(x, y);
@@ -242,13 +240,6 @@ Renderer.prototype.drawSprite = function(sprite, x=0, y=0){
   sprite.height = sprite.texture.width * spriteScale * this.verticalRatio;
   sprite.position.set(x * this.horizontalRatio, y * this.verticalRatio);
   this.draw(sprite);
-};
-
-Renderer.prototype.scaleSprite = function(sprite){
-  let scale = this.parent.spriteScale;
-  sprite.width = sprite.texture.width * scale;
-  sprite.height = sprite.texture.width * scale;
-  return sprite;
 };
 
 // Draw a game entity. i.e. player.
@@ -352,7 +343,7 @@ Renderer.prototype.createLabelGraphic = function(label){
   let message = label.text;
   let style = label.attributes.has("style") ? label.attributes.get("style") : "default";
   style = this.textStyles[style];
-  let text = new PIXI.Text(message, style);
+  let text = new PIXI.BitmapText(message, style);
   return text
 };
 
@@ -380,7 +371,7 @@ Renderer.prototype.createButtonGraphic = function(button, rectangle){
 
   // Create label component.
   let message = button.text;
-  let text = new PIXI.Text(message, this.textStyles[textStyle]);
+  let text = new PIXI.BitmapText(message, this.textStyles[textStyle]);
 
   // Create button component.
 
@@ -437,7 +428,7 @@ Renderer.prototype.createListWidgetGraphic = function(listWidget){
 
 // Caluclates the size of the string in pixels based on PIXI text styling.
 Renderer.prototype.calculateTextSize = function(s, textStyle){
-  let text = new PIXI.Text(s, textStyle);
+  let text = new PIXI.BitmapText(s, textStyle);
   this.textureManager.addToPool(text);
   return [text.width, text.height];
 };
@@ -448,7 +439,7 @@ Renderer.prototype.calculateTextSize = function(s, textStyle){
 */
 function TextureManager(parent){
   this.parent = parent; // Reference to the renderer.
-  this.loader = new PIXI.Loader();
+  this.loader = this.parent.loader;
   this.pool = new Set(); // An array of extra Pixi.js graphics objects. Allows for them to be destroyed properly..
 };
 
@@ -594,21 +585,20 @@ TextureManager.prototype.getSpriteFromSheet = function(spriteSheet, index_X, ind
   return spriteSheet.sprite;
 };
 
-// Basically recursively loop through the array and load each image.
+// Loop through the array and load each image.
 // When all the loading is done. Fire off the callback.
 TextureManager.prototype._loadTextureArray = function(imageArray, imageMap, callback, i=0){
   let engine = this.parent.parent;
+  let id;
+  let url;
 
-  if(i < imageArray.length){
-    let id = imageArray[i];
-    let url = engine.imgLocation + "/" + imageMap.get(id).name
+  for(const imageID of imageArray){
+    url = engine.imgLocation + "/" + imageMap.get(imageID).name;
     this.loader.add(url);
-    func = this._loadTextureArray(imageArray, imageMap, callback, i + 1)
-    this.loader.onComplete.add(() => func);
-  } else {
-    this.loader.load();
-    this.loader.onComplete.add(() => {callback()});
   };
+
+  this.loader.load();
+  this.loader.onComplete.add(callback);
 };
 
 /**

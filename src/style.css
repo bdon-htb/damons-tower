@@ -1,8 +1,3 @@
-@font-face {
-  font-family: "Bitmgothic";
-  src: url("/fonts/Bitmgothic.ttf") format("truetype");
-}
-
 #game-container {
   display: flex;
   justify-content: center;

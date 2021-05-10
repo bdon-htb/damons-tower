@@ -63,9 +63,9 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
 
   let initialTilePos = tileMap.convertIndexToCoords(tileMap.getNearestTileIndex(rayVector.p1));
   let finalTilePos = tileMap.convertIndexToCoords(tileMap.getNearestTileIndex(rayVector.p2));
-  let tileRangeX = Math.ceil(Math.abs(finalTilePos[0] - initialTilePos[0]) / tileMap.tileSize);
+  let tileRangeX = Math.ceil(Math.abs(rayVector.p2[0] - rayVector.p1[0]) / tileMap.tileSize);
   if(tileRangeX === 0){tileRangeX = 1};
-  let tileRangeY = Math.ceil(Math.abs(finalTilePos[1] - initialTilePos[1]) / tileMap.tileSize);
+  let tileRangeY = Math.ceil(Math.abs(rayVector.p2[1] - rayVector.p1[1]) / tileMap.tileSize);
   if(tileRangeY === 0){tileRangeY = 1};
   let tilePos;
   let tileIndex;
@@ -87,18 +87,24 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
     // Line is some sort of diagonal.
     // For diagonals, we utilize the equation of a line and calculate the nearest.
     let m = Math.abs(rise / run);
-    let increment;
+    let increment = ((rayVector.p1[0] % 32) / 32) * m;
     let increaseY = 0;
-    let tileIndexX = tileMap.convertCoordsToIndex((initialTilePos[0] + (1 * directionX)), initialTilePos[1]);
-    let tileIndexY = tileMap.convertCoordsToIndex(initialTilePos[0], (initialTilePos[1] + (1 * directionY)));
-    let collisionX = this._checkForCollision(scene, rayVector, tileIndexX);
-    let collisionY = this._checkForCollision(scene, rayVector, tileIndexY);
-    if (collisionX === null && collisionY === null) {
-      increment = 0;
-    } else if (collisionX !== null) {
-      increment = 0;
-    } else {
-      increment = 1;
+    let tileIndexX;
+    let j = 0;
+    while(j < tileRangeX) {
+      j += 1;
+      increment += m;
+      if (increment >= 1) {
+        break;
+      };
+    };
+    for(let i = 1; i <= tileRangeX; ++i) {
+      tileIndexX = tileMap.convertCoordsToIndex((initialTilePos[0] + (i * directionX)), initialTilePos[1]);
+      let collisionX = this._checkForCollision(scene, rayVector, tileIndexX);
+      if (collisionX == null) {
+        break;
+      };
+      increment -= m;
     };
     for(let i = 1; i <= tileRangeX; i++){
       if (increment >= 1) {

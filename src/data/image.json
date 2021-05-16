@@ -1,11 +1,5 @@
 {
   "images": {
-    "jtp": {
-      "name": "jo_the_pyro.png",
-      "width": 192,
-      "height": 96,
-      "spriteSize": 32},
-
     "player_idle": {
       "name": "player_idle.png",
       "width": 256,
@@ -16,6 +10,72 @@
       "name": "player_walk.png",
       "width": 256,
       "height": 128,
+      "spriteSize": 32},
+
+    "player_dodge": {
+      "name": "player_dodge.png",
+      "width": 224,
+      "height": 128,
+      "spriteSize": 32},
+
+    "player_basic_attack1": {
+      "name": "player_basic_attack1.png",
+      "width": 288,
+      "height": 64,
+      "spriteSize": 32},
+
+    "player_basic_attack2": {
+      "name": "player_basic_attack2.png",
+      "width": 224,
+      "height": 64,
+      "spriteSize": 32},
+
+    "player_basic_attack3": {
+      "name": "player_basic_attack3.png",
+      "width": 224,
+      "height": 64,
+      "spriteSize": 32},
+
+    "player_basic_attack_return": {
+      "name": "player_basic_attack_return.png",
+      "width": 128,
+      "height": 64,
+      "spriteSize": 32},
+
+    "iron_basic_attack1": {
+      "name": "iron_basic_attack1.png",
+      "width": 576,
+      "height": 192,
+      "spriteSize": 96},
+
+    "iron_basic_attack2": {
+      "name": "iron_basic_attack2.png",
+      "width": 672,
+      "height": 192,
+      "spriteSize": 96},
+
+    "iron_basic_attack3": {
+      "name": "iron_basic_attack3.png",
+      "width": 672,
+      "height": 192,
+      "spriteSize": 96},
+
+    "iron_basic_attack_return": {
+      "name": "iron_basic_attack_return.png",
+      "width": 480,
+      "height": 96,
+      "spriteSize": 96},
+
+    "outdoors_tileset": {
+      "name": "outdoors_tileset.png",
+      "width": 352,
+      "height": 416,
+      "spriteSize": 32},
+
+    "jtp": {
+      "name": "jo_the_pyro.png",
+      "width": 192,
+      "height": 96,
       "spriteSize": 32},
 
     "testDungeon": {

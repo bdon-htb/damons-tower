@@ -236,12 +236,61 @@ Game.prototype._updatePlayer = function(scene){
 
 Game.prototype._handlePlayerMovement = function(scene){
   let player = scene.getEntity("player");
+  let playerState = player.attributes["state"];
+  let commands = this.controller.getCommands();
+  let oldPos = [player.attributes["x"], player.attributes["y"]];
+  let isMoving = false;
+
+  if(playerState === "dodging"){
+    isMoving = this._handlePlayerDodge(player, commands)
+  }
+  // Check if we want to dodge
+  else if(commands.includes('keyDown-space') === true && ["walking", "sprinting"].includes(playerState) === true){
+    player.attributes["state"] = "dodging";
+  }
+  else {
+    // This function also handles when the player is idling.
+    isMoving = this._walkPlayer(player, commands);
+  }
+
+  if(isMoving === true){
+    let newPos = this._handleCollision(player.attributes["x"], player.attributes["y"], player.attributes["dx"], player.attributes["dy"], scene);
+    scene.moveEntity(player, newPos);
+
+    // Reset displacement after moving.
+    player.attributes["dx"] = 0;
+    player.attributes["dy"] = 0;
+  }
+};
+
+// Precondition: player.attributes["state"] === "dodging"
+Game.prototype._handlePlayerDodge = function(player, commands){
+  let physicsManager = this.physicsManager
+  let dodgeAnimation = player.attributes["currentAnimation"];
+  let dodgeSpeed = player.attributes["dodgeSpeed"];
+
+  let movMap = {
+    "up": ["dy", -dodgeSpeed],
+    "down": ["dy", dodgeSpeed],
+    "left": ["dx", -dodgeSpeed],
+    "right": ["dx", dodgeSpeed]
+  }
+
+  let movArray = movMap[player.attributes["direction"]]
+  player.attributes[movArray[0]] += physicsManager.calculateVelocity(movArray[1]);
+
+  if(dodgeAnimation.active === false){
+    player.attributes["state"] = "idle";
+    return false;
+  };
+  return true;
+};
+
+Game.prototype._walkPlayer = function(player, commands){
   let physicsManager = this.physicsManager;
-  let frameData = this.gameStateObject["frameData"];
   let moveCommands = ["keyDown-left", "keyDown-right", "keyDown-up", "keyDown-down"];
   let sprintCommands = ["doubleTap-right", "doubleTap-left", "doubleTap-up", "doubleTap-down"];
 
-  let commands = this.controller.getCommands();
   let isMoving = moveCommands.some(c => commands.includes(c) === true); // Booleans
   let startSprint = sprintCommands.some(c => commands.includes(c) === true);
 
@@ -280,15 +329,18 @@ Game.prototype._handlePlayerMovement = function(scene){
       let c = commands[i];
       // Prioritize the last move input and move if one is detected. This should prevent standstill by pressing opposite keys.
       if(Object.keys(movMap).includes(c) === true && commands.slice(i, commands.length).includes(movMap[c][2]) === false){
-        coordinate = movMap[c][0]
+        coordinate = movMap[c][0];
         dMap[coordinate] += physicsManager.calculateVelocity(movMap[c][1]);
-        player.attributes["direction"] = movMap[c][3]
+        player.attributes["direction"] = movMap[c][3];
       };
     };
 
-    let newPos = this._handleCollision(player.attributes["x"], player.attributes["y"], dMap["dx"], dMap["dy"], scene);
-    scene.moveEntity(player, newPos);
+    player.attributes["dx"] = dMap["dx"];
+    player.attributes["dy"] = dMap["dy"];
+
+    return true; // Yes we are moving
   };
+  return false; // We are not moving this frame.
 };
 
 Game.prototype._updatePlayerAnimation = function(scene){
@@ -306,6 +358,14 @@ Game.prototype._updatePlayerAnimation = function(scene){
         "down": allAnims.get("walk_front"),
         "left": allAnims.get("walk_left"),
         "right": allAnims.get("walk_right")
+      };
+      break;
+    case "dodging":
+      animMap = {
+        "up": allAnims.get("dodge_back"),
+        "down": allAnims.get("dodge_front"),
+        "left": allAnims.get("dodge_left"),
+        "right": allAnims.get("dodge_right")
       };
       break;
     default: // Let's treat idle as default.

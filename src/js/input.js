@@ -88,10 +88,11 @@ InputDevice.prototype.resetKeyObject = function(keyObject){
 */
 function Keyboard(){
   let defaultKeys = {
-    up:"w", // W
-    down:"s", // S
-    left:"a", // A
-    right:"d" // D
+    up:"KeyW", // W
+    down:"KeyS", // S
+    left:"KeyA", // A
+    right:"KeyD", // D
+    space: "Space" // Space
   };
 
   InputDevice.call(this, "keyboard", defaultKeys);
@@ -141,7 +142,7 @@ Keyboard.prototype.removeListeners = function(element){
 // Sets the value of the specified boolean keyObject. i.e. keyDown or keyUp.
 // type can either be "keyDown" or "keyUp"
 Keyboard.prototype.keyHandler = function(event, type, value){
-  let keyCode = event.key;
+  let keyCode = event.code;
   let updateFunc = this.updateKeyOrder.bind(this)
   let keyObject = (type === "keyDown") ? this.keyDown : this.keyUp; // Assumes keyUp otherwise.
   for (const [key, code] of Object.entries(this.keys)){
@@ -211,7 +212,7 @@ Mouse.prototype.removeListeners = function(element){
   element.removeEventListener("mouseup", this.mouseUpHandler.bind(this), false);
   element.removeEventListener("mousemove", this.mouseMoveHandler.bind(this), false);
   element.addEventListener("click", this.mouseClickHandler.bind(this, "leftClick"));
-  element.addEventListener("auxclick", this.mouseClickHandler.bind(this, "rightClick"));  
+  element.addEventListener("auxclick", this.mouseClickHandler.bind(this, "rightClick"));
   element.addEventListener("contextmenu", this.disableDefault.bind(this), false);
 };
 

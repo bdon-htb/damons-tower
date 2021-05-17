@@ -660,7 +660,7 @@ AnimationManager.prototype.nextFrame = function(animation){
       this.setFrame(animation, animation.frameIndex + 1); // Set to the next frame.
     }
     // If the animation is complete and it DOESN'T loop
-    else if(animation.frameIndex + 1 >= animation.frames.length && this.loops === false){
+    else if(animation.loops === false){
       this.deactivateAnimation(animation);
     }
     // Else; if the animation is complete and the animation DOES loop.

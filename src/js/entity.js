@@ -18,9 +18,10 @@ function Entity(id, sprite, type, state, x, y, width, height){
     "state": state,
     "x": x,
     "y": y,
+    "dx": 0,
+    "dy": 0,
     "width": width,
     "height": height,
-    "wallCollider": null
   };
 };
 
@@ -45,6 +46,7 @@ function PlayerEntity(engine, gameObject){
   this.attributes["animations"] = new Map(); // Animations is a map of all the available animations.
   this.attributes["speed"] = 3; // Set the default player movement speed.
   this.attributes["sprintSpeed"] = this.attributes["speed"] * 2;
+  this.attributes["dodgeSpeed"] = 4;
   this.attributes["direction"] = "down";
 
   let idleAnimations = {
@@ -61,7 +63,14 @@ function PlayerEntity(engine, gameObject){
     "walk_right": engine.getLoadedAsset(engine.animKey).get("player_walk_right")
   };
 
-  let allAnimations = [idleAnimations, walkAnimations];
+  let dodgeAnimations = {
+    "dodge_front": engine.getLoadedAsset(engine.animKey).get("player_dodge_front"),
+    "dodge_back": engine.getLoadedAsset(engine.animKey).get("player_dodge_back"),
+    "dodge_left": engine.getLoadedAsset(engine.animKey).get("player_dodge_left"),
+    "dodge_right": engine.getLoadedAsset(engine.animKey).get("player_dodge_right")
+  };
+
+  let allAnimations = [idleAnimations, walkAnimations, dodgeAnimations];
 
   // Add all of the animations in allAnimations to the player's attribute "animations".
   allAnimations.forEach(object => {

@@ -234,6 +234,11 @@ Game.prototype._updatePlayer = function(scene){
   updateAnim(scene);
 };
 
+Game.prototype._resetEntityDisplacement = function(entity){
+  entity.attributes["dx"] = 0;
+  entity.attributes["dy"] = 0;
+};
+
 Game.prototype._handlePlayerMovement = function(scene){
   let player = scene.getEntity("player");
   let playerState = player.attributes["state"];
@@ -242,48 +247,82 @@ Game.prototype._handlePlayerMovement = function(scene){
   let isMoving = false;
 
   if(playerState === "dodging"){
-    isMoving = this._handlePlayerDodge(player, commands)
+    isMoving = this._handlePlayerDodge(player, commands);
   }
   // Check if we want to dodge
   else if(commands.includes('keyDown-space') === true && ["walking", "sprinting"].includes(playerState) === true){
-    player.attributes["state"] = "dodging";
+    this._handlePlayerDodgeStart(player, commands);
   }
   else {
     // This function also handles when the player is idling.
     isMoving = this._walkPlayer(player, commands);
-  }
+  };
 
   if(isMoving === true){
     let newPos = this._handleCollision(player.attributes["x"], player.attributes["y"], player.attributes["dx"], player.attributes["dy"], scene);
     scene.moveEntity(player, newPos);
+  };
 
-    // Reset displacement after moving.
-    player.attributes["dx"] = 0;
-    player.attributes["dy"] = 0;
-  }
+  if(playerState === "idle"){
+    this._resetEntityDisplacement(player);
+  };
+};
+
+// Precondition: player.attribute["state"] === "walking" or "sprinting"
+Game.prototype._handlePlayerDodgeStart = function(player, commands){
+  let moveCommands = ["keyDown-left", "keyDown-right", "keyDown-up", "keyDown-down"];
+
+  // Format: {"commandName": [coordinate, displacement, oppositeCommand]}
+  // We use a magnitude of 1 for displacement so we know what direction
+  // the player is going to move in. The player does NOT move the same frame a dodge is called.
+  let movMap = {
+    "keyDown-left": ["dx", -1, "keyDown-right"],
+    "keyDown-right": ["dx", +1, "keyDown-left"],
+    "keyDown-up": ["dy", -1, "keyDown-down"],
+    "keyDown-down": ["dy", +1, "keyDown-up"]
+  };
+
+  let dMap = {
+    "dx": 0,
+    "dy": 0
+  };
+
+  for(var i = 0; i < commands.length; i++){
+    let c = commands[i];
+    // Prioritize the last move input and move if one is detected. This should prevent standstill by pressing opposite keys.
+    if(Object.keys(movMap).includes(c) === true && commands.slice(i, commands.length).includes(movMap[c][2]) === false){
+      coordinate = movMap[c][0];
+      dMap[coordinate] += movMap[c][1];
+    };
+  };
+
+  player.attributes["state"] = "dodging";
+  player.attributes["dx"] = dMap["dx"];
+  player.attributes["dy"] = dMap["dy"];
 };
 
 // Precondition: player.attributes["state"] === "dodging"
 Game.prototype._handlePlayerDodge = function(player, commands){
-  let physicsManager = this.physicsManager
   let dodgeAnimation = player.attributes["currentAnimation"];
-  let dodgeSpeed = player.attributes["dodgeSpeed"];
-
-  let movMap = {
-    "up": ["dy", -dodgeSpeed],
-    "down": ["dy", dodgeSpeed],
-    "left": ["dx", -dodgeSpeed],
-    "right": ["dx", dodgeSpeed]
-  }
-
-  let movArray = movMap[player.attributes["direction"]]
-  player.attributes[movArray[0]] += physicsManager.calculateVelocity(movArray[1]);
-
   if(dodgeAnimation.active === false){
     player.attributes["state"] = "idle";
     return false;
+  }
+  else {
+    let physicsManager = this.physicsManager;
+    let dodgeSpeed = player.attributes["dodgeSpeed"];
+
+    for(const d of ["dx", "dy"]){
+      if(player.attributes[d] > 0){
+        player.attributes[d] = physicsManager.calculateVelocity(dodgeSpeed);
+      }
+      else if(player.attributes[d] < 0){
+        player.attributes[d] = physicsManager.calculateVelocity(-dodgeSpeed);
+      }
+      // We do nothing if displacement is 0.
+    };
+    return true;
   };
-  return true;
 };
 
 Game.prototype._walkPlayer = function(player, commands){
@@ -340,6 +379,7 @@ Game.prototype._walkPlayer = function(player, commands){
 
     return true; // Yes we are moving
   };
+  this._resetEntityDisplacement(player);
   return false; // We are not moving this frame.
 };
 

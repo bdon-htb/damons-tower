@@ -11,6 +11,11 @@
     },
     "doubleTap-down": {
       "pattern": ["keyDown-down", "keyUp-down", "keyDown-down"]
+    },
+    "singleTap-space": {
+      "pattern": ["keyDown-space", "keyUp-space"],
+      "type": "tap",
+      "timeLimit": "none"
     }
   }
 }

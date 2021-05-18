@@ -553,7 +553,7 @@ TimerManager.prototype._getTimerComplete = function(timerName, deleteTimer=false
 
   if(result === true && deleteTimer === true){
     let deleteFunc = this._removeTimer.bind(this);
-    deleteFunc();
+    deleteFunc(timerName);
   };
   return result;
 };

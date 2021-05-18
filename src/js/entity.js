@@ -48,6 +48,10 @@ function PlayerEntity(engine, gameObject){
   this.attributes["sprintSpeed"] = this.attributes["speed"] * 2;
   this.attributes["dodgeSpeed"] = 4;
   this.attributes["direction"] = "down";
+  this.attributes["dodgeCooldown"] = 400 // In miliseconds.
+
+  // Set relevant flags for player controls.
+  this.attributes["canDodge"] = true;
 
   let idleAnimations = {
     "idle_front": engine.getLoadedAsset(engine.animKey).get("player_idle_front"),

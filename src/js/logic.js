@@ -386,7 +386,9 @@ Controller.prototype.createPatterns = function(timeStamp){
   for(const [name, obj] of patternData){
     let p = new InputPattern(name, obj);
     // Sets a timer with id == pattern name.
-    engine.timerManager.setTimer(p.timeLimit, name)
+    if(p.timeLimit != "none"){
+      engine.timerManager.setTimer(p.timeLimit, name);
+    }
     this.patterns.set(name, p);
   };
 };
@@ -407,24 +409,31 @@ Controller.prototype.updatePatterns = function(inputs){
   let engine = this.engine
   for(const [name, p] of this.patterns){
     let timerComplete = engine.timerManager.isComplete(name, false);
+
+    // If pattern time limit passes, reset pattern.
+    // note that if the pattern has no timelimit, then it doesn't have a timer
+    // so timerComplete will be false.
     if(this.patternActive(p) === true && timerComplete === true){
       console.log("reset")
       this.resetPattern(p)
     };
 
-    inputs.forEach(i => {
+    for(const i of inputs){
       if(this.patternIncludes(p, i) === true){
         let commandInputted = this.nextState(p); // Log if the command has been inputted or not while also moving to the next.
+        // Fire command on input start if it's tap. Assumes p.pattern.length > 0
+        if(p.type === 'tap' && p.state === 0){this.commands.push(name)}
         if(commandInputted === true){
-          this.commands.push(name);
-          console.log(`COMMAND INPUTTED! | COMMAND: ${name}`)
+          // Fire command on input completion if it's not tap.
+          if(p.type != 'tap'){this.commands.push(name)};
+          console.log(`COMMAND INPUTTED! | COMMAND: ${name}`);
           this.resetPattern(p);
         };
       };
-    });
+    };
+
   };
 };
-
 // Checks if the pattern (at its current state) includes the SINGLE input.
 // Will take into account things like condition.
 Controller.prototype.patternIncludes = function(inputPattern, input){
@@ -461,6 +470,7 @@ function InputPattern(name, inputData){
 
   this.name = name;
   this.condition = inputData["condition"] ? inputData["condition"] : "default";
+  this.type = inputData["type"] ? inputData["type"] : "default";
   this.timeLimit = inputData["timeLimit"] ? inputData["timeLimit"] : this._defaultTimeLimit;
   this.pattern = inputData["pattern"]; // There's no check, meaning that this must be explicitly defined.
 

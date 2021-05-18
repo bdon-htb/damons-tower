@@ -11,6 +11,7 @@ function Game(engine){
   // Create aliases for engine components.
   this.renderer = engine.renderer;
   this.animationManager = this.renderer.animationManager;
+  this.timerManager = engine.timerManager;
 
   this.debugModeOn = true;
   this.debugMenu = new DebugMenu(this);
@@ -91,10 +92,11 @@ Game.prototype.update = function(){
       player.attributes["sprite"] = this.animationManager.getSprite(player.attributes["currentAnimation"]);
       this.animationManager.nextFrame(player.attributes["currentAnimation"]);
 
-      this.debugMenu.updateVariable("doubleTap-right state", this.controller.patterns.get("doubleTap-right")["state"]);
+      this.debugMenu.updateVariable("singleTap-space state", this.controller.patterns.get("singleTap-space")["state"]);
       this.debugMenu.updateVariable("player state", player.attributes["state"]);
       this.debugMenu.updateVariable("player x", player.attributes["x"]);
       this.debugMenu.updateVariable("player y", player.attributes["y"]);
+      this.debugMenu.updateVariable("canDodge", player.attributes["canDodge"]);
       break;
   };
 };
@@ -223,20 +225,29 @@ Game.prototype._handleCollision = function(x, y, dx, dy, scene){
   return newPos;
 };
 
+Game.prototype._resetEntityDisplacement = function(entity){
+  entity.attributes["dx"] = 0;
+  entity.attributes["dy"] = 0;
+};
+
 // =====================
 // Player related methods.
 // =====================
 Game.prototype._updatePlayer = function(scene){
+  let updateControlAttribs = this._handlePlayerControlAttributes.bind(this);
   let handleMove = this._handlePlayerMovement.bind(this);
   let updateAnim = this._updatePlayerAnimation.bind(this);
 
+  updateControlAttribs(scene);
   handleMove(scene);
   updateAnim(scene);
 };
 
-Game.prototype._resetEntityDisplacement = function(entity){
-  entity.attributes["dx"] = 0;
-  entity.attributes["dy"] = 0;
+Game.prototype._handlePlayerControlAttributes = function(scene){
+  let player = scene.getEntity("player");
+  if(this.timerManager.isComplete("playerDodgeCooldown") === true){
+    player.attributes["canDodge"] = true;
+  };
 };
 
 Game.prototype._handlePlayerMovement = function(scene){
@@ -250,7 +261,8 @@ Game.prototype._handlePlayerMovement = function(scene){
     isMoving = this._handlePlayerDodge(player, commands);
   }
   // Check if we want to dodge
-  else if(commands.includes('keyDown-space') === true && ["walking", "sprinting"].includes(playerState) === true){
+  else if(player.attributes["canDodge"] === true && commands.includes("singleTap-space")){
+    player.attributes["canDodge"] = false;
     this._handlePlayerDodgeStart(player, commands);
   }
   else {
@@ -304,8 +316,9 @@ Game.prototype._handlePlayerDodgeStart = function(player, commands){
 // Precondition: player.attributes["state"] === "dodging"
 Game.prototype._handlePlayerDodge = function(player, commands){
   let dodgeAnimation = player.attributes["currentAnimation"];
-  if(dodgeAnimation.active === false){
+  if(dodgeAnimation.active === false){ // Dodge ends.
     player.attributes["state"] = "idle";
+    this.timerManager.setTimer(player.attributes["dodgeCooldown"], 'playerDodgeCooldown');
     return false;
   }
   else {

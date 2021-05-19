@@ -187,6 +187,7 @@ function Mouse(){
   this.y;
   this.clickEvents = { // Let's make click events a separate thing.
     leftClick: false,
+    middleClick: false,
     rightClick: false
   };
 };
@@ -202,8 +203,8 @@ Mouse.prototype.addListeners = function(element){
   element.addEventListener("mousedown", this.mouseDownHandler.bind(this), false);
   element.addEventListener("mouseup", this.mouseUpHandler.bind(this), false);
   element.addEventListener("mousemove", this.mouseMoveHandler.bind(this), false);
-  element.addEventListener("click", this.mouseClickHandler.bind(this, "leftClick"));
-  element.addEventListener("auxclick", this.mouseClickHandler.bind(this, "rightClick"));
+  element.addEventListener("click", this.mouseClickHandler.bind(this), false);
+  element.addEventListener("auxclick", this.mouseClickHandler.bind(this), false);
   element.addEventListener("contextmenu", this.disableDefault.bind(this), false);
 };
 
@@ -211,9 +212,9 @@ Mouse.prototype.removeListeners = function(element){
   element.removeEventListener("mousedown", this.mouseDownHandler.bind(this), false);
   element.removeEventListener("mouseup", this.mouseUpHandler.bind(this), false);
   element.removeEventListener("mousemove", this.mouseMoveHandler.bind(this), false);
-  element.addEventListener("click", this.mouseClickHandler.bind(this, "leftClick"));
-  element.addEventListener("auxclick", this.mouseClickHandler.bind(this, "rightClick"));
-  element.addEventListener("contextmenu", this.disableDefault.bind(this), false);
+  element.removeEventListener("click", this.mouseClickHandler.bind(this), false);
+  element.removeEventListener("auxclick", this.mouseClickHandler.bind(this), false);
+  element.removeEventListener("contextmenu", this.disableDefault.bind(this), false);
 };
 
 Mouse.prototype.getCoords = function(){
@@ -246,8 +247,15 @@ Mouse.prototype.mouseMoveHandler = function(event){
   this._updateCoords(event.offsetX, event.offsetY);
 };
 
-Mouse.prototype.mouseClickHandler = function(type){
-  this.clickEvents[type] = true;
+Mouse.prototype.mouseClickHandler = function(event){
+  // array index corresponds to event.button value.
+  buttons = ["leftClick", "middleClick", "rightClick"];
+
+  // auxclick could be theoretically fired for mouses with extra buttons.
+  // so we account for that here.
+  if(event.button >= 0 && event.button <= 2){
+    this.clickEvents[buttons[event.button]] = true;
+  };
 };
 
 Mouse.prototype.resetClicks = function(){

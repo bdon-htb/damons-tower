@@ -363,12 +363,19 @@ Controller.prototype.addCommands = function(e){
 Controller.prototype.getInputs = function(events, data){
   let inputs = []; // Inputs detected this frame.
 
-  if(this.mode === "keyboard" && events.get("inputEvents").has("keyboard")){
-    let m = events.get("inputEvents").get("keyboard"); // This is a map.
-    // Essentially flatten the map. Prepend descriptive words for each input.
-    // inputs = inputs.concat(m.get("keyDown").map(x => "keyDown-" + x));
-    inputs = inputs.concat(m.get("keyDown")); // get keys from orderedKeyDown already formatted
-    inputs = inputs.concat(m.get("keyUp").map(x => "keyUp-" + x));
+  if(this.mode === "keyboard"){
+    let inputEvents = events.get("inputEvents");
+    if(inputEvents.has("keyboard") === true){
+      let m = inputEvents.get("keyboard"); // This is a map.
+      // Essentially flatten the map. Prepend descriptive words for each input.
+      // inputs = inputs.concat(m.get("keyDown").map(x => "keyDown-" + x));
+      inputs = inputs.concat(m.get("keyDown")); // get keys from orderedKeyDown already formatted
+      inputs = inputs.concat(m.get("keyUp").map(x => "keyUp-" + x));
+    };
+
+    if(inputEvents.has("mouse") === true){
+      console.log(inputEvents.get("mouse"))
+    };
   };
 
   return inputs;

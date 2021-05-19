@@ -97,6 +97,7 @@ Game.prototype.update = function(){
       this.debugMenu.updateVariable("player x", player.attributes["x"]);
       this.debugMenu.updateVariable("player y", player.attributes["y"]);
       this.debugMenu.updateVariable("canDodge", player.attributes["canDodge"]);
+      this.debugMenu.updateVariable("commands", this.controller.getCommands());
       break;
   };
 };
@@ -261,7 +262,7 @@ Game.prototype._handlePlayerMovement = function(scene){
     isMoving = this._handlePlayerDodge(player, commands);
   }
   // Check if we want to dodge
-  else if(player.attributes["canDodge"] === true && commands.includes("singleTap-space")){
+  else if(["walking", "sprinting"].includes(playerState) && player.attributes["canDodge"] === true && commands.includes("singleTap-space")){
     player.attributes["canDodge"] = false;
     this._handlePlayerDodgeStart(player, commands);
   }

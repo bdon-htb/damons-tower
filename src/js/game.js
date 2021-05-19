@@ -59,7 +59,7 @@ Game.prototype.update = function(){
   this._updateFrameData(data);
   this._refreshEvents(); // Init / re-init the game events.
   let currentState = this.stateMachine.currentState;
-  let events = this.gameStateObject["events"] // Create an alias.
+  let events = this.gameStateObject["events"]; // Create an alias.
   let inputs = this.engine.getInputEvents();
   events.set("inputEvents", this.engine.getInputEvents());
 
@@ -67,13 +67,13 @@ Game.prototype.update = function(){
   switch(currentState){
     case "starting": // For loading stuff specific to the game.
       this.controller.createPatterns(data["timeStamp"]);
-      this.stateMachine.changeState("mainMenu")
+      this.stateMachine.changeState("mainMenu");
       break;
     case "mainMenu":
-      let menu = this.gameStateObject["menu"]
+      let menu = this.gameStateObject["menu"];
       this.engine.guiManager.checkHover(menu);
       if(events.get("inputEvents").size > 0){
-        this.engine.guiManager.checkClicks(menu)
+        this.engine.guiManager.checkClicks(menu);
       };
       break;
     case "inLevel":
@@ -86,7 +86,7 @@ Game.prototype.update = function(){
       let level = this.gameStateObject["scene"];
       let player = this.gameStateObject["scene"].getEntity("player");
       let camera = level.camera;
-      let posArray = [player.attributes["x"], player.attributes["y"]]
+      let posArray = [player.attributes["x"], player.attributes["y"]];
       camera.center(posArray[0], posArray[1]);
       let relPosArray = camera.getRelative(posArray[0], posArray[1]);
       player.attributes["sprite"] = this.animationManager.getSprite(player.attributes["currentAnimation"]);
@@ -236,11 +236,11 @@ Game.prototype._resetEntityDisplacement = function(entity){
 // =====================
 Game.prototype._updatePlayer = function(scene){
   let updateControlAttribs = this._handlePlayerControlAttributes.bind(this);
-  let handleMove = this._handlePlayerMovement.bind(this);
+  let handleStates = this._handlePlayerStates.bind(this);
   let updateAnim = this._updatePlayerAnimation.bind(this);
 
   updateControlAttribs(scene);
-  handleMove(scene);
+  handleStates(scene);
   updateAnim(scene);
 };
 
@@ -251,10 +251,13 @@ Game.prototype._handlePlayerControlAttributes = function(scene){
   };
 };
 
-Game.prototype._handlePlayerMovement = function(scene){
+Game.prototype._handlePlayerStates = function(scene){
   let player = scene.getEntity("player");
-  let playerState = player.attributes["state"];
   let commands = this.controller.getCommands();
+
+  // If I want to implement different controller modes, then I'd add a check here.
+  let attackCommands = ["leftPress", "rightPress"];
+  let playerState = player.attributes["state"];
   let oldPos = [player.attributes["x"], player.attributes["y"]];
   let isMoving = false;
 
@@ -262,9 +265,12 @@ Game.prototype._handlePlayerMovement = function(scene){
     isMoving = this._handlePlayerDodge(player, commands);
   }
   // Check if we want to dodge
-  else if(["walking", "sprinting"].includes(playerState) && player.attributes["canDodge"] === true && commands.includes("singleTap-space")){
+  else if(player.attributes["canDodge"] === true && commands.includes("singleTap-space") && ["walking", "sprinting"].includes(playerState)){
     player.attributes["canDodge"] = false;
     this._handlePlayerDodgeStart(player, commands);
+  }
+  else if(player.attributes["canAttack"] === true && attackCommands.some(c => commands.includes(c)) && ["idle", "walking", "sprinting", "attacking"].includes(playerState)){
+    this._handlePlayerAttack(player, commands);
   }
   else {
     // This function also handles when the player is idling.
@@ -396,6 +402,8 @@ Game.prototype._walkPlayer = function(player, commands){
   this._resetEntityDisplacement(player);
   return false; // We are not moving this frame.
 };
+
+Game.prototype._handlePlayerAttack = function(player, commands){};
 
 Game.prototype._updatePlayerAnimation = function(scene){
   // Can set aliases here because we we're just checking their values.

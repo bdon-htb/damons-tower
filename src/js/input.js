@@ -55,14 +55,21 @@ function InputDevice(name, defaultKeys){
   // An object of the valid keys and a boolean to represent if their event has been triggerred.
   this.keyDown = {};
   this.keyUp = {}; // For checking if a key has been released.
+  this.orderedKeyDown = [];
+  this.orderedKeyUp = [];
   // FIll out this.keyDown and this.keyUp; Set all their key values to false.
   let objKeys = Object.keys(this.keys);
   objKeys.forEach(objKey => this.keyDown[objKey] = false);
   objKeys.forEach(objKey => this.keyUp[objKey] = false);
 }
 
+InputDevice.prototype.captureInputs = function(){
+  console.error('captureInputs() was called directly from the base InputDevice class');
+};
+
 // Return an array of strings of all the currently triggered keys in the specified keyObject.
-InputDevice.prototype.captureInputs = function(keyObject, inputs=[]){
+InputDevice.prototype.getActiveInputs = function(keyObject){
+  let inputs = [];
   for(const [key, bool] of Object.entries(keyObject)){
     if(bool == true){inputs.push(key)};
   };
@@ -75,14 +82,60 @@ InputDevice.prototype.setToDefaultKeys = function(){
 };
 
 // Set the keyObject's code value to the specified newCode
-InputDevice.prototype.changeKeyCode = function(keyObject, key, newCode){
-  keyObject[key] = newCode;
+InputDevice.prototype.changeKeyCode = function(key, newCode){
+  this.keys[key] = newCode;
 };
 
 // Set all of the values in keyObject to false.
 InputDevice.prototype.resetKeyObject = function(keyObject){
   Object.keys(keyObject).forEach((key) => keyObject[key] = false);
 };
+
+// Update the order of the keys listed in this.orderedKeyDown / this.orderedKeyUp.
+// type can either be "KeyDown" or "KeyUp"
+InputDevice.prototype.updateKeyOrder = function(key, value, type){
+  let item = `${type}-${key}`;
+  // i.e. keyDown -> orderedKeyDown
+  type = "ordered" + type.slice(0,1).toUpperCase() + type.slice(1);
+  let index = this[type].indexOf(item);
+  if(index > -1){
+    this[type].splice(index, 1); // Remove item from array if it's already in it.
+  };
+
+  if(value === true){
+    this[type].push(item);
+  };
+};
+
+// Sets the value of the specified boolean keyObject. i.e. keyDown or keyUp.
+// type can either be "keyDown" or "keyUp"
+InputDevice.prototype.keyHandler = function(keyCode, type, value){
+  let updateFunc = this.updateKeyOrder.bind(this)
+  let keyObject = (type === "keyDown") ? this.keyDown : this.keyUp; // Assumes keyUp otherwise.
+  for (const [key, code] of Object.entries(this.keys)){
+    if(keyCode == code){
+      keyObject[key] = value;
+      updateFunc(key, value, type);
+      break;
+    };
+  };
+};
+
+// Return all active keyDown and keyUp inputs in the order they are pressed.
+// The output will look something like ["keyDown-up", "keyUp-down"]
+// Children of InputDevice will have to make sure that their ordered keys
+// are updated properly indivudally.
+InputDevice.prototype.getActiveKeys = function(){
+  let inputs = [];
+  inputs = inputs.concat(this.orderedKeyDown);
+  inputs = inputs.concat(this.orderedKeyUp);
+
+  // Reset any stored keyUps.
+  this.resetKeyObject(this.keyUp);
+  this.orderedKeyUp = [];
+  return inputs;
+};
+
 /**
  * Keyboard input device class.
 */
@@ -96,36 +149,13 @@ function Keyboard(){
   };
 
   InputDevice.call(this, "keyboard", defaultKeys);
-  this.orderedKeyDown = []; // An array that keeps track of key presses in order.
 };
 
-Keyboard.prototype.updateKeyOrder = function(key, value){
-  item = `keyDown-${key}`; // Construct input command.
-  index = this.orderedKeyDown.indexOf(item)
-  if(index > -1){
-    this.orderedKeyDown.splice(index, 1); // Remove item from array if it's already in it.
-  };
-
-  if(value === true){
-    this.orderedKeyDown.push(item);
-  };
-};
+// Inherit methods from InputDevice;
+Keyboard.prototype = Object.create(InputDevice.prototype);
 
 Keyboard.prototype.captureInputs = function(){
-  // Side note: the reason why I didn't just output an array here is to keep the data neat for checking.
-  let inputs = new Map()
-  // inputs.set("keyDown", InputDevice.prototype.captureInputs(this.keyDown));
-  inputs.set("keyDown", this.orderedKeyDown);
-  inputs.set("keyUp", InputDevice.prototype.captureInputs(this.keyUp));
-
-  if(inputs.get("keyDown").length === 0 && inputs.get("keyUp").length === 0){
-    return []; // If there are no detected inputs, just return an empty list as usual.
-  };
-
-  if(inputs.get("keyUp").length > 0){
-    let resetFunc = this.resetKeyObject.bind(this);
-    resetFunc(this.keyUp); // Once captured, reset stored keyUps.
-  };
+  inputs = this.getActiveKeys();
   return inputs;
 };
 
@@ -139,40 +169,14 @@ Keyboard.prototype.removeListeners = function(element){
   element.removeEventListener("keyup", this.keyUpHandler.bind(this), false);
 };
 
-// Sets the value of the specified boolean keyObject. i.e. keyDown or keyUp.
-// type can either be "keyDown" or "keyUp"
-Keyboard.prototype.keyHandler = function(event, type, value){
-  let keyCode = event.code;
-  let updateFunc = this.updateKeyOrder.bind(this)
-  let keyObject = (type === "keyDown") ? this.keyDown : this.keyUp; // Assumes keyUp otherwise.
-  for (const [key, code] of Object.entries(this.keys)){
-    if(keyCode == code){
-      keyObject[key] = value;
-      if(type === "keyDown"){updateFunc(key, value)};
-    };
-  };
-};
-
 Keyboard.prototype.keyDownHandler = function(event){
-  this.keyHandler(event, "keyDown", true); // log keyDown
-  this.keyHandler(event, "keyUp", false); // reset equivalent keyUp
+  this.keyHandler(event.code, "keyDown", true); // log keyDown
+  this.keyHandler(event.code, "keyUp", false); // reset equivalent keyUp
 };
 
 Keyboard.prototype.keyUpHandler = function(event){
-  this.keyHandler(event, "keyUp", true); // log keyUp
-  this.keyHandler(event, "keyDown", false); // reset equivalent keyUp
-};
-
-Keyboard.prototype.setToDefaultKeys = InputDevice.prototype.setToDefaultKeys.bind(this)
-
-Keyboard.prototype.changeKeyCode = function(key, newCode){
-  InputDevice.prototype.changeKeyCode(this.keys, key, newCode);
-};
-
-// Sets all to false.
-Keyboard.prototype.resetKeyObject = function(keyObject){
-  keys = Object.keys(keyObject);
-  keys.forEach((key) => keyObject[key] = false);
+  this.keyHandler(event.code, "keyUp", true); // log keyUp
+  this.keyHandler(event.code, "keyDown", false); // reset equivalent keyUp
 };
 
 function Mouse(){
@@ -192,10 +196,12 @@ function Mouse(){
   };
 };
 
+// Inherit methods from InputDevice.
+Mouse.prototype = Object.create(InputDevice.prototype);
+
 Mouse.prototype.captureInputs = function(){
-  let inputs = InputDevice.prototype.captureInputs(this.keyDown);
-  inputs = InputDevice.prototype.captureInputs(this.clickEvents, inputs);
-  this.resetClicks(); // All click events are set to false when the mouse button is released.
+  let inputs = this.getActiveKeys().concat(this.getActiveInputs(this.clickEvents));
+  this.resetKeyObject(this.clickEvents);
   return inputs;
 };
 
@@ -226,21 +232,14 @@ Mouse.prototype._updateCoords = function(x, y){
   this.y = y;
 };
 
-Mouse.prototype.mouseButtonHandler = function(event, keyDown=true){
-  this.disableDefault(event);
-  this._updateCoords(event.offsetX, event.offsetY);
-  let keyCode = event.button;
-  for (const [key, code] of Object.entries(this.keys)){
-    if(keyCode == code){this.keyDown[key] = keyDown};
-  };
-};
-
 Mouse.prototype.mouseDownHandler = function(event){
-  this.mouseButtonHandler(event);
+  this.keyHandler(event.button, "keyDown", true);
+  this.keyHandler(event.button, "keyUp", false);
 };
 
 Mouse.prototype.mouseUpHandler = function(event){
-  this.mouseButtonHandler(event, false);
+  this.keyHandler(event.button, "keyUp", true);
+  this.keyHandler(event.button, "keyDown", false);
 };
 
 Mouse.prototype.mouseMoveHandler = function(event){
@@ -258,23 +257,8 @@ Mouse.prototype.mouseClickHandler = function(event){
   };
 };
 
-Mouse.prototype.resetClicks = function(){
-  InputDevice.prototype.resetKeyObject(this.clickEvents);
-};
-
 Mouse.prototype.disableDefault = function(event){
   event.preventDefault();
-};
-
-Mouse.prototype.setToDefaultKeys = InputDevice.prototype.setToDefaultKeys.bind(this)
-
-Mouse.prototype.changeKeyCode = function(key, newCode){
-  InputDevice.prototype.changeKeyCode(this.keys, key, newCode);
-};
-
-// Sets all of this.keyDown to false.
-Mouse.prototype.resetKeyDown = function(){
-  InputDevice.prototype.resetKeyObject(this.keyDown);
 };
 
 // TODO: For waaaaayyyy later.

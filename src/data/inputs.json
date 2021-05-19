@@ -16,6 +16,11 @@
       "pattern": ["keyDown-space", "keyUp-space"],
       "type": "tap",
       "timeLimit": "none"
+    },
+    "singleTap-leftPress": {
+      "pattern": ["keyDown-leftPress", "keyUp-leftPress"],
+      "type": "tap",
+      "timeLimit": "none"
     }
   }
 }

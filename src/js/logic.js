@@ -352,7 +352,7 @@ Controller.prototype.clearCommands = function(){
 };
 
 // Adds commands to Controller.commands. Accepts both array and other objects.
-// If array, all the ELEMENTS are added to this.commands.
+// If array, all the ARRAY ELEMENTS are added to this.commands.
 Controller.prototype.addCommands = function(e){
   if(e.constructor === Array){
     this.commands = this.commands.concat(e);
@@ -365,19 +365,16 @@ Controller.prototype.getInputs = function(events, data){
 
   if(this.mode === "keyboard"){
     let inputEvents = events.get("inputEvents");
+
     if(inputEvents.has("keyboard") === true){
-      let m = inputEvents.get("keyboard"); // This is a map.
-      // Essentially flatten the map. Prepend descriptive words for each input.
-      // inputs = inputs.concat(m.get("keyDown").map(x => "keyDown-" + x));
-      inputs = inputs.concat(m.get("keyDown")); // get keys from orderedKeyDown already formatted
-      inputs = inputs.concat(m.get("keyUp").map(x => "keyUp-" + x));
+      inputs = inputs.concat(inputEvents.get("keyboard"));
     };
 
     if(inputEvents.has("mouse") === true){
-      console.log(inputEvents.get("mouse"))
+      inputs = inputs.concat(inputEvents.get("mouse"));
     };
-  };
 
+  };
   return inputs;
 };
 

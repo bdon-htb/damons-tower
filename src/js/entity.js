@@ -42,7 +42,7 @@ function PlayerEntity(engine, gameObject){
     "left",
     "right"
   ];
-  this.attributes["wallCollider"] = new Rect([-7, 9], 14, 7); // position relative to topLeft: [9, 25]
+  // this.attributes["wallCollider"] = new Rect([-7, 9], 14, 7); // position relative to topLeft: [9, 25]
   this.attributes["animations"] = new Map(); // Animations is a map of all the available animations.
   this.attributes["speed"] = 3; // Set the default player movement speed.
   this.attributes["sprintSpeed"] = this.attributes["speed"] * 2;
@@ -53,41 +53,19 @@ function PlayerEntity(engine, gameObject){
   // Set relevant flags for player controls.
   this.attributes["canDodge"] = true;
 
-  let idleAnimations = {
-    "idle_front": engine.getLoadedAsset(engine.animKey).get("player_idle_front"),
-    "idle_back": engine.getLoadedAsset(engine.animKey).get("player_idle_back"),
-    "idle_left": engine.getLoadedAsset(engine.animKey).get("player_idle_left"),
-    "idle_right": engine.getLoadedAsset(engine.animKey).get("player_idle_right")
+  let spriteSheet;
+  let animation;
+  // Create all player animations from data in animation.json
+  for(const [animationName, animationData] of engine.assets.get(engine.animKey).entries()){
+    if(animationName.startsWith('player_')){
+      spriteSheet = engine.renderer.getSheetFromId(animationData["spriteSheet"]);
+      animation = new Animation(animationName, spriteSheet, animationData);
+      this.attributes["animations"].set(animationName, animation);
+    };
   };
-
-  let walkAnimations = {
-    "walk_front": engine.getLoadedAsset(engine.animKey).get("player_walk_front"),
-    "walk_back": engine.getLoadedAsset(engine.animKey).get("player_walk_back"),
-    "walk_left": engine.getLoadedAsset(engine.animKey).get("player_walk_left"),
-    "walk_right": engine.getLoadedAsset(engine.animKey).get("player_walk_right")
-  };
-
-  let dodgeAnimations = {
-    "dodge_front": engine.getLoadedAsset(engine.animKey).get("player_dodge_front"),
-    "dodge_back": engine.getLoadedAsset(engine.animKey).get("player_dodge_back"),
-    "dodge_left": engine.getLoadedAsset(engine.animKey).get("player_dodge_left"),
-    "dodge_right": engine.getLoadedAsset(engine.animKey).get("player_dodge_right")
-  };
-
-  let allAnimations = [idleAnimations, walkAnimations, dodgeAnimations];
-
-  // Add all of the animations in allAnimations to the player's attribute "animations".
-  allAnimations.forEach(object => {
-    let spriteSheet;
-    let animation;
-    for(let [key, value] of Object.entries(object)){
-      spriteSheet = engine.renderer.getSheetFromId(value["spriteSheet"]);
-      animation = new Animation(key, spriteSheet, value);
-      this.attributes["animations"].set(key, animation)}
-  });
 
   // Set the default sprite.
-  let defaultAnimation = this.attributes["animations"].get("idle_front");
+  let defaultAnimation = this.attributes["animations"].get("player_idle_front");
   gameObject.animationManager.activateAnimation(defaultAnimation);
   this.attributes["currentAnimation"] = defaultAnimation;
   this.attributes["sprite"] = gameObject.animationManager.getSprite(defaultAnimation);

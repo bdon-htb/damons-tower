@@ -82,6 +82,52 @@
       "frames": [[0,3], [1,3], [2,3], [3,3], [4,3], [5,3], [6,3]],
       "loops": false,
       "type": "dodge",
-      "speed": 5}
+      "speed": 5},
+
+    "player_basic_attack1_left": {
+      "spriteSheet": "player_basic_attack1",
+      "frames": [[0,0], [1,0], [2,0], [3,0], [4,0], [5,0], [6,0], [7,0], [8,0]],
+      "loops": false,
+      "type": "attack",
+      "speed": "default",
+      "followUp": "player_basic_attack2_left"},
+
+    "player_basic_attack1_right": {
+      "spriteSheet": "player_basic_attack1",
+      "frames": [[0,1], [1,1], [2,1], [3,1], [4,1], [5,1], [6,1], [7,1], [8,1]],
+      "loops": false,
+      "type": "attack",
+      "speed": "default",
+      "followUp": "player_basic_attack2_right"},
+
+    "player_basic_attack2_left": {
+      "spriteSheet": "player_basic_attack2",
+      "frames": [[0,0], [1,0], [2,0], [3,0], [4,0], [5,0], [6,0]],
+      "loops": false,
+      "type": "attack",
+      "speed": "default",
+      "followUp": "player_basic_attack3_left"},
+
+    "player_basic_attack2_right": {
+      "spriteSheet": "player_basic_attack2",
+      "frames": [[0,1], [1,1], [2,1], [3,1], [4,1], [5,1], [6,1]],
+      "loops": false,
+      "type": "attack",
+      "speed": "default",
+      "followUp": "player_basic_attack3_right"},
+
+    "player_basic_attack3_left": {
+      "spriteSheet": "player_basic_attack3",
+      "frames": [[0,0], [1,0], [2,0], [3,0], [4,0], [5,0], [6,0]],
+      "loops": false,
+      "type": "attack",
+      "speed": "default"},
+
+    "player_basic_attack3_right": {
+      "spriteSheet": "player_basic_attack2",
+      "frames": [[0,1], [1,1], [2,1], [3,1], [4,1], [5,1], [6,1]],
+      "loops": false,
+      "type": "attack",
+      "speed": "default"}
     }
 }

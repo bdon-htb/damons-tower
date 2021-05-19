@@ -627,6 +627,7 @@ function Animation(id, spriteSheet, animationData){
   this._defaultSpeed = 8; // Avoid changing this value as much as possible.
   this.speed = (animationData.speed === "default") ? this._defaultSpeed : animationData.speed; // Frames it takes to reach the next animation frame.
   this.type = animationData.type;
+  this.followup = animationData.followUp ? null : animationData.followUp; // Name of animation that comes after current animation
   this.counter = 0; // A counter that keeps track of the frames while the animation is active.
 };
 

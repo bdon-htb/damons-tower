@@ -407,26 +407,26 @@ Game.prototype._updatePlayerAnimation = function(scene){
     case "walking":
     case "sprinting":
       animMap = {
-        "up": allAnims.get("walk_back"),
-        "down": allAnims.get("walk_front"),
-        "left": allAnims.get("walk_left"),
-        "right": allAnims.get("walk_right")
+        "up": allAnims.get("player_walk_back"),
+        "down": allAnims.get("player_walk_front"),
+        "left": allAnims.get("player_walk_left"),
+        "right": allAnims.get("player_walk_right")
       };
       break;
     case "dodging":
       animMap = {
-        "up": allAnims.get("dodge_back"),
-        "down": allAnims.get("dodge_front"),
-        "left": allAnims.get("dodge_left"),
-        "right": allAnims.get("dodge_right")
+        "up": allAnims.get("player_dodge_back"),
+        "down": allAnims.get("player_dodge_front"),
+        "left": allAnims.get("player_dodge_left"),
+        "right": allAnims.get("player_dodge_right")
       };
       break;
     default: // Let's treat idle as default.
       animMap = {
-        "up": allAnims.get("idle_back"),
-        "down": allAnims.get("idle_front"),
-        "left": allAnims.get("idle_left"),
-        "right": allAnims.get("idle_right")
+        "up": allAnims.get("player_idle_back"),
+        "down": allAnims.get("player_idle_front"),
+        "left": allAnims.get("player_idle_left"),
+        "right": allAnims.get("player_idle_right")
       };
   };
 

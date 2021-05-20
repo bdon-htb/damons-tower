@@ -50,14 +50,16 @@ function PlayerEntity(engine, gameObject){
   this.attributes["direction"] = "down";
   this.attributes["dodgeCooldown"] = 400 // In miliseconds.
 
-  // Set relevant flags for player controls.
+  // Set relevant variables for player controls.
   this.attributes["canDodge"] = true;
+  this.attributes["canAttack"] = true;
+  this.attributes["attackQueue"] = [];
 
   let spriteSheet;
   let animation;
   // Create all player animations from data in animation.json
   for(const [animationName, animationData] of engine.assets.get(engine.animKey).entries()){
-    if(animationName.startsWith('player_')){
+    if(animationName.startsWith('player_') || animationName.startsWith('iron_')){
       spriteSheet = engine.renderer.getSheetFromId(animationData["spriteSheet"]);
       animation = new Animation(animationName, spriteSheet, animationData);
       this.attributes["animations"].set(animationName, animation);

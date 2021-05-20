@@ -240,6 +240,8 @@ Renderer.prototype.drawLine = function(colour, startX, startY, endX, endY, thick
 
 // Draws sprite from spritesheet only!
 Renderer.prototype.drawSprite = function(sprite, x=0, y=0){
+  if(sprite === null){return};
+
   let spriteScale = this.parent.spriteScale;
   sprite.width = sprite.texture.width * spriteScale * this.horizontalRatio;
   sprite.height = sprite.texture.width * spriteScale * this.verticalRatio;
@@ -256,6 +258,17 @@ Renderer.prototype.drawEntity = function(scene, gameEntity){
   let topRightY = (gameEntity.attributes["y"] - (gameEntity.attributes["height"] / 2)) * this.parent.spriteScale;
   let relativePos = camera.getRelative(topLeftX, topRightY);
   this.drawSprite(gameEntity.attributes["sprite"], relativePos[0], relativePos[1]);
+};
+
+// Draw an effect with respect to the source entity.
+Renderer.prototype.drawEffect = function(scene, gameEntity, effectAnim){
+  let camera = scene.camera;
+  let offsetX = effectAnim.offsetX * this.parent.spriteScale;
+  let offsetY = effectAnim.offsetY * this.parent.spriteScale;
+  let topLeftX = (gameEntity.attributes["x"] - (gameEntity.attributes["width"] / 2)) * this.parent.spriteScale;
+  let topRightY = (gameEntity.attributes["y"] - (gameEntity.attributes["height"] / 2)) * this.parent.spriteScale;
+  let relativePos = camera.getRelative(topLeftX + offsetX, topRightY + offsetY);
+  this.drawSprite(this.animationManager.getSprite(effectAnim), relativePos[0], relativePos[1]);
 };
 
 // Draws all tiles in view of the camera.
@@ -618,17 +631,76 @@ function SpriteSheet(imageURL, texture, sprite, sheetWidth, sheetHeight, spriteS
 */
 function Animation(id, spriteSheet, animationData){
   this.id = id;
-  this.spriteSheet = spriteSheet;
-  this.frames = animationData.frames; // An array of indexes; each index corresponds to the frame's sprite index in the sheet.
-  this.currentFrame = this.frames[0];
+  // A counter that keeps track of the game refreshes while the current animation frames is active.
+  this.counter = 0;
+  // Default number of refreshes before next animation frame.
+  this._defaultTiming = 8;
   this.frameIndex = 0;
   this.active = false;
+
+  // Required settings.
+
+  this.spriteSheet = spriteSheet;
+  // An array of indexes; each index corresponds to the frame's sprite index in the sheet.
+  this.frames = animationData.frames;
+  this.currentFrame = this.frames[0];
   this.loops = animationData.loops;
-  this._defaultSpeed = 8; // Avoid changing this value as much as possible.
-  this.speed = (animationData.speed === "default") ? this._defaultSpeed : animationData.speed; // Frames it takes to reach the next animation frame.
+  // Type of animation. Can be used for checking.
   this.type = animationData.type;
-  this.followup = animationData.followUp ? null : animationData.followUp; // Name of animation that comes after current animation
-  this.counter = 0; // A counter that keeps track of the frames while the animation is active.
+
+  // Optional settings.
+
+  // Name of animation that comes after current animation. If cancelIndex is defined, then followUp will trigger at the index.
+  this.followUp = animationData.followUp === undefined ? null : animationData.followUp;
+
+  // Index of first frame where player can input for followUp.
+  this.queueIndex = animationData.queueIndex === undefined ? "d" : animationData.queueIndex;
+  // Default behaviour is that queue frame will be nth index to the left on the last index.
+  if(["default", "d"].includes(this.queueIndex)){
+    let n = 2;
+    if(this.frames.length < n){
+      this.queueIndex = 0;
+    } else this.queueIndex = this.frames.length - n;
+  };
+
+  // Number of game refreshes it takes to reach the next animation frame.
+  this.timings = animationData.timings === undefined ? this._defaultTiming : animationData.timings;
+  if(this.timings.constructor === Array){
+
+    // Error checking.
+    if(this.timings.length != this.frames.length){
+      console.error(`"timings" array does not match "frames" array size. timings: ${this.timings}, frames: ${this.frames}`)
+    };
+
+    for(let i = 0; i < this.timings.length; i++){
+      if(["default", "d"].includes(this.timings[i])){
+        this.timings[i] = this._defaultTiming;
+      };
+    };
+  } else if(this.timings === "d"){this.timings = this._defaultTiming};
+
+  // An array of rectangle dimensions and locations tied to frames.
+  this.hitBoxes = animationData.hitBoxes === undefined ? null : animationData.hitBoxes;
+
+  // If there are movements tied to the animation, use this to set the speed for the frame(s) (without direction!)
+  // can be a number or an array.
+  this.speed = animationData.speed === undefined ? null : animationData.speed;
+
+  // If exists, dictates what frame to cancel the animation at if applicable.
+  this.cancelIndex = animationData.cancelIndex === undefined ? null: animationData.cancelIndex;
+
+  // Similar to followUp but will only trigger once the animation completes
+  this.return = animationData.return === undefined ? null: animationData.return;
+
+  // An array of "effect" animations. These are names of animations that are added ontop of the existing animation.
+  // Each frame of an effect animation should correspond to a frame in the main animation.
+  this.effects = animationData.effects === undefined ? []: animationData.effects;
+
+  if(this.type === "effect"){
+    this.offsetX = animationData.offsetX === undefined ? 0: animationData.offsetX;
+    this.offsetY = animationData.offsetY === undefined ? 0: animationData.offsetY;
+  };
+
 };
 
 /**
@@ -675,7 +747,10 @@ AnimationManager.prototype.nextFrame = function(animation){
 AnimationManager.prototype.getSprite = function(animation){
   let spriteSheet = animation.spriteSheet;
   let spriteIndex = animation.currentFrame;
-  return this.parent.textureManager.getSpriteFromSheet(spriteSheet, spriteIndex[0], spriteIndex[1]);
+
+  if(spriteIndex === null){
+    return null;
+  } else return this.parent.textureManager.getSpriteFromSheet(spriteSheet, spriteIndex[0], spriteIndex[1]);
 };
 
 AnimationManager.prototype.activateAnimation = function(animation){
@@ -689,9 +764,10 @@ AnimationManager.prototype.deactivateAnimation = function(animation){
 
 AnimationManager.prototype._incrementCounter = function(animation){
   animation.counter += 1;
+  let timing = (animation.timings.constructor === Array) ? animation.timings[animation.frameIndex] : animation.timings;
   let complete; // Flag; whether the counter = speed; the number of frames to move on.
 
-  if(animation.counter >= animation.speed){
+  if(animation.counter >= timing){
     animation.counter = 0;
     complete = true;
   } else complete = false;

@@ -89,14 +89,25 @@ Game.prototype.update = function(){
       let posArray = [player.attributes["x"], player.attributes["y"]];
       camera.center(posArray[0], posArray[1]);
       let relPosArray = camera.getRelative(posArray[0], posArray[1]);
+
+      // Update player graphic.
+      // TODO: Make more elaborate and applicable to theoretically any entity.
       player.attributes["sprite"] = this.animationManager.getSprite(player.attributes["currentAnimation"]);
       this.animationManager.nextFrame(player.attributes["currentAnimation"]);
+      if(player.attributes["currentAnimation"].effects.length > 0){
+        for(const effect of player.attributes["currentAnimation"].effects){
+          effectAnim = player.attributes["animations"].get(effect);
+          this.animationManager.nextFrame(effectAnim);
+        };
+      };
 
       this.debugMenu.updateVariable("singleTap-space state", this.controller.patterns.get("singleTap-space")["state"]);
       this.debugMenu.updateVariable("player state", player.attributes["state"]);
       this.debugMenu.updateVariable("player x", player.attributes["x"]);
       this.debugMenu.updateVariable("player y", player.attributes["y"]);
       this.debugMenu.updateVariable("canDodge", player.attributes["canDodge"]);
+      this.debugMenu.updateVariable("animation frame", player.attributes["currentAnimation"].frameIndex);
+      this.debugMenu.updateVariable("current animation", player.attributes["currentAnimation"].id);
       this.debugMenu.updateVariable("commands", this.controller.getCommands());
       break;
   };
@@ -123,6 +134,14 @@ Game.prototype.draw = function(){
 
       renderer.drawTiles(this.gameStateObject["scene"]);
       this.renderer.drawEntity(level, player);
+
+      //
+      let currentAnimation = player.attributes["currentAnimation"];
+      if(currentAnimation.effects.length > 0 && currentAnimation.active === true){
+        for(const effect of player.attributes["currentAnimation"].effects){
+          this.renderer.drawEffect(level, player, player.attributes["animations"].get(effect));
+        };
+      };
       // renderer.drawRect(0xff0000, playerCenter[0], playerCenter[1], 4, 4);
       // renderer.drawRect(0xff0000, playerCenter[0] - (16 * this.engine.spriteScale), playerCenter[1] - (16 * this.engine.spriteScale), 4, 4);
       // renderer.drawRect(0xff0000, playerCenter[0] + (16 * this.engine.spriteScale), playerCenter[1] + (16 * this.engine.spriteScale), 4, 4);
@@ -178,7 +197,6 @@ Game.prototype._loadTestLevel = function(){
 // Gemeral update methods.
 // =======================
 Game.prototype._updateLevel = function(scene){
-  let events = this.gameStateObject["events"]
   if(scene.entities.has("player") === true){
     this._updatePlayer(scene);
   };
@@ -231,6 +249,31 @@ Game.prototype._resetEntityDisplacement = function(entity){
   entity.attributes["dy"] = 0;
 };
 
+Game.prototype._changeEntityAnimation = function(entity, oldAnimation, newAnimation){
+  this.animationManager.deactivateAnimation(oldAnimation);
+  this.animationManager.activateAnimation(newAnimation);
+  entity.attributes["currentAnimation"] = newAnimation;
+
+  this._deactiveEntityEffects(entity, oldAnimation);
+  this._activateEntityEffects(entity, newAnimation);
+};
+
+Game.prototype._activateEntityEffects = function(entity, animation){
+  let effectAnim;
+  for(const effect of animation.effects){
+    effectAnim = entity.attributes["animations"].get(effect);
+    this.animationManager.activateAnimation(effectAnim);
+  };
+};
+
+Game.prototype._deactiveEntityEffects = function(entity, animation){
+  let effectAnim;
+  for(const effect of animation.effects){
+    effectAnim = entity.attributes["animations"].get(effect);
+    this.animationManager.deactivateAnimation(effectAnim);
+  };
+};
+
 // =====================
 // Player related methods.
 // =====================
@@ -256,10 +299,12 @@ Game.prototype._handlePlayerStates = function(scene){
   let commands = this.controller.getCommands();
 
   // If I want to implement different controller modes, then I'd add a check here.
-  let attackCommands = ["leftPress", "rightPress"];
+  let attackCommands = ["singleTap-leftPress", "singleTap-rightPress"];
   let playerState = player.attributes["state"];
   let oldPos = [player.attributes["x"], player.attributes["y"]];
   let isMoving = false;
+
+  let test = attackCommands.some(c => commands.includes(c))
 
   if(playerState === "dodging"){
     isMoving = this._handlePlayerDodge(player, commands);
@@ -269,7 +314,8 @@ Game.prototype._handlePlayerStates = function(scene){
     player.attributes["canDodge"] = false;
     this._handlePlayerDodgeStart(player, commands);
   }
-  else if(player.attributes["canAttack"] === true && attackCommands.some(c => commands.includes(c)) && ["idle", "walking", "sprinting", "attacking"].includes(playerState)){
+  else if(playerState === "attacking" || player.attributes["canAttack"] === true && attackCommands.some(c => commands.includes(c))
+  && ["idle", "walking", "sprinting", "attacking"].includes(playerState)){
     this._handlePlayerAttack(player, commands);
   }
   else {
@@ -403,7 +449,59 @@ Game.prototype._walkPlayer = function(player, commands){
   return false; // We are not moving this frame.
 };
 
-Game.prototype._handlePlayerAttack = function(player, commands){};
+// Handles all of player attacking, including animations.
+// Precondition: ["idle", "walking", "sprinting", "attacking"].includes(playerState)
+Game.prototype._handlePlayerAttack = function(player, commands){
+  let basicAttackCommand = "singleTap-leftPress";
+  let playerState = player.attributes["state"];
+  let allAnims = player.attributes["animations"];
+  let attackQueue = player.attributes["attackQueue"];
+  let currentAnimation = player.attributes["currentAnimation"];
+
+  // Check for basic attack.
+  if(commands.includes(basicAttackCommand)){
+
+    // Adding input to queue to continuing attack.
+    if(playerState === "attacking" && currentAnimation.frameIndex >= currentAnimation.queueIndex
+    && currentAnimation.active === true){ // We're trying to continue off a current attack.
+      attackQueue.push(basicAttackCommand);
+    }
+    // Start basic attack.
+    else if(playerState != "attacking"){
+      player.attributes["state"] = "attacking";
+      let direction = player.attributes["direction"];
+      let animMap = {
+        "up": allAnims.get("player_basic_attack1_left"),
+        "down": allAnims.get("player_basic_attack1_right"),
+        "left": allAnims.get("player_basic_attack1_left"),
+        "right": allAnims.get("player_basic_attack1_right")
+      };
+      this._changeEntityAnimation(player, currentAnimation, animMap[direction]);
+    };
+  }
+  // If we're at the end of an attack with a followUp, and there is an input queued,
+  // move on to the followUp animation.
+  // If the attack has a specified cancelIndex then we check for followUp ONLY
+  // at that point.
+  else if(playerState === "attacking" && attackQueue[0] === basicAttackCommand
+  && currentAnimation.followUp != undefined
+  && (currentAnimation.frameIndex === currentAnimation.cancelIndex ||
+    currentAnimation.cancelIndex === undefined && currentAnimation.active === false)){
+    this._changeEntityAnimation(player, currentAnimation, allAnims.get(currentAnimation.followUp));
+    player.attributes["attackQueue"] = [];
+  }
+
+  // Reached end of attack animation. Reset to idle.
+  else if(playerState === "attacking" && currentAnimation.active === false){
+    // Go to return animation if there is one.
+    if(currentAnimation.return != null){
+      this._changeEntityAnimation(player, currentAnimation, allAnims.get(currentAnimation.return))
+    } else player.attributes["state"] = "idle";
+
+    player.attributes["attackQueue"] = [];
+
+  };
+};
 
 Game.prototype._updatePlayerAnimation = function(scene){
   // Can set aliases here because we we're just checking their values.
@@ -430,6 +528,8 @@ Game.prototype._updatePlayerAnimation = function(scene){
         "right": allAnims.get("player_dodge_right")
       };
       break;
+    case "attacking":
+      return; // Exit if we're in attacking state because that's handled elsewhere.
     default: // Let's treat idle as default.
       animMap = {
         "up": allAnims.get("player_idle_back"),
@@ -445,8 +545,6 @@ Game.prototype._updatePlayerAnimation = function(scene){
   // If there's a change in animation...
   if(oldAnimation !== newAnimation){
     // Switch to new animation.
-    this.animationManager.deactivateAnimation(oldAnimation);
-    this.animationManager.activateAnimation(newAnimation);
-    player.attributes["currentAnimation"] = newAnimation;
+    this._changeEntityAnimation(player, oldAnimation, newAnimation);
   };
 };

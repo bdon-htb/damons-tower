@@ -310,7 +310,7 @@ function DebugMenu(parent){
   this.parent = parent;
   this.debugVariables = new Map();
   this.textStyle = "debug"
-  this.topLeft = [700, 0];
+  this.topLeft = [0, 0];
 
   let titleLabel = this._createLabel("Debug Display", "debug")
   titleLabel.x = this.topLeft[0]

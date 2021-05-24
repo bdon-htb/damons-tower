@@ -8,12 +8,15 @@ function PhysicsManager(engine){
   this.FPS = engine.FPS;
 };
 
+/*
 PhysicsManager.prototype.calculateVelocity = function(velocity){
+  return velocity;
   if(this.engine.frameData["fps"] === 0){
     console.warn("fps detected as 0.")
     return velocity;
   } return Math.round(velocity * (1/this.engine.frameData["fps"]) * this.FPS);
 };
+*/
 
 // Returns the point where a vector intersects a rect.
 // Returns null if hits nothing.

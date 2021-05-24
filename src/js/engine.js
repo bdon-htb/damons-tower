@@ -56,8 +56,7 @@ function Engine(htmlDOM){
     "loading assets",
     "loading menus",
     "loading textures",
-    "loading fonts",
-    "error"
+    "loading fonts"
   ];
 
   // Create components.
@@ -75,12 +74,6 @@ function Engine(htmlDOM){
   this.callbacks = this.app.callbacks;
 };
 
-Engine.prototype.draw = function(data){
-  this.renderer.clear();
-  // this.tester.testDraw(data);
-  this.app.draw();
-};
-
 Engine.prototype.update = function(data){
   this.timerManager.updateTimers();
   this.inputManager.captureInputs();
@@ -88,12 +81,19 @@ Engine.prototype.update = function(data){
   this.app.update();
 };
 
+
+Engine.prototype.draw = function(data){
+  this.renderer.clear();
+  if(this.stateMachine.currentState === "running"){
+    this.app.draw();
+  };
+};
+
 Engine.prototype.run = function(data){
   this.frameData = Object.assign({}, data);
-  let state = this.stateMachine.currentState;
-  if(state === "running"){
+
+  if(this.stateMachine.currentState === "running"){
     this.update();
-    this.draw();
   } else this._runLoadingStates() // If the engine is not running, then it must be loading something.
 };
 

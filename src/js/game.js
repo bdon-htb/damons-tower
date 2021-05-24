@@ -380,10 +380,10 @@ Game.prototype._handlePlayerDodge = function(player, commands){
 
     for(const d of ["dx", "dy"]){
       if(player.attributes[d] > 0){
-        player.attributes[d] = physicsManager.calculateVelocity(dodgeSpeed);
+        player.attributes[d] = dodgeSpeed;
       }
       else if(player.attributes[d] < 0){
-        player.attributes[d] = physicsManager.calculateVelocity(-dodgeSpeed);
+        player.attributes[d] = -dodgeSpeed;
       }
       // We do nothing if displacement is 0.
     };
@@ -435,7 +435,7 @@ Game.prototype._walkPlayer = function(player, commands){
       // Prioritize the last move input and move if one is detected. This should prevent standstill by pressing opposite keys.
       if(Object.keys(movMap).includes(c) === true && commands.slice(i, commands.length).includes(movMap[c][2]) === false){
         coordinate = movMap[c][0];
-        dMap[coordinate] += physicsManager.calculateVelocity(movMap[c][1]);
+        dMap[coordinate] += movMap[c][1];
         player.attributes["direction"] = movMap[c][3];
       };
     };

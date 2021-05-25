@@ -56,7 +56,7 @@ function Game(engine){
 };
 
 Game.prototype.update = function(){
-  this._updateFrameData(data);
+  this._updateFrameData();
   this._refreshEvents(); // Init / re-init the game events.
   let currentState = this.stateMachine.currentState;
   let events = this.gameStateObject["events"]; // Create an alias.
@@ -205,8 +205,8 @@ Game.prototype._updateLevel = function(scene){
 // ===============================
 // gameStateObject update methods.
 // ===============================
-Game.prototype._updateFrameData = function(data){
-  this.gameStateObject["frameData"] = data;
+Game.prototype._updateFrameData = function(){
+  this.gameStateObject["frameData"] = this.engine.data;
 };
 
 Game.prototype._refreshEvents = function(){

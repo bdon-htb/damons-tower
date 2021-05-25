@@ -12,16 +12,10 @@ let fps;
 
 /**
  * Fixed physics timestep with variable drawing.
- * Currently there's no interpolation.
+ * Currently there's no draw interpolation and at low
+ * enough framerates inputs might be "eaten" up.
 */
 function main(timeStamp){
-  /* Throttle the framerate
-  if (timeStamp < oldTimeStamp + (1000 / 10)) {
-      frameID = requestAnimationFrame(main);
-      return;
-  }
-  */
-
   timeDelta = timeStamp - oldTimeStamp;
 
   data = {
@@ -35,7 +29,7 @@ function main(timeStamp){
 
   let numUpdateSteps = 0; // Track any additional updates.
   while(accumulator >= timeStep){
-    game.run(data);
+    game.update(data);
     accumulator -= timeStep;
     // Catch spiral of death.
     if(++numUpdateSteps >= 240){

@@ -74,27 +74,25 @@ function Engine(htmlDOM){
   this.callbacks = this.app.callbacks;
 };
 
-Engine.prototype.update = function(data){
-  this.timerManager.updateTimers();
-  this.inputManager.captureInputs();
-  // this.tester.testUpdate(data);
-  this.app.update();
+Engine.prototype.updateFrameData = function(newData){
+  this.frameData = Object.assign({}, data);
 };
 
+Engine.prototype.update = function(data){
+  this.updateFrameData(data);
+  this.timerManager.updateTimers();
+  this.inputManager.captureInputs();
+  
+  if(this.stateMachine.currentState === "running"){
+    this.app.update();
+  } else this._runLoadingStates(); // If the engine is not running, then it must be loading something.
+};
 
-Engine.prototype.draw = function(data){
+Engine.prototype.draw = function(){
   this.renderer.clear();
   if(this.stateMachine.currentState === "running"){
     this.app.draw();
   };
-};
-
-Engine.prototype.run = function(data){
-  this.frameData = Object.assign({}, data);
-
-  if(this.stateMachine.currentState === "running"){
-    this.update();
-  } else this._runLoadingStates() // If the engine is not running, then it must be loading something.
 };
 
 // ==============================

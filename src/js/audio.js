@@ -14,7 +14,7 @@ function AudioManager(parent){
 
 // load songs into this.songs
 // songs is an array of audio urls.
-AudioManager.prototype.loadSongs = function(songs){};
+AudioManager.prototype.loadSound = function(sound){};
 
 
 // Play single sound

@@ -13,7 +13,7 @@ function Game(engine){
   this.animationManager = this.renderer.animationManager;
   this.timerManager = engine.timerManager;
 
-  this.debugModeOn = true;
+  this.debugModeOn = false;
   this.debugMenu = new DebugMenu(this);
 
   this.gameStateObject = {
@@ -50,8 +50,8 @@ function Game(engine){
     "openOptions": this.stateMachine.changeState.bind(this.stateMachine, "options"),
     "openCredits": this.stateMachine.changeState.bind(this.stateMachine, "credits"),
     "resizeTest": this.renderer.requestFullscreen.bind(this.renderer),
-    "resizeTest2": this.renderer.resizeScreen.bind(this.renderer, 1280, 720),
-    "resizeTest3": this.renderer.resizeScreen.bind(this.renderer, 960, 540)
+    "resizeTest2": this._resizeScreen.bind(this, 1280, 720),
+    "resizeTest3": this._resizeScreen.bind(this, 960, 540)
   };
 };
 
@@ -153,6 +153,12 @@ Game.prototype.draw = function(){
   };
 };
 
+Game.prototype._resizeScreen = function(newWidth, newHeight){
+  this.renderer.resizeScreen(newWidth, newHeight);
+  if(this.gameStateObject["menu"] != undefined){
+    this.engine.guiManager.updateMenuGraphics(this.gameStateObject["menu"]);
+  };
+};
 // =========================
 // State transition methods.
 // =========================

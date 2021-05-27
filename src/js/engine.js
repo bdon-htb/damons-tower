@@ -35,6 +35,8 @@ function Engine(htmlDOM){
   this.fontsKey = "fonts";
   // contains input command objects.
   this.inputsKey = "inputCommands";
+  // contains data for drawing custom gui objects based on a spritesheet.
+  this.guiConfigKey = "guiCustomStyle";
 
   // AssetLoader variables.
   this.dataLocation = "data";
@@ -56,6 +58,7 @@ function Engine(htmlDOM){
     "loading assets",
     "loading menus",
     "loading textures",
+    "start loading fonts",
     "loading fonts"
   ];
 
@@ -82,7 +85,7 @@ Engine.prototype.update = function(data){
   this.updateFrameData(data);
   this.timerManager.updateTimers();
   this.inputManager.captureInputs();
-  
+
   if(this.stateMachine.currentState === "running"){
     this.app.update();
   } else this._runLoadingStates(); // If the engine is not running, then it must be loading something.
@@ -109,6 +112,7 @@ Engine.prototype.loadAllAssets = function(){
   this.assetLoader.getAsset(dataLocation + "/" + "menus.json", true); // menu filenames.
   this.assetLoader.getAsset(dataLocation + "/" + "fonts.json", true); // custom font names.
   this.assetLoader.getAsset(dataLocation + "/" + "inputs.json", true); // input commands / patterns.
+  this.assetLoader.getAsset(dataLocation + "/" + "guiCustomStyle.json", true); // input commands / patterns.
 
   this.assetLoader.getAsset(dataLocation + "/" + "levels.json", true); // (test) level data.
 };
@@ -329,30 +333,35 @@ Engine.prototype.getInputDevice = function(deviceName){
 // In hindsight, I should've just bit the bullet and learned promises. Oh well :|
 Engine.prototype._runLoadingStates = function(){
   let state = this.stateMachine.currentState;
-  // starting => loading assets
+  // starting -> loading assets
   if(state === "starting"){
     this.stateMachine.changeState("loading assets");
     this.loadAllAssets();
   }
 
-  // loading assets => loading fonts => loading menus.
+  // loading assets -> loading textures -> loading fonts
   else if(state === "loading assets" && this.allAssetsLoaded() === true){
-    this.stateMachine.changeState("loading fonts");
-    const callback = () => {
-      this.stateMachine.changeState("loading menus")
-      this.loadAllMenus();
-    };
-    this.loadAllFonts(callback)
-  }
-
-  // loading menus => loading textures => running
-  else if(state === "loading menus" && this.allMenusLoaded() === true){
     this.stateMachine.changeState("loading textures");
     const callback = () => {
-      this.stateMachine.changeState("running");
-      this.app.stateMachine.changeState(this.app.startingState);
+      this.stateMachine.changeState("start loading fonts");
     };
     this.loadAllTextures(callback);
+  }
+
+  // loading fonts -> loading menus
+  else if(state === "start loading fonts"){
+    this.stateMachine.changeState("loading fonts");
+    const callback = () => {
+      this.stateMachine.changeState("loading menus");
+      this.loadAllMenus();
+    };
+    this.loadAllFonts(callback);
+  }
+
+  // loading menus -> running
+  else if(state === "loading menus" && this.allMenusLoaded() === true){
+    this.stateMachine.changeState("running");
+    this.app.stateMachine.changeState(this.app.startingState);
   };
 
 };

@@ -66,6 +66,13 @@
       "height": 96,
       "spriteSize": 96},
 
+    "gui": {
+      "name": "gui_assets.png",
+      "width": 192,
+      "height": 128,
+      "type": "variableSize"
+    },
+
     "outdoors_tileset": {
       "name": "outdoors_tileset.png",
       "width": 352,

@@ -116,8 +116,24 @@ GUIManager.prototype._createListWidget = function(listTag){
   return new ListWidget(parentObj, listItems)
 };
 
-GUIManager.prototype._setGUIObjectGraphic = function(guiObject){
+GUIManager.prototype.updateMenuGraphics = function(widget){
   let renderer = this.parent.renderer;
+  let recursiveFunc = this.updateMenuGraphics.bind(this);
+  switch(widget.constructor){
+    case Menu:
+      for(const guiObject of widget.guiObjects){
+        recursiveFunc(guiObject)
+      };
+      break;
+    case Label:
+    case Button:
+      renderer.setGUIGraphic(widget);
+      break;
+    case ListWidget:
+      for(const listItem of widget.listItems){
+        recursiveFunc(listItem);
+      };
+  };
 };
 
 // Return an array of all gui objects in the menu.
@@ -147,11 +163,9 @@ GUIManager.prototype._createAllGUIObjects = function(menuTag){
     };
 
     guiObject = createFunc(child);
-
-    // Update dimensions if there were any graphical changes.
-    let size = renderer.getEntitySize(guiObject)
-    guiObject.width = size[0];
-    guiObject.height = size[1];
+    renderer.setGUIGraphic(guiObject);
+    guiObject.width = guiObject.graphic.width;
+    guiObject.height = guiObject.graphic.height;
 
     guiObjectArray.push(guiObject);
   };
@@ -267,7 +281,8 @@ function GUIObject(x, y, width, height, attributes){
   this.width = width;
   this.height = height;
   this.attributes = attributes;
-  this.state = "default"
+  this.state = "default";
+  this.graphic;
 };
 
 function Label(guiObject, text){
@@ -278,6 +293,8 @@ function Label(guiObject, text){
 function Button(labelObject, callback){
   Object.assign(this, labelObject);
   this.callback = callback;
+  this.overlayGraphic;
+  // this.pressedGraphic;
 };
 
 function ListWidget(guiObject, listItems){
@@ -297,7 +314,7 @@ function ButtonStyle(styleObj){
   this.alpha = 1;
 
   if(styleObj !== undefined){
-    Object.assign(styleObj)
+    Object.assign(this, styleObj)
   };
 };
 

@@ -66,9 +66,12 @@ Renderer.prototype.loadBitmapFonts = function(fontsArray, callback){
   this.loader.onComplete.add(callback);
 };
 
+// This is only relevant for buttons that are NOT sprite-based.
 Renderer.prototype.createButtonStyles = function(){
   this.buttonStyles = {
-    "default": new ButtonStyle()
+    "default": new ButtonStyle({guiCustomStyle: "roundButton"}),
+    "roundButtonHover": new ButtonStyle({guiCustomStyle: "roundButtonHover"}),
+    "debug": new ButtonStyle()
   };
 };
 
@@ -303,7 +306,7 @@ Renderer.prototype.drawTiles = function(scene){
       spriteIndexArray = tileMap.getSpriteIndex(index);
       tileSprite = textureManager.copySprite(spriteSheet.sprite);
       frame = textureManager.getRectFromSheet(spriteSheet, spriteIndexArray[0], spriteIndexArray[1]);
-      tileSprite.texture.frame = frame;
+      this.textureManager.setTextureFrame(tileSprite.texture, frame);
       this.drawSprite(tileSprite, pos_X, pos_Y);
     };
   };
@@ -317,7 +320,26 @@ Renderer.prototype.drawMenu = function(menu){
   menu.guiObjects.forEach(e => this.drawGUIObject(e));
 };
 
+Renderer.prototype.drawGUIObject = function(entity){
+  let graphic;
+  if(entity.constructor === Button && entity.state === "hover"){
+    graphic = entity.overlayGraphic;
+  }
+  else if(entity.constructor === ListWidget){
+    for(const item of entity.listItems){
+      this.drawGUIObject(item);
+    }
+    return;
+  }
+  else {
+    graphic = entity.graphic;
+  }
+  graphic.position.set(entity.x * this.horizontalRatio, entity.y * this.verticalRatio)
+  this.draw(graphic);
+};
+
 // Shorthand method.
+/*
 Renderer.prototype.drawGUIObject = function(entity){
   let graphic;
   graphic = this.createGUIGraphic(entity);
@@ -326,6 +348,8 @@ Renderer.prototype.drawGUIObject = function(entity){
   this.textureManager.addToPool(graphic);
   this.draw(graphic);
 };
+*/
+
 
 Renderer.prototype.createGUIGraphic = function(entity){
   let graphic;
@@ -336,8 +360,8 @@ Renderer.prototype.createGUIGraphic = function(entity){
       break;
     case Button:
       if(entity.state === "hover"){
-        createGraphicFunc = this.createButtonOverlay.bind(this);
-      } else createGraphicFunc = this.createButtonGraphic.bind(this);
+          createGraphicFunc = this.createButtonOverlay.bind(this);
+        } else createGraphicFunc = this.createButtonGraphic.bind(this);
       break;
     case ListWidget:
       createGraphicFunc = this.createListWidgetGraphic.bind(this);
@@ -346,6 +370,39 @@ Renderer.prototype.createGUIGraphic = function(entity){
       console.error(`Error while trying to create the GUIObject's graphic" ${entity} is an invalid GUIObject.`);
   };
   return createGraphicFunc(entity)
+};
+
+Renderer.prototype.setGUIGraphic = function(entity){
+  let graphic;
+  let createGraphicFunc;
+  switch(entity.constructor){
+    case Label:
+      createGraphicFunc = this.createLabelGraphic.bind(this);
+      break;
+    case Button:
+      createGraphicFunc = this.createButtonOverlay.bind(this);
+
+      if(entity.overlayGraphic != undefined){
+        this.textureManager.addToPool(entity.overlayGraphic);
+      };
+
+      entity.overlayGraphic = createGraphicFunc(entity);
+      entity.overlayGraphic = this.scale(entity.overlayGraphic)
+      createGraphicFunc = this.createButtonGraphic.bind(this);
+      break;
+    case ListWidget:
+      createGraphicFunc = this.createListWidgetGraphic.bind(this);
+      break;
+    default:
+      console.error(`Error while trying to create the GUIObject's graphic" ${entity} is an invalid GUIObject.`);
+  };
+
+  // If we're replacing, delete.
+  if(entity.graphic != undefined){
+    this.textureManager.addToPool(entity.graphic);
+  };
+  entity.graphic = createGraphicFunc(entity);
+  entity.graphic = this.scale(entity.graphic);
 };
 
 // Calculate and return the size of the entity by creating a dummy graphic.
@@ -357,6 +414,88 @@ Renderer.prototype.getEntitySize = function(entity){
   return [dummy.width, dummy.height];
 };
 
+Renderer.prototype.createCustomGUIRectGraphic = function(guiName, width, height){
+  let engine = this.parent;
+  // let spriteScale = engine.spriteScale;
+  let textureManager = this.textureManager;
+  let guiConfig = engine.assets.get(engine.guiConfigKey);
+  let guiData = guiConfig.get(guiName);
+  let cornerData = guiData["corners"];
+  let edgeData = guiData["edges"];
+  let spriteSheet = this.getSheetFromId(guiConfig.get("METADATA")["spriteSheet"]);
+
+  let container = new PIXI.Container();
+
+  // Fill the container with the fill colour.
+  let fillColour = guiData["fillColour"].replace("#", "0x");
+  // Calculating these rely on the fact that vertical edges should share widths with their corners.
+  // and horizontal edges share heights with their corners.
+  let fillWidth = width - (cornerData["topLeft"][2] + cornerData["topRight"][2]);
+  let fillHeight = height - (cornerData["topLeft"][3] + cornerData["bottomLeft"][3]);
+  let fillRect = new PIXI.Graphics();
+  fillRect.beginFill(fillColour);
+  fillRect.drawRect(0, 0, fillWidth, fillHeight)
+  fillRect.position.set(cornerData["topLeft"][2], cornerData["topLeft"][3]);
+  container.addChild(fillRect);
+
+  // Add corners to container.
+  let cornerPos = {
+    "topLeft": [0,0],
+    "topRight": [width - cornerData["topRight"][2], 0],
+    "bottomLeft": [0, height - cornerData["bottomLeft"][3]],
+    "bottomRight": [width - cornerData["bottomRight"][2], height - cornerData["bottomRight"][3]]
+  };
+  let corner;
+  let i = 0;
+  for(const [cornerName, frameArray] of Object.entries(guiData.corners)){
+    corner = textureManager.copySprite(spriteSheet.sprite, {pool: false, frameArray: frameArray});
+    corner.position.set(cornerPos[cornerName][0], cornerPos[cornerName][1]);
+    container.addChild(corner);
+    i++;
+  };
+
+  // Add vertical edges to container;
+  // for verticalCount, basically we're subtracting out the heights of the corners and then dividing what's leftover
+  // by the height of a verticalEdge (which will probably be 1, but let's make it flexible).
+  let verticalCount = fillHeight / edgeData["right"][3];
+  let leftEdge;
+  let rightEdge;
+  let posY;
+  // Note that the loop assumes that leftEdge and rightEdge share heights (which they should).
+  for(let i = 0; i < verticalCount; i++){
+    posY = cornerData["topLeft"][3] + (i * edgeData["left"][3]);
+    leftEdge = textureManager.copySprite(spriteSheet.sprite, {pool: false, frameArray: edgeData["left"]});
+    leftEdge.position.set(0, posY);
+
+    rightEdge = textureManager.copySprite(spriteSheet.sprite, {pool: false, frameArray: edgeData["right"]});
+    rightEdge.position.set(width - edgeData["right"][2], posY);
+
+    container.addChild(leftEdge);
+    container.addChild(rightEdge);
+  };
+
+  // Add horizontal edges to container;
+  // subtract widths of the top two edges from total width and divide by width of edge.
+  // similar to verticalEdge, both horizontal edges should have the same width;
+  let horizontalCount = fillWidth / edgeData["top"][2];
+  let topEdge;
+  let bottomEdge;
+  let posX;
+  for(let i = 0; i < horizontalCount; i++){
+    posX = cornerData["topLeft"][2] + (i * edgeData["top"][2]);
+    topEdge = textureManager.copySprite(spriteSheet.sprite, {pool: false, frameArray: edgeData["top"]});
+    topEdge.position.set(posX, 0)
+
+    bottomEdge = textureManager.copySprite(spriteSheet.sprite, {pool: false, frameArray: edgeData["bottom"]});
+    bottomEdge.position.set(posX, height - edgeData["bottom"][3]);
+
+    container.addChild(topEdge);
+    container.addChild(bottomEdge);
+  };
+
+  return container;
+};
+
 Renderer.prototype.createLabelGraphic = function(label){
   let message = label.text;
   let style = label.attributes.has("style") ? label.attributes.get("style") : "default";
@@ -366,48 +505,72 @@ Renderer.prototype.createLabelGraphic = function(label){
 };
 
 Renderer.prototype.createButtonOverlay = function(button){
-  let buttonStyle = button.attributes.has("buttonStyle") ? label.attributes.get("buttonStyle") : "default";
+  let buttonStyle = button.attributes.has("buttonStyle") ? button.attributes.get("buttonStyle") : "default";
+  let overlay;
+  buttonStyle = this.buttonStyles[buttonStyle];
 
-  let overlayStyle = new ButtonStyle(this.buttonStyles[buttonStyle]);
-  overlayStyle.color = this.brightenColor(overlayStyle.color, 20);
-  overlayStyle.color = (overlayStyle.color).replace("#", "0x")
+  if(buttonStyle.guiCustomStyle != null){
+    let overlayButton = new Button();
+    Object.assign(overlayButton, button)
+    overlayButton.attributes = new Map(button.attributes);
+    overlayButton.attributes.set("buttonStyle", buttonStyle.guiCustomStyle + "Hover");
+    overlay = this.createButtonGraphic(overlayButton);
+  }
+  else {
+    let buttonStyle = button.attributes.has("buttonStyle") ? button.attributes.get("buttonStyle") : "default";
 
-  overlayStyle.borderColor = this.brightenColor(overlayStyle.borderColor, 20);
-  overlayStyle.borderColor = (overlayStyle.borderColor).replace("#", "0x")
-  let overlayRect = this.configureButtonRect(overlayStyle);
-  let overlay = this.createButtonGraphic(button, overlayRect);
+    let overlayStyle = new ButtonStyle(this.buttonStyles[buttonStyle]);
+    overlayStyle.color = this.brightenColor(overlayStyle.color, 20);
+    overlayStyle.color = (overlayStyle.color).replace("#", "0x")
+
+    overlayStyle.borderColor = this.brightenColor(overlayStyle.borderColor, 20);
+    overlayStyle.borderColor = (overlayStyle.borderColor).replace("#", "0x")
+    let overlayRect = this.configureButtonRect(overlayStyle);
+    overlay = this.createButtonGraphic(button, overlayRect);
+  }
   return overlay;
 };
 
+// Note: buttonStyle is suppose to be a ButtonStyle object.
+Renderer.prototype.createGenericButtonGraphic = function(width, height, buttonStyle, rectangle){
+  if(rectangle === undefined){
+    rectangle = this.configureButtonRect(buttonStyle);
+  };
+
+  rectangle.drawRect(0, 0, width, height);
+  rectangle.endFill();
+  return rectangle;
+};
 // Create the button graphic. rectangle is an OPTIONAL parameter.
 Renderer.prototype.createButtonGraphic = function(button, rectangle){
   let minimumWidth = 150;
   let minimumHeight = 50;
   let container = new PIXI.Container();
-  let textStyle = button.attributes.has("textStyle") ? label.attributes.get("textStyle") : "default";
-  let buttonStyle = button.attributes.has("buttonStyle") ? label.attributes.get("buttonStyle") : "default";
+  let textStyle = button.attributes.has("textStyle") ? button.attributes.get("textStyle") : "default";
+  let buttonStyle = button.attributes.has("buttonStyle") ? button.attributes.get("buttonStyle") : "default";
+  buttonStyle = this.buttonStyles[buttonStyle];
 
   // Create label component.
   let message = button.text;
   let text = new PIXI.BitmapText(message, this.textStyles[textStyle]);
-
-  // Create button component.
-
-  if(rectangle === undefined){
-    rectangle = this.configureButtonRect(this.buttonStyles[buttonStyle]);
-  };
-
   let rectangleWidth = (text.width < minimumWidth) ? minimumWidth : text.width;
   let rectangleHeight = (text.height < minimumHeight) ? minimumHeight: text.height;
-  rectangle.drawRect(0, 0, rectangleWidth, rectangleHeight);
-  rectangle.endFill();
+
+  // Create button component.
+  let buttonGraphic;
+  if(buttonStyle.guiCustomStyle != null){
+    buttonGraphic = this.createCustomGUIRectGraphic(buttonStyle.guiCustomStyle, rectangleWidth, rectangleHeight);
+  }
+  else {
+    buttonGraphic = this.createGenericButtonGraphic(rectangleWidth, rectangleHeight, buttonStyle, rectangle);
+  };
 
   // Center text within containing rectangle.
   let center = [(rectangleWidth / 2) - (text.width / 2), (rectangleHeight / 2) - (text.height / 2)]
   text.position.set(center[0], center[1]);
 
   // Combine them into the container.
-  container.addChild(rectangle);
+  container.addChild(buttonGraphic);
   container.addChild(text);
 
   return container;
@@ -426,7 +589,7 @@ Renderer.prototype.createListWidgetGraphic = function(listWidget){
   // Add child graphics to container.
   let itemGraphic;
   for(const item of listWidget.listItems){
-    itemGraphic = this.createGUIGraphic(item);
+    itemGraphic = item.graphic;
     itemGraphic.position.set(item.x - listWidget.x, item.y - listWidget.y);
     container.addChild(itemGraphic);
   };
@@ -460,9 +623,11 @@ TextureManager.prototype.destroyObject = function(object){
   switch(object.constructor){
     case PIXI.Container:
     case PIXI.Text:
-    case PIXI.Graphics:
       object.destroy(true);
       break;
+    case PIXI.Graphics:
+      object.clear();
+      object.destroy();
     default:
       object.destroy();
   };
@@ -500,14 +665,25 @@ TextureManager.prototype.getTexture = function(imageURL, makeNew=true){
   return texture;
 };
 
+TextureManager.prototype.setTextureFrame = function(texture, frameRect){
+  if(frameRect.constructor === PIXI.Rectangle){
+    newFrame = frameRect;
+  } else newFrame = new PIXI.Rectangle(frameRect[0], frameRect[1], frameRect[2], frameRect[3]);
+  texture.frame = newFrame;
+  // texture.updateUvs();
+};
+
 // Return a copy of the given texture.
-// If the pool parameter is seto true then the texture will automatically be added to the pool.
-TextureManager.prototype.copyTexture = function(texture, pool=true){
+// If the pool parameter is se to true then the texture will automatically be added to the pool.
+TextureManager.prototype.copyTexture = function(texture, kwargs={pool: true, frameArray: null}){
+  let pool = (kwargs.pool === undefined) ? true : kwargs.pool;
+  let frameArray = (kwargs.frameArray === undefined) ? null : kwargs.frameArray;
   // Error handling.
   if(texture.constructor !== PIXI.Texture){
     console.error(`Error trying to copy texture. Detected texture: ${texture}. Texture constructor: ${texture.constructor}`);
   } else {
-    let newTexture = new PIXI.Texture(texture);
+    let newTexture = texture.clone();
+    if(frameArray != null){this.setTextureFrame(newTexture, frameArray)};
     if(pool === true){this.addToPool(newTexture)};
     return newTexture;
   };
@@ -552,12 +728,14 @@ TextureManager.prototype.getSprite = function(texture){
 };
 
 // Return a copy of the given sprite. By default the sprite will be added to the pool.
-TextureManager.prototype.copySprite = function(sprite, pool=true){
+TextureManager.prototype.copySprite = function(sprite, kwargs={pool: true, frameArray: null}){
   // Error handler.
+  let pool = (kwargs.pool === undefined) ? true : kwargs.pool;
+  let frameArray = (kwargs.frameArray === undefined) ? null : kwargs.frameArray;
   if(sprite.constructor !== PIXI.Sprite){
-    console.error(`Error trying to copy texture. Detected texture: ${texture}. Texture constructor: ${texture.constructor}`);
+    console.error(`Error trying to copy texture. Detected sprite: ${sprite}. Sprite constructor: ${sprite.constructor}`);
   } else {
-    let newTexture = this.copyTexture(sprite.texture);
+    let newTexture = this.copyTexture(sprite.texture, {pool: pool, frameArray: frameArray});
     let newSprite = new PIXI.Sprite(newTexture);
     if(pool === true){this.addToPool(newSprite)};
     return newSprite;
@@ -568,27 +746,44 @@ TextureManager.prototype.copySprite = function(sprite, pool=true){
 // Note: Copies of spritesheets must be made because of framining issues with shared spritesheets.
 TextureManager.prototype.getSheetFromId = function(id){
   let engine = this.parent.parent;
+
   let image = engine.getImage(id);
   let imageURL = engine.imgLocation + "/" + image.name;
   let texture = this.getTexture(imageURL);
   let sprite = this.getSprite(texture);
-  return new SpriteSheet(imageURL, texture, sprite, image.width, image.height, image.spriteSize);
+  return new SpriteSheet(imageURL, texture, sprite, image);
 };
 
 // Calculate and return the pixi texture frame of the specified sprite from the spritesheet.
 TextureManager.prototype.getRectFromSheet = function(spriteSheet, index_X, index_Y){
-  size = spriteSheet.spriteSize;
-  let posX = index_X * size;
-  let posY = index_Y * size;
+  let width;
+  let height;
+  let posX;
+  let posY;
+  switch (spriteSheet.type) {
+    case "fixedSize":
+      size = spriteSheet.spriteSize;
+      width = size;
+      height = size;
+      posX = index_X * size;
+      posY = index_Y * size;
+      break;
+    case "variableSize":
+      posX = this.spriteProperties[`${index_X}, ${index_Y}`]["x"];
+      posY = this.spriteProperties[`${index_X}, ${index_Y}`]["y"];
+      width = this.spriteProperties[`${index_X}, ${index_Y}`]["width"];
+      height = this.spriteProperties[`${index_X}, ${index_Y}`]["height"];
+      break;
+  };
 
-  let rectangle = new PIXI.Rectangle(posX, posY, size, size);
+  let rectangle = new PIXI.Rectangle(posX, posY, width, height);
   return rectangle;
 };
 
 // Get the actual sprite from the spritesheet.
 TextureManager.prototype.getSpriteFromSheet = function(spriteSheet, index_X, index_Y){
   let rect = this.getRectFromSheet(spriteSheet, index_X, index_Y);
-  spriteSheet.sprite.texture.frame = rect;
+  this.setTextureFrame(spriteSheet.sprite.texture, rect);
   return spriteSheet.sprite;
 };
 
@@ -611,17 +806,30 @@ TextureManager.prototype._loadTextureArray = function(imageArray, imageMap, call
 /**
  * Custom spritesheet object. This will make it easier to automatically pull
  * single sprites from a larger sheet.
- * This class will assume that an individual sprite's height = width.
+ * imageObj is an object literal from image.json containing relevant spriteSheet
+ * information of that iamge.
  */
-function SpriteSheet(imageURL, texture, sprite, sheetWidth, sheetHeight, spriteSize){
+function SpriteSheet(imageURL, texture, sprite, imageObj){
   this.id = imageURL;
   this.sprite = sprite;
   this.texture = texture;
-  this.width = sheetWidth;
-  this.height = sheetHeight;
-  this.spriteSize = spriteSize;
-  // Area of sheet / Area of individual sprites; No remainder. So it better be even!
-  this.numberOfSprites = Math.floor((this.width * this.height) / (this.spriteSize ** 2))
+  this.width = imageObj.width;
+  this.height = imageObj.height;
+
+  this.type = (imageObj.type === undefined) ? "fixedSize" : imageObj.type;
+  switch (this.type) {
+    // Applies to majority of spritesheets; each sprite in the sheet is a fixed size. (i.e. 32x32)
+    case "fixedSize":
+      this.spriteSize = imageObj.spriteSize;
+      break;
+    // Sprites in sheet are not a fixedSize. If this type is set, dimensions of sprites
+    // at each index_X, index_Y needs to be set manually an object.
+    case "variableSize":
+      this.spriteProperties = imageObj.spriteProperties;
+      break;
+    default: // error checking.
+      console.error(`${this.type} is an unrecognized sprite type. spriteSheet id: ${this.id}`);
+  };
 };
 
 /**
@@ -630,7 +838,6 @@ function SpriteSheet(imageURL, texture, sprite, sheetWidth, sheetHeight, spriteS
  * the spritesheet provided.
 */
 function Animation(id, spriteSheet, animationData){
-  this.id = id;
   // A counter that keeps track of the game refreshes while the current animation frames is active.
   this.counter = 0;
   // Default number of refreshes before next animation frame.
@@ -640,6 +847,7 @@ function Animation(id, spriteSheet, animationData){
 
   // Required settings.
 
+  this.id = id;
   this.spriteSheet = spriteSheet;
   // An array of indexes; each index corresponds to the frame's sprite index in the sheet.
   this.frames = animationData.frames;
@@ -649,7 +857,6 @@ function Animation(id, spriteSheet, animationData){
   this.type = animationData.type;
 
   // Optional settings.
-
   // Name of animation that comes after current animation. If cancelIndex is defined, then followUp will trigger at the index.
   this.followUp = animationData.followUp === undefined ? null : animationData.followUp;
 
@@ -664,14 +871,14 @@ function Animation(id, spriteSheet, animationData){
   };
 
   // Number of game refreshes it takes to reach the next animation frame.
+  // Can be an integer (which makes all frames have the same timing)
+  // Or an array of integers (so each frame can have its own unique timing)
   this.timings = animationData.timings === undefined ? this._defaultTiming : animationData.timings;
   if(this.timings.constructor === Array){
-
     // Error checking.
     if(this.timings.length != this.frames.length){
       console.error(`"timings" array does not match "frames" array size. timings: ${this.timings}, frames: ${this.frames}`)
     };
-
     for(let i = 0; i < this.timings.length; i++){
       if(["default", "d"].includes(this.timings[i])){
         this.timings[i] = this._defaultTiming;

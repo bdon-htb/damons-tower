@@ -8,7 +8,7 @@
   <menu>
       <label text="Development build" x="0" y="0"></label>
       <list x="480" y="270" spaceBetween="5" justifyContents="center">
-        <button text="Start Game" callback="startGame"></button>
+        <button text="Start Game" callback="startGame" width="500"></button>
         <button text="Toggle Fullscreen" callback="resizeTest"></button>
         <button text="1280x720" callback="resizeTest2"></button>
         <button text="960x540" callback="resizeTest3"></button>

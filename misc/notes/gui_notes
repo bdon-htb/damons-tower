@@ -51,6 +51,12 @@ functionality from its first definition:
     text:
     x:
     y:
+    width: the width of the button's frame. (NOTE: if set, text may overflow)
+    height: the height of the button's frame. (NOTE: if set, text may overflow)
+    horizontalPadding: Determines how much padding is between the widget frame and its contents.
+                       Check the widget's respective createGraphic function for the default value.
+                       padding is distributed evenly (i.e. a value of 20 means, 10 pixels of more space
+                       on each side)
     textStyle: similar to label's style attribute, sets the style of the
                button's text.
     buttonStyle: defines how buttons are styled. See Renderer.prototype.createButtonStyles.
@@ -63,6 +69,39 @@ functionality from its first definition:
     y:
     spaceBetween: number of pixels to put between listItems.
     orientation: can be either vertical or horizontal. Tells the engine
-                 how the list widget should draw its children.
+                 how the list widget position its children.
     justifyContents: determines where listItems will be positioned relative
                  to the listWidget. Currently only "center" is supported.
+
+- frame (a rectangle that is drawn behind its parent widget; good for backgrounds)
+  NOTE: Since draw order is determined by the order of the elements. if you want
+        multiple frames belonging to the same widget to be layered in
+        a certain order, make sure they are ordered correctly in the menu file.
+        (i.e. from furthest -> closest)
+  attributes:
+    x:
+    y:
+    width:
+    height:
+    horizontalPadding:
+    verticalPadding: Similar to horizontal padding but in the y coordinate.
+    NOTE: Padding values will be ignored if the frame's parent is the Menu itself and
+    no width / height values are specified (because default value takes up entire screen).
+    frameStyle: defines how the frame is styled.
+
+- img (for displaying images)
+  NOTE: If the image's type is set to "gui", only the files in guiCustomStyle.json,
+        with "model" = "image" will be accepted.
+  attributes:
+    x:
+    y:
+    src: (REQUIRED) contains the name of the image file / guiCustomStyle entry.
+    type: string identifier for the Engine to figure out where to look for src name.
+          Options are currently: "gui", "sprite", "fullImage".
+          Default value is fullImage.
+    spriteIndex: (For "spriteSheet" types only!) specifies the index of the sprite to capture from its spriteSheet.
+    frameArray: This tells the engine how to crop / frame the image. If type is set to sprite and
+                spriteIndex is specified, this will be ignored.
+    scale: determines how much to scale the image by. The default is the engine's spriteScale value.
+    justifyContents: determines where listItems will be positioned relative to the listWidget.
+                     Currently only "center" is supported.    

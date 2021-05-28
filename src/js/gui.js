@@ -98,6 +98,7 @@ GUIManager.prototype._createListWidget = function(listTag){
   let nextX = parentObj.x;
   let nextY = parentObj.y;
   for(const item of listItems){
+    if(item.constructor === Frame){continue};
     item.x = nextX;
     item.y = nextY;
 
@@ -113,7 +114,53 @@ GUIManager.prototype._createListWidget = function(listTag){
     };
   };
 
-  return new ListWidget(parentObj, listItems)
+  let listWidget = new ListWidget(parentObj, listItems);
+  return listWidget;
+};
+
+GUIManager.prototype._createFrame = function(frameTag){
+  let createFunc = this._createGUIObject.bind(this);
+  let parentObj = createFunc(frameTag);
+  return new Frame(parentObj);
+};
+
+GUIManager.prototype._createImage = function(imageTag){
+  let createFunc = this._createGUIObject.bind(this);
+  let parentObj = createFunc(imageTag);
+  let parentAttributes = parentObj.attributes;
+  let spriteScale = parentAttributes.has("scale") ? Number(parentAttributes.get("scale")) : this.parent.spriteScale;
+  parentAttributes.delete("scale");
+  return new ImageWidget(parentObj, spriteScale);
+};
+
+GUIManager.prototype.setWidgetFrames = function(widget){
+  let renderer = this.parent.renderer;
+  let iterator;
+  switch (widget.constructor) {
+    case Menu:
+      iterator = widget.guiObjects;
+      break;
+    case ListWidget:
+      iterator = widget.listItems;
+      break;
+    default:
+      console.error(`widget with constructor ${widget.constructor} does not support frames!`)
+  };
+
+  // Pop frame widgets out of iterator and put them in widget.frames instead.
+  // Performance wise, this is kinda a trash way of doing it but should only be called
+  // once for each time a relevant widget is created.
+  for(let i = 0; i < iterator.length; i++){
+    if(iterator[i].constructor === Frame){
+      let frame = iterator[i];
+      frame.parentWidget = widget;
+      renderer.setGUIGraphic(frame);
+      frame.width = frame.graphic.width;
+      frame.height = frame.graphic.height;
+      widget.frames.push(frame);
+      iterator.splice(i, 1);
+    };
+  };
 };
 
 GUIManager.prototype.updateMenuGraphics = function(widget){
@@ -121,12 +168,17 @@ GUIManager.prototype.updateMenuGraphics = function(widget){
   let recursiveFunc = this.updateMenuGraphics.bind(this);
   switch(widget.constructor){
     case Menu:
-      for(const guiObject of widget.guiObjects){
-        recursiveFunc(guiObject)
-      };
+      widget.frames.forEach(f => recursiveFunc(f));
+      widget.guiObjects.forEach(o => recursiveFunc(o));
       break;
     case Label:
+    case Frame:
       renderer.scale(widget.graphic);
+      break;
+    case ImageWidget:
+      // There's probably a better way to do this but... whatever?
+      widget.graphic.width = widget.graphic.texture.width * widget.spriteScale * renderer.horizontalRatio;
+      widget.graphic.height = widget.graphic.texture.height * widget.spriteScale * renderer.verticalRatio;
       break;
     case Button:
       renderer.scale(widget.overlayGraphic);
@@ -134,9 +186,8 @@ GUIManager.prototype.updateMenuGraphics = function(widget){
       renderer.scale(widget.graphic);
       break;
     case ListWidget:
-      for(const listItem of widget.listItems){
-        recursiveFunc(listItem);
-      };
+      widget.frames.forEach(f => recursiveFunc(f));
+      widget.listItems.forEach(o => recursiveFunc(o));
   };
 };
 
@@ -162,14 +213,29 @@ GUIManager.prototype._createAllGUIObjects = function(menuTag){
       case "list":
         createFunc = this._createListWidget.bind(this);
         break;
+      case "frame":
+        createFunc = this._createFrame.bind(this);
+        break;
+      case "img":
+        createFunc = this._createImage.bind(this);
+        break;
       default:
         console.error(`Invalid gui object tag detected. tagName: ${guiObjectName}`);
     };
 
     guiObject = createFunc(child);
-    renderer.setGUIGraphic(guiObject);
-    guiObject.width = guiObject.graphic.width;
-    guiObject.height = guiObject.graphic.height;
+
+    // Set graphic size.
+    // We set the graphics of the frames AFTER everything else in this.setWidgetFrames();
+    if(guiObjectName != "frame"){
+      renderer.setGUIGraphic(guiObject);
+      guiObject.width = guiObject.graphic.width;
+      guiObject.height = guiObject.graphic.height;
+    };
+
+    if(guiObjectName === "list"){
+      this.setWidgetFrames(guiObject);
+    };
 
     guiObjectArray.push(guiObject);
   };
@@ -198,6 +264,7 @@ GUIManager.prototype.createMenuFromData = function(data){
   let menuGUIObjects = createAllGUIObjectsFunc(menuTag);
 
   let menu = new Menu(menuName, menuLayoutType, menuLayoutSettings, menuGUIObjects);
+  this.setWidgetFrames(menu);
   return menu
 };
 
@@ -271,6 +338,7 @@ function Menu(name, layoutType, layoutSettings, guiObjects){
   this.layoutType = layoutType;
   this.layoutSettings = layoutSettings;
   this.guiObjects = guiObjects;
+  this.frames = [];
 };
 
 /**
@@ -304,6 +372,17 @@ function Button(labelObject, callback){
 function ListWidget(guiObject, listItems){
   Object.assign(this, guiObject);
   this.listItems = listItems;
+  this.frames = [];
+};
+
+function Frame(guiObject){
+  Object.assign(this, guiObject);
+  this.parentWidget;
+};
+
+function ImageWidget(guiObject, spriteScale){
+  Object.assign(this, guiObject);
+  this.spriteScale = spriteScale;
 };
 
 /**

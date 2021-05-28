@@ -321,6 +321,7 @@ Renderer.prototype.drawTiles = function(scene){
 // =====================
 
 Renderer.prototype.drawMenu = function(menu){
+  menu.frames.forEach(f => this.drawGUIObject(f));
   menu.guiObjects.forEach(e => this.drawGUIObject(e));
 };
 
@@ -339,7 +340,9 @@ Renderer.prototype.drawGUIObject = function(entity){
     };
   }
   else if(entity.constructor === ListWidget){
-    for(const item of entity.listItems){this.drawGUIObject(item)};
+    // We draw its children individually because ListWidget.graphic doesn't account for entity state.
+    entity.frames.forEach(f => this.drawGUIObject(f));
+    entity.listItems.forEach(e => this.drawGUIObject(e));
     return;
   }
   else {
@@ -361,6 +364,7 @@ Renderer.prototype.drawGUIObject = function(entity){
 };
 */
 
+/*
 Renderer.prototype.createGUIGraphic = function(entity){
   let graphic;
   let createGraphicFunc;
@@ -386,6 +390,7 @@ Renderer.prototype.createGUIGraphic = function(entity){
   };
   return createGraphicFunc(entity)
 };
+*/
 
 Renderer.prototype.setGUIGraphic = function(entity){
   let graphic;
@@ -395,16 +400,6 @@ Renderer.prototype.setGUIGraphic = function(entity){
       createGraphicFunc = this.createLabelGraphic.bind(this);
       break;
     case Button:
-      if(entity.overlayGraphic != undefined){
-        this.textureManager.addToPool(entity.overlayGraphic);
-        delete entity.overlayGraphic;
-      };
-
-      if(entity.pressedGraphic != undefined){
-        this.textureManager.addToPool(entity.pressedGraphic);
-        delete entity.pressedGraphic;
-      };
-
       createGraphicFunc = this.createButtonOverlay.bind(this);
       entity.overlayGraphic = createGraphicFunc(entity, "Hover");
       // entity.overlayGraphic = this.scale(entity.overlayGraphic);
@@ -416,15 +411,16 @@ Renderer.prototype.setGUIGraphic = function(entity){
     case ListWidget:
       createGraphicFunc = this.createListWidgetGraphic.bind(this);
       break;
+    case Frame:
+      createGraphicFunc = this.createFrameGraphic.bind(this);
+      break;
+    case ImageWidget:
+      createGraphicFunc = this.createImageGraphic.bind(this);
+      break;
     default:
       console.error(`Error while trying to create the GUIObject's graphic" ${entity} is an invalid GUIObject.`);
   };
 
-  // If we're replacing, delete.
-  if(entity.graphic != undefined){
-    this.textureManager.addToPool(entity.graphic);
-    delete entity.graphic;
-  };
   entity.graphic = createGraphicFunc(entity);
   // entity.graphic = this.scale(entity.graphic);
 };
@@ -528,6 +524,8 @@ Renderer.prototype.createCustomGUIRectGraphic = function(guiName, width, height)
     container.addChild(bottomEdge);
   };
 
+  textureManager.addToPool(spriteSheet);
+
   return container;
 };
 
@@ -581,18 +579,22 @@ Renderer.prototype.createGenericButtonGraphic = function(width, height, buttonSt
 Renderer.prototype.createButtonGraphic = function(button, rectangle){
   let minimumWidth = 150;
   let minimumHeight = 50;
-  let horizontalPadding = 20;
   let container = new PIXI.Container();
+
   let textStyle = button.attributes.has("textStyle") ? button.attributes.get("textStyle") : "default";
   let buttonStyle = button.attributes.has("buttonStyle") ? button.attributes.get("buttonStyle") : "default";
+  let horizontalPadding = button.attributes.has("horizontalPadding") ? Number(button.attributes.get("horizontalPadding")) : 20;
   buttonStyle = this.buttonStyles[buttonStyle];
 
   // Create label component.
   let message = button.text;
   let text = new PIXI.BitmapText(message, this.textStyles[textStyle]);
-  let rectangleWidth = (text.width < minimumWidth) ? minimumWidth : text.width;
+
+  // For manual sizing to work properly, the width and height of a button must be
+  // 0 by default.
+  let rectangleWidth = (button.width > 0) ? button.width : Math.max(text.width, minimumWidth);
   rectangleWidth += horizontalPadding;
-  let rectangleHeight = (text.height < minimumHeight) ? minimumHeight: text.height;
+  let rectangleHeight = (button.height > 0) ? button.height : Math.max(text.height, minimumHeight);
 
   // Create button component.
   let buttonGraphic;
@@ -604,8 +606,15 @@ Renderer.prototype.createButtonGraphic = function(button, rectangle){
   };
 
   // Center text within containing rectangle.
-  let center = [(rectangleWidth / 2) - (text.width / 2), (rectangleHeight / 2) - (text.height / 2)]
+  let maxWidth = Math.max(rectangleWidth, text.width);
+  let maxHeight = Math.max(rectangleHeight, text.height);
+  let center = [(maxWidth / 2) - (text.width / 2), (maxHeight / 2) - (text.height / 2)]
   text.position.set(center[0], center[1]);
+
+  if(buttonGraphic.width < text.width){
+    center = [(maxWidth / 2) - (buttonGraphic.width / 2), (maxHeight / 2) - (buttonGraphic.width / 2)];
+    buttonGraphic.position.set(center[0], center[1]);
+  };
 
   // Combine them into the container.
   container.addChild(buttonGraphic);
@@ -627,13 +636,102 @@ Renderer.prototype.createListWidgetGraphic = function(listWidget){
   // Add child graphics to container.
   let itemGraphic;
   for(const item of listWidget.listItems){
-    itemGraphic = item.graphic;
-    itemGraphic.position.set(item.x - listWidget.x, item.y - listWidget.y);
-    container.addChild(itemGraphic);
+    if(item.constructor != Frame){
+      itemGraphic = item.graphic;
+      itemGraphic.position.set(item.x - listWidget.x, item.y - listWidget.y);
+      container.addChild(itemGraphic);
+    };
   };
   return container;
 };
 
+// Frame graphics currently only supports using guiCustomStyles.
+Renderer.prototype.createFrameGraphic = function(frameWidget){
+  let parentWidget = frameWidget.parentWidget;
+  let parentWidth = (parentWidget.constructor === Menu) ? this.parent.windowWidth : parentWidget.width;
+  let parentHeight = (parentWidget.constructor === Menu) ? this.parent.windowHeight : parentWidget.height;
+  frameWidget.x = (parentWidget.constructor === Menu) ? 0 : parentWidget.x;
+  frameWidget.y = (parentWidget.constructor === Menu) ? 0 : parentWidget.y;
+
+  let frameStyle = frameWidget.attributes.has("frameStyle") ? button.attributes.get("frameStyle") : "window";
+
+  let horizontalPadding = frameWidget.attributes.has("horizontalPadding") ? Number(frameWidget.attributes.get("horizontalPadding")) : 40;
+  let verticalPadding = frameWidget.attributes.has("verticalPadding") ? Number(frameWidget.attributes.get("verticalPadding")) : 40;
+  let frameWidth = (frameWidget.width > 0) ? frameWidget.width : parentWidth;
+
+  let frameHeight = (frameWidget.height > 0) ? frameWidget.height : parentHeight;
+
+  if(parentWidget.constructor === ListWidget){
+    frameWidth += horizontalPadding;
+    frameHeight += verticalPadding;
+
+    if(parentWidget.attributes.get("justifyContents") === "center"){
+      frameWidget.x -= frameWidth / 2;
+      frameWidget.y -= verticalPadding / 2;
+    };
+  };
+
+  frameGraphic = this.createCustomGUIRectGraphic(frameStyle, frameWidth, frameHeight);
+  return frameGraphic;
+};
+
+Renderer.prototype.createImageGraphic = function(imageWidget){
+  let textureManager = this.textureManager;
+  let src = imageWidget.attributes.get("src");
+  if(src === undefined){console.error(`image widget is missing a source name!`)}
+  let type = imageWidget.attributes.has("type") ? imageWidget.attributes.get("type") : "fullImage";
+  // Treat sprites without a specified index as fullImages.
+  if(type === "sprite" && imageWidget.attributes.get("spriteIndex") === undefined){type = "fullImage"};
+  let spriteScale = imageWidget.spriteScale;
+  let graphic;
+  let spriteSheet;
+  let frameArray;
+
+  switch(type){
+    case "fullImage":
+      spriteSheet = this.getSheetFromId(src);
+      frameArray = imageWidget.attributes.has("frameArray") ? imageWidget.attributes.get("frameArray") : null;
+
+      // We convert the string into an Array of integers.
+      if(frameArray != null){
+        frameArray = frameArray.replaceAll(' ','').replaceAll('[', '').replaceAll(']', '').split(',')
+        frameArray = frameArray.map(n => Number(n));
+        textureManager.setTextureFrame(spriteSheet.texture, frameArray)
+      };
+      graphic = spriteSheet.sprite;
+      break;
+    // We can assume that a frameIndex is specified.
+    case "sprite":
+      spriteSheet = this.getSheetFromId(src);
+      let spriteIndex = imageWidget.attributes.get("spriteIndex");
+      // We convert the string into an Array of integers.
+      spriteIndex = spriteIndex.replaceAll(' ','').replaceAll('[', '').replaceAll(']', '').split(',');
+      spriteIndex = spriteIndex.map(n => Number(n));
+      graphic = textureManager.getSpriteFromSheet(spriteSheet, spriteIndex[0], spriteIndex[1]);
+      break;
+    case "gui":
+      let parent = this.parent;
+      let guiConfig = parent.assets.get(parent.guiConfigKey);
+      let imageConfig = guiConfig.get(src);
+      if(imageConfig.model != "image"){console.error(`image widget with src=${src} has the incorrect model set for its image source.`)};
+      spriteSheet = this.getSheetFromId(guiConfig.get("METADATA")["spriteSheet"]);
+      frameArray = [imageConfig.topLeft[0], imageConfig.topLeft[1], imageConfig.width, imageConfig.height];
+      textureManager.setTextureFrame(spriteSheet.texture, frameArray);
+      graphic = spriteSheet.sprite;
+      break;
+    default:
+      console.error(`image type ${type} is invalid!`);
+  }
+
+  graphic.width = graphic.width * spriteScale;
+  graphic.height = graphic.height * spriteScale;
+
+  if(imageWidget.attributes.get("justifyContents") === "center"){
+    imageWidget.x = imageWidget.x - (graphic.width / 2);
+  }
+  return graphic;
+
+};
 // Caluclates the size of the string in pixels based on PIXI text styling.
 Renderer.prototype.calculateTextSize = function(s, textStyle){
   let text = new PIXI.BitmapText(s, textStyle);
@@ -666,6 +764,11 @@ TextureManager.prototype.destroyObject = function(object){
     case PIXI.Graphics:
       object.clear();
       object.destroy();
+      break;
+    case SpriteSheet:
+      object.sprite.destroy();
+      object.texture.destroy();
+      break;
     default:
       object.destroy();
   };
@@ -703,6 +806,7 @@ TextureManager.prototype.getTexture = function(imageURL, makeNew=true){
   return texture;
 };
 
+// frameRect can be either a PIXI.Rectangle or an Array in the format [x, y, width, height]
 TextureManager.prototype.setTextureFrame = function(texture, frameRect){
   if(frameRect.constructor === PIXI.Rectangle){
     newFrame = frameRect;

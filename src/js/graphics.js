@@ -71,6 +71,10 @@ Renderer.prototype.createButtonStyles = function(){
   this.buttonStyles = {
     "default": new ButtonStyle({guiCustomStyle: "roundButton"}),
     "roundButtonHover": new ButtonStyle({guiCustomStyle: "roundButtonHover"}),
+    "roundButtonPressed": new ButtonStyle({guiCustomStyle: "roundButtonPressed"}),
+    "squareButton": new ButtonStyle({guiCustomStyle: "squareButton"}),
+    "squareButtonHover": new ButtonStyle({guiCustomStyle: "squareButtonHover"}),
+    "squareButtonPressed": new ButtonStyle({guiCustomStyle: "squareButtonPressed"}),
     "debug": new ButtonStyle()
   };
 };
@@ -322,13 +326,20 @@ Renderer.prototype.drawMenu = function(menu){
 
 Renderer.prototype.drawGUIObject = function(entity){
   let graphic;
-  if(entity.constructor === Button && entity.state === "hover"){
-    graphic = entity.overlayGraphic;
+  if(entity.constructor === Button){
+    switch(entity.state){
+      case "hover":
+        graphic = entity.overlayGraphic;
+        break;
+      case "pressed":
+        graphic = entity.pressedGraphic;
+        break;
+      default:
+        graphic = entity.graphic;
+    };
   }
   else if(entity.constructor === ListWidget){
-    for(const item of entity.listItems){
-      this.drawGUIObject(item);
-    }
+    for(const item of entity.listItems){this.drawGUIObject(item)};
     return;
   }
   else {
@@ -350,7 +361,6 @@ Renderer.prototype.drawGUIObject = function(entity){
 };
 */
 
-
 Renderer.prototype.createGUIGraphic = function(entity){
   let graphic;
   let createGraphicFunc;
@@ -359,9 +369,14 @@ Renderer.prototype.createGUIGraphic = function(entity){
       createGraphicFunc = this.createLabelGraphic.bind(this);
       break;
     case Button:
-      if(entity.state === "hover"){
+      switch(entity.state){
+        case "pressed":
+        case "hover":
           createGraphicFunc = this.createButtonOverlay.bind(this);
-        } else createGraphicFunc = this.createButtonGraphic.bind(this);
+          break;
+        default:
+          createGraphicFunc = this.createButtonGraphic.bind(this);
+        }
       break;
     case ListWidget:
       createGraphicFunc = this.createListWidgetGraphic.bind(this);
@@ -380,14 +395,20 @@ Renderer.prototype.setGUIGraphic = function(entity){
       createGraphicFunc = this.createLabelGraphic.bind(this);
       break;
     case Button:
-      createGraphicFunc = this.createButtonOverlay.bind(this);
-
       if(entity.overlayGraphic != undefined){
         this.textureManager.addToPool(entity.overlayGraphic);
       };
 
-      entity.overlayGraphic = createGraphicFunc(entity);
-      entity.overlayGraphic = this.scale(entity.overlayGraphic)
+      if(entity.pressedGraphic != undefined){
+        this.textureManager.addToPool(entity.pressedGraphic);
+      };
+
+      createGraphicFunc = this.createButtonOverlay.bind(this);
+      entity.overlayGraphic = createGraphicFunc(entity, "Hover");
+      entity.overlayGraphic = this.scale(entity.overlayGraphic);
+      entity.pressedGraphic = createGraphicFunc(entity, "Pressed");
+      entity.pressedGraphic = this.scale(entity.pressedGraphic);
+
       createGraphicFunc = this.createButtonGraphic.bind(this);
       break;
     case ListWidget:
@@ -416,6 +437,7 @@ Renderer.prototype.getEntitySize = function(entity){
 
 Renderer.prototype.createCustomGUIRectGraphic = function(guiName, width, height){
   let engine = this.parent;
+  let spriteScale = engine.spriteScale;
   // let spriteScale = engine.spriteScale;
   let textureManager = this.textureManager;
   let guiConfig = engine.assets.get(engine.guiConfigKey);
@@ -430,26 +452,28 @@ Renderer.prototype.createCustomGUIRectGraphic = function(guiName, width, height)
   let fillColour = guiData["fillColour"].replace("#", "0x");
   // Calculating these rely on the fact that vertical edges should share widths with their corners.
   // and horizontal edges share heights with their corners.
-  let fillWidth = width - (cornerData["topLeft"][2] + cornerData["topRight"][2]);
-  let fillHeight = height - (cornerData["topLeft"][3] + cornerData["bottomLeft"][3]);
+  let fillWidth = width - ((cornerData["topLeft"][2] + cornerData["topRight"][2]) * spriteScale);
+  let fillHeight = height - ((cornerData["topLeft"][3] + cornerData["bottomLeft"][3]) * spriteScale);
   let fillRect = new PIXI.Graphics();
   fillRect.beginFill(fillColour);
   fillRect.drawRect(0, 0, fillWidth, fillHeight)
-  fillRect.position.set(cornerData["topLeft"][2], cornerData["topLeft"][3]);
+  fillRect.position.set(cornerData["topLeft"][2] * spriteScale, cornerData["topLeft"][3] * spriteScale);
   container.addChild(fillRect);
 
   // Add corners to container.
   let cornerPos = {
     "topLeft": [0,0],
-    "topRight": [width - cornerData["topRight"][2], 0],
-    "bottomLeft": [0, height - cornerData["bottomLeft"][3]],
-    "bottomRight": [width - cornerData["bottomRight"][2], height - cornerData["bottomRight"][3]]
+    "topRight": [width - (cornerData["topRight"][2] * spriteScale), 0],
+    "bottomLeft": [0, height - (cornerData["bottomLeft"][3] * spriteScale)],
+    "bottomRight": [width - (cornerData["bottomRight"][2] * spriteScale), height - (cornerData["bottomRight"][3] * spriteScale)]
   };
   let corner;
   let i = 0;
   for(const [cornerName, frameArray] of Object.entries(guiData.corners)){
     corner = textureManager.copySprite(spriteSheet.sprite, {pool: false, frameArray: frameArray});
     corner.position.set(cornerPos[cornerName][0], cornerPos[cornerName][1]);
+    corner.width = corner.width * spriteScale;
+    corner.height = corner.height * spriteScale;
     container.addChild(corner);
     i++;
   };
@@ -457,18 +481,22 @@ Renderer.prototype.createCustomGUIRectGraphic = function(guiName, width, height)
   // Add vertical edges to container;
   // for verticalCount, basically we're subtracting out the heights of the corners and then dividing what's leftover
   // by the height of a verticalEdge (which will probably be 1, but let's make it flexible).
-  let verticalCount = fillHeight / edgeData["right"][3];
+  let verticalCount = fillHeight / (edgeData["right"][3] * spriteScale);
   let leftEdge;
   let rightEdge;
   let posY;
   // Note that the loop assumes that leftEdge and rightEdge share heights (which they should).
   for(let i = 0; i < verticalCount; i++){
-    posY = cornerData["topLeft"][3] + (i * edgeData["left"][3]);
+    posY = (cornerData["topLeft"][3] * spriteScale) + (i * edgeData["left"][3] * spriteScale);
     leftEdge = textureManager.copySprite(spriteSheet.sprite, {pool: false, frameArray: edgeData["left"]});
+    leftEdge.width = leftEdge.width * spriteScale;
+    leftEdge.height = leftEdge.height * spriteScale;
     leftEdge.position.set(0, posY);
 
     rightEdge = textureManager.copySprite(spriteSheet.sprite, {pool: false, frameArray: edgeData["right"]});
-    rightEdge.position.set(width - edgeData["right"][2], posY);
+    rightEdge.width = rightEdge.width * spriteScale;
+    rightEdge.height = rightEdge.height * spriteScale;
+    rightEdge.position.set(width - (edgeData["right"][2] * spriteScale), posY);
 
     container.addChild(leftEdge);
     container.addChild(rightEdge);
@@ -477,17 +505,21 @@ Renderer.prototype.createCustomGUIRectGraphic = function(guiName, width, height)
   // Add horizontal edges to container;
   // subtract widths of the top two edges from total width and divide by width of edge.
   // similar to verticalEdge, both horizontal edges should have the same width;
-  let horizontalCount = fillWidth / edgeData["top"][2];
+  let horizontalCount = fillWidth / (edgeData["top"][2] * spriteScale);
   let topEdge;
   let bottomEdge;
   let posX;
   for(let i = 0; i < horizontalCount; i++){
-    posX = cornerData["topLeft"][2] + (i * edgeData["top"][2]);
+    posX = (cornerData["topLeft"][2] * spriteScale) + (i * edgeData["top"][2] * spriteScale);
     topEdge = textureManager.copySprite(spriteSheet.sprite, {pool: false, frameArray: edgeData["top"]});
+    topEdge.width = topEdge.width * spriteScale;
+    topEdge.height = topEdge.height * spriteScale;
     topEdge.position.set(posX, 0)
 
     bottomEdge = textureManager.copySprite(spriteSheet.sprite, {pool: false, frameArray: edgeData["bottom"]});
-    bottomEdge.position.set(posX, height - edgeData["bottom"][3]);
+    bottomEdge.width = bottomEdge.width * spriteScale;
+    bottomEdge.height = bottomEdge.height * spriteScale;
+    bottomEdge.position.set(posX, height - (edgeData["bottom"][3] * spriteScale));
 
     container.addChild(topEdge);
     container.addChild(bottomEdge);
@@ -504,7 +536,8 @@ Renderer.prototype.createLabelGraphic = function(label){
   return text
 };
 
-Renderer.prototype.createButtonOverlay = function(button){
+// overlayType is required if buttonStyle.guiCustomStyle != null;
+Renderer.prototype.createButtonOverlay = function(button, overlayType){
   let buttonStyle = button.attributes.has("buttonStyle") ? button.attributes.get("buttonStyle") : "default";
   let overlay;
   buttonStyle = this.buttonStyles[buttonStyle];
@@ -513,7 +546,7 @@ Renderer.prototype.createButtonOverlay = function(button){
     let overlayButton = new Button();
     Object.assign(overlayButton, button)
     overlayButton.attributes = new Map(button.attributes);
-    overlayButton.attributes.set("buttonStyle", buttonStyle.guiCustomStyle + "Hover");
+    overlayButton.attributes.set("buttonStyle", buttonStyle.guiCustomStyle + overlayType);
     overlay = this.createButtonGraphic(overlayButton);
   }
   else {

@@ -231,29 +231,30 @@ GUIManager.prototype.checkHover = function(widget){
 };
 
 // Mouse event for whenever a click is detected
-GUIManager.prototype.checkClicks = function(widget){
+GUIManager.prototype.checkPressesAndClicks = function(widget){
   let engine = this.parent;
   let hoverCheckFunc = this._mouseOverGUIObject.bind(this);
-  let recursiveFunc = this.checkClicks.bind(this);
+  let recursiveFunc = this.checkPressesAndClicks.bind(this);
   let inputs = engine.getInputEvents();
 
-  if(inputs.get("mouse").includes("leftClick")){
-    let mouse = engine.getInputDevice("mouse");
+  let mouse = engine.getInputDevice("mouse");
 
-    switch (widget.constructor) {
-      case Menu:
-        for(const guiObject of widget.guiObjects){
-          recursiveFunc(guiObject)
+  switch (widget.constructor) {
+    case Menu:
+      for(const guiObject of widget.guiObjects){recursiveFunc(guiObject)};
+      break;
+    case Button:
+      if(hoverCheckFunc(mouse, widget) === true){
+        let mouseEvents = inputs.get("mouse");
+        if(mouseEvents.includes("keyDown-leftPress") === true){
+          console.log("PRESS")
+          widget.state = "pressed"
         };
-        break;
-      case Button:
-        if(hoverCheckFunc(mouse, widget) === true){this.executeCallback(widget)};
-        break;
-      case ListWidget:
-        for(const listItem of widget.listItems){
-          recursiveFunc(listItem);
-        };
-    };
+        if(mouseEvents.includes("leftClick") === true){this.executeCallback(widget)};
+      };
+      break;
+    case ListWidget:
+      for(const listItem of widget.listItems){recursiveFunc(listItem)};
   };
 };
 

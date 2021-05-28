@@ -71,9 +71,10 @@ Game.prototype.update = function(){
       break;
     case "mainMenu":
       let menu = this.gameStateObject["menu"];
+      let mouseEvents = events.get("inputEvents").get("mouse");
       this.engine.guiManager.checkHover(menu);
-      if(events.get("inputEvents").size > 0){
-        this.engine.guiManager.checkClicks(menu);
+      if(mouseEvents != undefined && (mouseEvents.includes("keyDown-leftPress") || mouseEvents.includes("leftClick"))){
+        this.engine.guiManager.checkPressesAndClicks(menu);
       };
       break;
     case "inLevel":

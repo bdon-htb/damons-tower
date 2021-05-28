@@ -397,17 +397,19 @@ Renderer.prototype.setGUIGraphic = function(entity){
     case Button:
       if(entity.overlayGraphic != undefined){
         this.textureManager.addToPool(entity.overlayGraphic);
+        delete entity.overlayGraphic;
       };
 
       if(entity.pressedGraphic != undefined){
         this.textureManager.addToPool(entity.pressedGraphic);
+        delete entity.pressedGraphic;
       };
 
       createGraphicFunc = this.createButtonOverlay.bind(this);
       entity.overlayGraphic = createGraphicFunc(entity, "Hover");
-      entity.overlayGraphic = this.scale(entity.overlayGraphic);
+      // entity.overlayGraphic = this.scale(entity.overlayGraphic);
       entity.pressedGraphic = createGraphicFunc(entity, "Pressed");
-      entity.pressedGraphic = this.scale(entity.pressedGraphic);
+      // entity.pressedGraphic = this.scale(entity.pressedGraphic);
 
       createGraphicFunc = this.createButtonGraphic.bind(this);
       break;
@@ -421,9 +423,10 @@ Renderer.prototype.setGUIGraphic = function(entity){
   // If we're replacing, delete.
   if(entity.graphic != undefined){
     this.textureManager.addToPool(entity.graphic);
+    delete entity.graphic;
   };
   entity.graphic = createGraphicFunc(entity);
-  entity.graphic = this.scale(entity.graphic);
+  // entity.graphic = this.scale(entity.graphic);
 };
 
 // Calculate and return the size of the entity by creating a dummy graphic.
@@ -578,6 +581,7 @@ Renderer.prototype.createGenericButtonGraphic = function(width, height, buttonSt
 Renderer.prototype.createButtonGraphic = function(button, rectangle){
   let minimumWidth = 150;
   let minimumHeight = 50;
+  let horizontalPadding = 20;
   let container = new PIXI.Container();
   let textStyle = button.attributes.has("textStyle") ? button.attributes.get("textStyle") : "default";
   let buttonStyle = button.attributes.has("buttonStyle") ? button.attributes.get("buttonStyle") : "default";
@@ -587,6 +591,7 @@ Renderer.prototype.createButtonGraphic = function(button, rectangle){
   let message = button.text;
   let text = new PIXI.BitmapText(message, this.textStyles[textStyle]);
   let rectangleWidth = (text.width < minimumWidth) ? minimumWidth : text.width;
+  rectangleWidth += horizontalPadding;
   let rectangleHeight = (text.height < minimumHeight) ? minimumHeight: text.height;
 
   // Create button component.

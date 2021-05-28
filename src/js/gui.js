@@ -126,8 +126,12 @@ GUIManager.prototype.updateMenuGraphics = function(widget){
       };
       break;
     case Label:
+      renderer.scale(widget.graphic);
+      break;
     case Button:
-      renderer.setGUIGraphic(widget);
+      renderer.scale(widget.overlayGraphic);
+      renderer.scale(widget.pressedGraphic);
+      renderer.scale(widget.graphic);
       break;
     case ListWidget:
       for(const listItem of widget.listItems){
@@ -247,7 +251,6 @@ GUIManager.prototype.checkPressesAndClicks = function(widget){
       if(hoverCheckFunc(mouse, widget) === true){
         let mouseEvents = inputs.get("mouse");
         if(mouseEvents.includes("keyDown-leftPress") === true){
-          console.log("PRESS")
           widget.state = "pressed"
         };
         if(mouseEvents.includes("leftClick") === true){this.executeCallback(widget)};

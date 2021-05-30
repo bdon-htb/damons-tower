@@ -112,6 +112,8 @@ GUIManager.prototype._createListWidget = function(listTag){
       };
       nextY += item.height + spaceBetween; // assume orientation is vertical.
     };
+
+    if(item.constructor === ArrowSelect){this._positionArrowSelectItems(item)};
   };
 
   let listWidget = new ListWidget(parentObj, listItems);
@@ -132,6 +134,42 @@ GUIManager.prototype._createImage = function(imageTag){
   parentAttributes.delete("scale");
   return new ImageWidget(parentObj, spriteScale);
 };
+
+GUIManager.prototype._createArrowSelect = function(frameTag){
+  let renderer = this.parent.renderer;
+  let createFunc = this._createGUIObject.bind(this);
+  let parentObj = createFunc(frameTag);
+  let parentAttributes = parentObj.attributes;
+  // If I decide to add more arrowButton styles later, change this.
+  parentAttributes.set("src", "arrowButton");
+  let options = parentAttributes.has("options") ? Engine.prototype.convertStringToArray(parentAttributes.get("options")) : [];
+  parentAttributes.delete("options");
+  let optionsLoop = parentAttributes.has("optionsLoop") ? parentAttributes.get("optionsLoop") : "false";
+  parentAttributes.delete("optionsLoop");
+  widget = new ArrowSelect(parentObj, options, optionsLoop);
+  if(optionsLoop === "false"){widget.leftBtn.state = "disabled"};
+  return widget;
+};
+
+// probably some of the most scuffed code I've written in awhile.
+// yes, I've effectively written the same code twice, the reason why I can't outright use
+// this for createArrowSelectGraphic is because of how much the ordering matters and
+// we don't know the size of pretty much anything until AFTER the graphic is made.
+GUIManager.prototype._positionArrowSelectItems = function(arrowSelect){
+  let leftBtn = arrowSelect.leftBtn;
+  let rightBtn = arrowSelect.rightBtn;
+
+  leftBtn.x = arrowSelect.x;
+  leftBtn.y = arrowSelect.y;
+  rightBtn.x = arrowSelect.x + arrowSelect.width - rightBtn.width;
+  rightBtn.y = arrowSelect.y;
+
+  for(const option of arrowSelect.options){
+    option.x = arrowSelect.x + (arrowSelect.width / 2) - (option.width / 2) - 5;
+    option.y = arrowSelect.y + (leftBtn.height / 2) - (option.height / 2) - 15;
+  };
+};
+
 
 GUIManager.prototype.setWidgetFrames = function(widget){
   let renderer = this.parent.renderer;
@@ -205,25 +243,28 @@ GUIManager.prototype._createAllGUIObjects = function(menuTag){
 
     switch (guiObjectName) {
       case "label":
-        createFunc = this._createLabel.bind(this);
+        createFunc = this._createLabel.bind(this, child);
         break;
       case "button":
-        createFunc = this._createButton.bind(this);
+        createFunc = this._createButton.bind(this, child);
         break;
       case "list":
-        createFunc = this._createListWidget.bind(this);
+        createFunc = this._createListWidget.bind(this, child);
         break;
       case "frame":
-        createFunc = this._createFrame.bind(this);
+        createFunc = this._createFrame.bind(this, child);
         break;
       case "img":
-        createFunc = this._createImage.bind(this);
+        createFunc = this._createImage.bind(this, child);
+        break;
+      case "arrowSelect":
+        createFunc = this._createArrowSelect.bind(this, child);
         break;
       default:
         console.error(`Invalid gui object tag detected. tagName: ${guiObjectName}`);
     };
 
-    guiObject = createFunc(child);
+    guiObject = createFunc();
 
     // Set graphic size.
     // We set the graphics of the frames AFTER everything else in this.setWidgetFrames();
@@ -298,6 +339,15 @@ GUIManager.prototype.checkHover = function(widget){
       for(const listItem of widget.listItems){
         recursiveFunc(listItem);
       };
+      break;
+    case ArrowSelect:
+      for(const btn of [widget.leftBtn, widget.rightBtn]){
+        if(btn.state != "disabled"){
+          if(hoverCheckFunc(mouse, btn) === true){
+            btn.state = "hover"
+          } else btn.state = "default";
+        };
+      };
   };
 };
 
@@ -310,24 +360,63 @@ GUIManager.prototype.checkPressesAndClicks = function(widget){
 
   let mouse = engine.getInputDevice("mouse");
 
-  switch (widget.constructor) {
+  switch (widget.constructor){
     case Menu:
       for(const guiObject of widget.guiObjects){recursiveFunc(guiObject)};
       break;
     case Button:
-      if(hoverCheckFunc(mouse, widget) === true){
+      if(widget.state != "disabled" && hoverCheckFunc(mouse, widget) === true){
         let mouseEvents = inputs.get("mouse");
         if(mouseEvents.includes("keyDown-leftPress") === true){
-          widget.state = "pressed"
+          widget.state = "pressed";
         };
         if(mouseEvents.includes("leftClick") === true){this.executeCallback(widget)};
       };
       break;
     case ListWidget:
       for(const listItem of widget.listItems){recursiveFunc(listItem)};
+      break;
+    case ArrowSelect:
+      let mouseEvents = inputs.get("mouse");
+      let disabledIndex = [0, widget.options.length - 1];
+      i = 0;
+      const buttons = [widget.leftBtn, widget.rightBtn];
+      for(const btn of buttons){
+        if(btn.state != "disabled" && hoverCheckFunc(mouse, btn) === true){
+          if(mouseEvents.includes("keyDown-leftPress") === true){
+            btn.state = "pressed";
+          };
+
+          // Detect click while hovering over button.
+          if(mouseEvents.includes("leftClick") === true){
+            let incrementValue = (btn === widget.leftBtn) ? -1 : 1;
+            widget.currentIndex += incrementValue;
+            if((widget.optionsLoop === "false" && widget.currentIndex < 0)
+            || (widget.optionsLoop === "true" && widget.currentIndex >= widget.options.length)){
+              widget.currentIndex = 0
+            }
+            else if((widget.optionsLoop === "false" && widget.currentIndex >= widget.options.length)
+            || (widget.optionsLoop === "true" && widget.currentIndex < 0)){
+              widget.currentIndex = widget.options.length - 1;
+            }
+          };
+        }
+      };
+
+    let btn;
+    for(let i = 0; i < buttons.length; i++){
+      btn = buttons[i];
+      // Switched to index that disables current button.
+      if(widget.optionsLoop === "false" && widget.currentIndex === disabledIndex[i]){
+        btn.state = "disabled";
+      }
+      else if(btn.state === "disabled" && widget.currentIndex != disabledIndex[i]){
+        btn.state = "default";
+      };
+    };
+
   };
 };
-
 
 /**
  * Menu class represents a single instance of a menu.
@@ -366,7 +455,8 @@ function Button(labelObject, callback){
   Object.assign(this, labelObject);
   this.callback = callback;
   this.overlayGraphic;
-  // this.pressedGraphic;
+  this.pressedGraphic;
+  this.disabledGraphic;
 };
 
 function ListWidget(guiObject, listItems){
@@ -383,6 +473,15 @@ function Frame(guiObject){
 function ImageWidget(guiObject, spriteScale){
   Object.assign(this, guiObject);
   this.spriteScale = spriteScale;
+};
+
+function ArrowSelect(guiObject, options, optionsLoop){
+  Object.assign(this, guiObject);
+  this.currentIndex = 0; // Index of active option.
+  this.options = options.map(e => new Label(guiObject, e));
+  this.optionsLoop = optionsLoop;
+  this.leftBtn = new Button(guiObject);
+  this.rightBtn = new Button(guiObject);
 };
 
 /**

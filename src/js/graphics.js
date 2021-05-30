@@ -72,9 +72,11 @@ Renderer.prototype.createButtonStyles = function(){
     "default": new ButtonStyle({guiCustomStyle: "roundButton"}),
     "roundButtonHover": new ButtonStyle({guiCustomStyle: "roundButtonHover"}),
     "roundButtonPressed": new ButtonStyle({guiCustomStyle: "roundButtonPressed"}),
+    "roundButtonDisabled": new ButtonStyle({guiCustomStyle: "roundButtonDisabled"}),
     "squareButton": new ButtonStyle({guiCustomStyle: "squareButton"}),
     "squareButtonHover": new ButtonStyle({guiCustomStyle: "squareButtonHover"}),
     "squareButtonPressed": new ButtonStyle({guiCustomStyle: "squareButtonPressed"}),
+    "squareButtonDisabled": new ButtonStyle({guiCustomStyle: "squareButtonDisabled"}),
     "debug": new ButtonStyle()
   };
 };
@@ -327,27 +329,27 @@ Renderer.prototype.drawMenu = function(menu){
 
 Renderer.prototype.drawGUIObject = function(entity){
   let graphic;
-  if(entity.constructor === Button){
-    switch(entity.state){
-      case "hover":
-        graphic = entity.overlayGraphic;
-        break;
-      case "pressed":
-        graphic = entity.pressedGraphic;
-        break;
-      default:
-        graphic = entity.graphic;
-    };
-  }
-  else if(entity.constructor === ListWidget){
-    // We draw its children individually because ListWidget.graphic doesn't account for entity state.
-    entity.frames.forEach(f => this.drawGUIObject(f));
-    entity.listItems.forEach(e => this.drawGUIObject(e));
-    return;
-  }
-  else {
-    graphic = entity.graphic;
-  }
+  switch(entity.constructor){
+    case Button:
+      if(entity.state === "hover"){graphic = entity.overlayGraphic}
+      else if(entity.state === "pressed"){graphic = entity.pressedGraphic}
+      else if(entity.state === "disabled"){graphic = entity.disabledGraphic}
+      else {graphic = entity.graphic};
+      break;
+    case ListWidget:
+      // We draw its children individually because ListWidget.graphic doesn't account for entity state.
+      entity.frames.forEach(f => this.drawGUIObject(f));
+      entity.listItems.forEach(e => this.drawGUIObject(e));
+      return;
+    case ArrowSelect:
+      this.drawGUIObject(entity.leftBtn);
+      this.drawGUIObject(entity.rightBtn);
+      if(entity.options.length > 0){this.drawGUIObject(entity.options[entity.currentIndex])};
+      return;
+    default:
+      graphic = entity.graphic;
+  };
+
   graphic.position.set(entity.x * this.horizontalRatio, entity.y * this.verticalRatio)
   this.draw(graphic);
 };
@@ -402,9 +404,8 @@ Renderer.prototype.setGUIGraphic = function(entity){
     case Button:
       createGraphicFunc = this.createButtonOverlay.bind(this);
       entity.overlayGraphic = createGraphicFunc(entity, "Hover");
-      // entity.overlayGraphic = this.scale(entity.overlayGraphic);
       entity.pressedGraphic = createGraphicFunc(entity, "Pressed");
-      // entity.pressedGraphic = this.scale(entity.pressedGraphic);
+      entity.disabledGraphic = createGraphicFunc(entity, "Disabled");
 
       createGraphicFunc = this.createButtonGraphic.bind(this);
       break;
@@ -417,14 +418,18 @@ Renderer.prototype.setGUIGraphic = function(entity){
     case ImageWidget:
       createGraphicFunc = this.createImageGraphic.bind(this);
       break;
+    case ArrowSelect:
+      // Note: This function is also responsible for setting the graphics of its labels and buttons.
+      createGraphicFunc = this.createArrowSelectGraphic.bind(this);
+      break;
     default:
       console.error(`Error while trying to create the GUIObject's graphic" ${entity} is an invalid GUIObject.`);
   };
 
   entity.graphic = createGraphicFunc(entity);
-  // entity.graphic = this.scale(entity.graphic);
 };
 
+/*
 // Calculate and return the size of the entity by creating a dummy graphic.
 Renderer.prototype.getEntitySize = function(entity){
   let createGraphicFunc = this.createGUIGraphic.bind(this);
@@ -433,6 +438,7 @@ Renderer.prototype.getEntitySize = function(entity){
   this.textureManager.addToPool(dummy)
   return [dummy.width, dummy.height];
 };
+*/
 
 Renderer.prototype.createCustomGUIRectGraphic = function(guiName, width, height){
   let engine = this.parent;
@@ -675,14 +681,19 @@ Renderer.prototype.createFrameGraphic = function(frameWidget){
   return frameGraphic;
 };
 
-Renderer.prototype.createImageGraphic = function(imageWidget){
+// Can optinally specifiy source too.
+Renderer.prototype.createImageGraphic = function(imageWidget, src, type, spriteScale){
   let textureManager = this.textureManager;
-  let src = imageWidget.attributes.get("src");
-  if(src === undefined){console.error(`image widget is missing a source name!`)}
-  let type = imageWidget.attributes.has("type") ? imageWidget.attributes.get("type") : "fullImage";
+  src = (src === undefined) ? imageWidget.attributes.get("src") : src;
+  if(src === undefined){console.error(`image widget is missing a source name!`)};
+
+  if(type === undefined){
+    type = imageWidget.attributes.has("type") ? imageWidget.attributes.get("type") : "fullImage";
+  };
+
   // Treat sprites without a specified index as fullImages.
   if(type === "sprite" && imageWidget.attributes.get("spriteIndex") === undefined){type = "fullImage"};
-  let spriteScale = imageWidget.spriteScale;
+  if(spriteScale === undefined){spriteScale = imageWidget.spriteScale};
   let graphic;
   let spriteSheet;
   let frameArray;
@@ -694,7 +705,7 @@ Renderer.prototype.createImageGraphic = function(imageWidget){
 
       // We convert the string into an Array of integers.
       if(frameArray != null){
-        frameArray = frameArray.replaceAll(' ','').replaceAll('[', '').replaceAll(']', '').split(',')
+        frameArray = Engine.prototype.convertStringToArray(frameArray);
         frameArray = frameArray.map(n => Number(n));
         textureManager.setTextureFrame(spriteSheet.texture, frameArray)
       };
@@ -705,7 +716,7 @@ Renderer.prototype.createImageGraphic = function(imageWidget){
       spriteSheet = this.getSheetFromId(src);
       let spriteIndex = imageWidget.attributes.get("spriteIndex");
       // We convert the string into an Array of integers.
-      spriteIndex = spriteIndex.replaceAll(' ','').replaceAll('[', '').replaceAll(']', '').split(',');
+      spriteIndex = Engine.prototype.convertStringToArray(spriteIndex);
       spriteIndex = spriteIndex.map(n => Number(n));
       graphic = textureManager.getSpriteFromSheet(spriteSheet, spriteIndex[0], spriteIndex[1]);
       break;
@@ -732,6 +743,79 @@ Renderer.prototype.createImageGraphic = function(imageWidget){
   return graphic;
 
 };
+
+Renderer.prototype.setArrowSelectButtonGraphic = function(arrowSelectBtn, side){
+  let src = arrowSelectBtn.attributes.get("src") + side;
+  let engine = this.parent;
+  let guiConfig = engine.assets.get(engine.guiConfigKey);
+  let guiData = guiConfig.get(src);
+
+  if(arrowSelectBtn.graphic != undefined){this.textureManager.addToPool(arrowSelectBtn.graphic)};
+  arrowSelectBtn.graphic = this.createImageGraphic(arrowSelectBtn, src, "gui", engine.spriteScale);
+
+  if(arrowSelectBtn.overlayGraphic != undefined){this.textureManager.addToPool(arrowSelectBtn.overlayGraphic)};
+  arrowSelectBtn.overlayGraphic = this.createImageGraphic(arrowSelectBtn, src + "Hover", "gui", engine.spriteScale);
+
+  if(arrowSelectBtn.pressedGraphic != undefined){this.textureManager.addToPool(arrowSelectBtn.pressedGraphic)};
+  arrowSelectBtn.pressedGraphic = this.createImageGraphic(arrowSelectBtn, src + "Pressed", "gui", engine.spriteScale);
+
+  if(arrowSelectBtn.disabledGraphic != undefined){this.textureManager.addToPool(arrowSelectBtn.disabledGraphic)};
+  arrowSelectBtn.disabledGraphic = this.createImageGraphic(arrowSelectBtn, src + "Disabled", "gui", engine.spriteScale);
+};
+
+
+Renderer.prototype.createArrowSelectGraphic = function(arrowSelect){
+  let container = new PIXI.Container();
+  let leftBtn = arrowSelect.leftBtn;
+  let rightBtn = arrowSelect.rightBtn;
+  let minimumWidth = 150;
+  let minimumHeight = 50;
+  let horizontalPadding = arrowSelect.attributes.has("horizontalPadding") ? Number(arrowSelect.attributes.get("horizontalPadding")) : 20;
+
+  // Set the graphics of its options.
+  let largestWidth = 0;
+  let createFunc = this.createLabelGraphic.bind(this);
+  for(const option of arrowSelect.options){
+    if(option.graphic != undefined){this.textureManager.addToPool(option.graphic)};
+
+    option.graphic = createFunc(option)
+    option.x = arrowSelect.x;
+    option.y = arrowSelect.y;
+    largestWidth = Math.max(option.graphic.width, largestWidth);
+  };
+
+  // Set the graphics of its buttons.
+  let btnName;
+  let setterFunc = this.setArrowSelectButtonGraphic.bind(this);
+  for(const btn of ["Left", "Right"]){
+    btnName = btn.toLowerCase() + "Btn"
+    setterFunc(arrowSelect[btnName], btn)
+    arrowSelect[btnName].width = arrowSelect[btnName].graphic.width;
+    arrowSelect[btnName].height = arrowSelect[btnName].graphic.height;
+  };
+
+  let rectangleWidth = leftBtn.width + largestWidth + rightBtn.width;
+  rectangleWidth = (rectangleWidth > minimumWidth) ? rectangleWidth : minimumWidth;
+  rectangleWidth += horizontalPadding;
+
+  leftBtn.x = arrowSelect.x;
+  leftBtn.y = arrowSelect.y;
+  rightBtn.x = arrowSelect.x + rectangleWidth - rightBtn.width;
+  rightBtn.y = arrowSelect.y;
+
+  // probably some of the most scuffed code I've written in awhile.
+  for(const option of arrowSelect.options){
+    option.x += (rectangleWidth / 2) - (option.width / 2) - 5;
+    option.y += (leftBtn.height / 2) - (option.height / 2) - 15;
+  };
+
+  for(const btn of [leftBtn, rightBtn]){
+    btn.graphic.position.set(btn.x - arrowSelect.x, btn.y - arrowSelect.y);
+    container.addChild(btn.graphic);
+  };
+  return container;
+};
+
 // Caluclates the size of the string in pixels based on PIXI text styling.
 Renderer.prototype.calculateTextSize = function(s, textStyle){
   let text = new PIXI.BitmapText(s, textStyle);
@@ -965,7 +1049,7 @@ function SpriteSheet(imageURL, texture, sprite, imageObj){
       this.spriteSize = imageObj.spriteSize;
       break;
     // Sprites in sheet are not a fixedSize. If this type is set, dimensions of sprites
-    // at each index_X, index_Y needs to be set manually an object.
+    // at each index_X, index_Y needs to be set manually in an object.
     case "variableSize":
       this.spriteProperties = imageObj.spriteProperties;
       break;

@@ -51,8 +51,8 @@ functionality from its first definition:
     text:
     x:
     y:
-    width: the width of the button's frame. (NOTE: if set, text may overflow)
-    height: the height of the button's frame. (NOTE: if set, text may overflow)
+    width: the width of the widget's frame. (NOTE: if set, text may overflow bounds)
+    height: the height of the widget's frame. (NOTE: if set, text may overflow bounds)
     horizontalPadding: Determines how much padding is between the widget frame and its contents.
                        Check the widget's respective createGraphic function for the default value.
                        padding is distributed evenly (i.e. a value of 20 means, 10 pixels of more space
@@ -95,13 +95,23 @@ functionality from its first definition:
   attributes:
     x:
     y:
+    justifyContents:
     src: (REQUIRED) contains the name of the image file / guiCustomStyle entry.
     type: string identifier for the Engine to figure out where to look for src name.
           Options are currently: "gui", "sprite", "fullImage".
           Default value is fullImage.
-    spriteIndex: (For "spriteSheet" types only!) specifies the index of the sprite to capture from its spriteSheet.
-    frameArray: This tells the engine how to crop / frame the image. If type is set to sprite and
-                spriteIndex is specified, this will be ignored.
+    spriteIndex: (For "spriteSheet" types only!) Comma separated list of integers that specifies the index
+                 of the sprite to capture from its spriteSheet.
+    frameArray: Comma separated list of integers that tells the engine how to crop / frame the image.
+                If type is set to sprite and spriteIndex is specified, this will be ignored.
     scale: determines how much to scale the image by. The default is the engine's spriteScale value.
-    justifyContents: determines where listItems will be positioned relative to the listWidget.
-                     Currently only "center" is supported.    
+
+- arrowSelect (small menu with left and right arrows as buttons for switching between options)
+  attributes:
+    x:
+    y:
+    width:
+    height:
+    horizontalPadding:
+    options: Comma separated list of option names.
+    optionsLoop: Determines if the arrowSelect will cycle through the options or not.

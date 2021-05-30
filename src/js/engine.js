@@ -238,6 +238,11 @@ Engine.prototype.getXMLAttributes = function(tag){
   return map;
 };
 
+// Converts string input like "[1, 2, 3]" or  "1, 2, 3" to ["1", "2", "3"]
+Engine.prototype.convertStringToArray = function(s){
+  return s.replaceAll(' ','').replaceAll('[', '').replaceAll(']', '').split(',');
+};
+
 // =================================
 // Gemeral common math calculations.
 // =================================
@@ -310,6 +315,15 @@ Engine.prototype.rectIntersects = function(rectA, rectB){
   return result;
 };
 
+// If n is outside the bounds, set it as the nearest endpoint value.
+// Precondition: a <= b
+Engine.prototype.boundNum = function(n, a, b){
+  if(a > b){console.error(`interval bounds are invalid! bounds: [${a}, ${b}]`)}
+
+  if(n < a){n = a}
+  else if(n > b){n = b};
+  return n;
+};
 // ======================
 // Input related methods.
 // ======================

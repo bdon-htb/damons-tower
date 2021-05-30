@@ -193,14 +193,17 @@ GUIManager.prototype.setWidgetFrames = function(widget){
   // Performance wise, this is kinda a trash way of doing it but should only be called
   // once for each time a relevant widget is created.
   for(let i = 0; i < iterator.length; i++){
-    if(iterator[i].constructor === Frame){
-      let frame = iterator[i];
-      frame.parentWidget = widget;
-      renderer.setGUIGraphic(frame);
-      frame.width = frame.graphic.width;
-      frame.height = frame.graphic.height;
-      widget.frames.push(frame);
+    let item = iterator[i];
+    if(item.constructor === Frame){
+      item.parentWidget = widget;
+      renderer.setGUIGraphic(item);
+      item.width = item.graphic.width;
+      item.height = item.graphic.height;
+      widget.frames.push(item);
       iterator.splice(i, 1);
+    }
+    else if(item.constructor === ListWidget){
+      this.setWidgetFrames(item);
     };
   };
 };
@@ -288,8 +291,6 @@ GUIManager.prototype._createAllGUIObjects = function(menuTag){
       guiObject.width = guiObject.graphic.width;
       guiObject.height = guiObject.graphic.height;
     };
-
-    if(guiObjectName === "list"){this.setWidgetFrames(guiObject)};
 
     guiObjectArray.push(guiObject);
   };

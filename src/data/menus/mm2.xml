@@ -8,8 +8,10 @@
   <menu>
       <label text="Development build" x="0" y="0"></label>
       <list x="480" y="100" spaceBetween="10" justifyContents="center">
-        <img type="gui" src="titleLogo" justifyContents="center"></img>
+        <frame></frame>
+        <img type="gui" src="titleLogo"></img>
         <list spaceBetween="10" orientation="h" justifyContents="center">
+          <frame></frame>
           <label text="Resolution:"></label>
           <arrowSelect options="[960x540, 1280x720, Fullscreen]"></arrowSelect>
         </list>

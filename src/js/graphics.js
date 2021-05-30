@@ -671,9 +671,14 @@ Renderer.prototype.createFrameGraphic = function(frameWidget){
   if(parentWidget.constructor === ListWidget){
     frameWidth += horizontalPadding;
     frameHeight += verticalPadding;
+    let parentAttributes = parentWidget.attributes;
+    let orientation = parentAttributes.get("orientation");
 
-    if(parentWidget.attributes.get("justifyContents") === "center"){
-      frameWidget.x -= frameWidth / 2;
+    if(parentAttributes.get("justifyContents")){
+      if(["v", "vertical"].includes(orientation)){
+        frameWidget.x -= frameWidth / 2;
+      }
+      else frameWidget.x -= horizontalPadding / 2;
       frameWidget.y -= verticalPadding / 2;
     };
   };

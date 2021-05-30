@@ -674,13 +674,13 @@ Renderer.prototype.createFrameGraphic = function(frameWidget){
     let parentAttributes = parentWidget.attributes;
     let orientation = parentAttributes.get("orientation");
 
-    if(parentAttributes.get("justifyContents")){
-      if(["v", "vertical"].includes(orientation)){
-        frameWidget.x -= frameWidth / 2;
-      }
-      else frameWidget.x -= horizontalPadding / 2;
-      frameWidget.y -= verticalPadding / 2;
-    };
+    if(["h", "horizontal"].includes(orientation)){
+      frameWidget.x -= horizontalPadding / 2;
+    }
+    else if(parentAttributes.get("justifyContents")){
+      frameWidget.x -= frameWidth / 2;
+    }
+    frameWidget.y -= verticalPadding / 2;
   };
 
   frameGraphic = this.createCustomGUIRectGraphic(frameStyle, frameWidth, frameHeight);

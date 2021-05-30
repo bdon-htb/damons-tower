@@ -165,8 +165,8 @@ GUIManager.prototype._positionArrowSelectItems = function(arrowSelect){
   rightBtn.y = arrowSelect.y;
 
   for(const option of arrowSelect.options){
-    option.x = arrowSelect.x + (arrowSelect.width / 2) - (option.width / 2) - 5;
-    option.y = arrowSelect.y + (leftBtn.height / 2) - (option.height / 2) - 15;
+    option.x = arrowSelect.x + (arrowSelect.width / 2) - (option.width / 2);
+    option.y = arrowSelect.y + (leftBtn.height / 2) - (option.height / 2) + 2;
   };
 };
 

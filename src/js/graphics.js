@@ -778,10 +778,12 @@ Renderer.prototype.createArrowSelectGraphic = function(arrowSelect){
   for(const option of arrowSelect.options){
     if(option.graphic != undefined){this.textureManager.addToPool(option.graphic)};
 
-    option.graphic = createFunc(option)
+    option.graphic = createFunc(option);
+    option.width = option.graphic.width;
+    option.height = option.graphic.height;
     option.x = arrowSelect.x;
     option.y = arrowSelect.y;
-    largestWidth = Math.max(option.graphic.width, largestWidth);
+    largestWidth = Math.max(option.width, largestWidth);
   };
 
   // Set the graphics of its buttons.
@@ -805,8 +807,8 @@ Renderer.prototype.createArrowSelectGraphic = function(arrowSelect){
 
   // probably some of the most scuffed code I've written in awhile.
   for(const option of arrowSelect.options){
-    option.x += (rectangleWidth / 2) - (option.width / 2) - 5;
-    option.y += (leftBtn.height / 2) - (option.height / 2) - 15;
+    option.x += (rectangleWidth / 2) - (option.width / 2);
+    option.y += (leftBtn.height / 2) - (option.height / 2) + 2;
   };
 
   for(const btn of [leftBtn, rightBtn]){

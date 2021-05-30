@@ -8,7 +8,7 @@
   <menu>
       <label text="Development build" x="0" y="0"></label>
       <list x="480" y="100" spaceBetween="10" justifyContents="center">
-        <arrowSelect options="[1, 2, 3]"></arrowSelect>
+        <arrowSelect options="[960x540, 1280x720, Fullscreen]"></arrowSelect>
         <img type="gui" src="titleLogo" justifyContents="center"></img>
         <button text="Start Game" callback="startGame"></button>
         <button text="Toggle Fullscreen" callback="resizeTest"></button>

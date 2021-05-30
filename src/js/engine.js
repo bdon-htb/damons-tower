@@ -449,7 +449,7 @@ AssetLoader.prototype.loadXML = function(data, success){
       default:
         console.error(`Error loading an XML file. Not a valid type! Detected type: ${type}. File: ${data}`);
     };
-  };
+  } else console.log('XML file is invalid!');
 };
 
 AssetLoader.prototype.loadMenu = function(data, success){
@@ -476,9 +476,9 @@ AssetLoader.prototype.loadMenu = function(data, success){
 */
 function StateMachine(parent, states, initialState){
   this.parent = parent;
-  // A lot of the states are currently placeholder. Will be adapted as needed.
   this.allStates = states;
   this.currentState = initialState;
+  this.stateLog = []; // Keeps track of all states, up to the current (but not including current).
 };
 
 StateMachine.prototype.isValidState = function(string){
@@ -489,8 +489,15 @@ StateMachine.prototype.isValidState = function(string){
   return result;
 };
 
-StateMachine.prototype.changeState = function(newState){
+StateMachine.prototype.goToPreviousState = function(){
+  if(this.stateLog.length > 0){
+    this.changeState(this.stateLog.pop());
+  } else console.error(`No previous state to go to!`);
+};
+
+StateMachine.prototype.changeState = function(newState, logState=false){
   if(this.isValidState(newState) === true){
+    if(logState === true){this.stateLog.push(this.currentState)}
     if(this.allStates.constructor !== Array){ // Assume allStates is an object.
       this._callTransitionMethod(this.currentState, "out"); // Call the out method of the last state.
       this.currentState = newState; // Change state.

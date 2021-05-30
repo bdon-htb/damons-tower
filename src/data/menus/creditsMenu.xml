@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<file>
+  <header>
+      <type>menu</type>
+      <name>creditsMenu</name>
+      <layout>floatLayout</layout>
+  </header>
+  <menu>
+      <list x="480" y="100" spaceBetween="10" justifyContents="center">
+        <frame></frame>
+        <label text="CREDITS"></label>
+        <label text="Created by: Brandon Phillips"></label>
+        <label text="Additional Programming: Julien Ouellette"></label>
+        <button text="Back" callback="goToPreviousState"></button>
+      </list>
+  </menu>
+</file>

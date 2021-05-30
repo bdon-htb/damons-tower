@@ -30,10 +30,10 @@ function Game(engine){
 
   let allStates = {
     "starting": null,
-    "mainMenu": [this._loadMenu.bind(this, "debugMenu"), this._clearGameStateObject.bind(this)],
+    "mainMenu": [this._loadMenu.bind(this, "mainMenu"), this._clearGameStateObject.bind(this)],
+    "settingsMenu": [this._loadMenu.bind(this, "settingsMenu"), this._clearGameStateObject.bind(this)],
+    "credits": [this._loadMenu.bind(this, "creditsMenu"), this._clearGameStateObject.bind(this)],
     "inLevel": [this._loadTestLevel.bind(this), this._clearGameStateObject.bind(this)],
-    "options": null,
-    "credits": null,
     "paused": null,
   };
 
@@ -47,8 +47,9 @@ function Game(engine){
   // Setup callbacks.
   this.callbacks = {
     "startGame":  this.stateMachine.changeState.bind(this.stateMachine,"inLevel"),
-    "openOptions": this.stateMachine.changeState.bind(this.stateMachine, "options"),
-    "openCredits": this.stateMachine.changeState.bind(this.stateMachine, "credits"),
+    "openSettings": this.stateMachine.changeState.bind(this.stateMachine, "settingsMenu", true),
+    "openCredits": this.stateMachine.changeState.bind(this.stateMachine, "credits", true),
+    "goToPreviousState": this.stateMachine.goToPreviousState.bind(this.stateMachine),
     "resizeTest": this.renderer.requestFullscreen.bind(this.renderer),
     "resizeTest2": this._resizeScreen.bind(this, 1280, 720),
     "resizeTest3": this._resizeScreen.bind(this, 960, 540)
@@ -70,6 +71,8 @@ Game.prototype.update = function(){
       this.stateMachine.changeState("mainMenu");
       break;
     case "mainMenu":
+    case "settingsMenu":
+    case "credits":
       let menu = this.gameStateObject["menu"];
       let mouseEvents = events.get("inputEvents").get("mouse");
       this.engine.guiManager.checkHover(menu);
@@ -121,6 +124,8 @@ Game.prototype.draw = function(){
     case "starting":
       break;
     case "mainMenu":
+    case "settingsMenu":
+    case "credits":
       let menu = this.gameStateObject["menu"]
       renderer.drawMenu(menu);
       break;
@@ -174,6 +179,7 @@ Game.prototype._loadMenu = function(menuName){
   if(gameStateObject["menu"] === undefined || gameStateObject["menu"].name !== menuName){
     gameStateObject["menu"] = this.engine.getLoadedAsset("menus").get(menuName);
   };
+  gameStateObject["menu"]
 };
 
 // Set the gameStateObject's scene.

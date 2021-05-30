@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<file>
+  <header>
+      <type>menu</type>
+      <name>settingsMenu</name>
+      <layout>floatLayout</layout>
+  </header>
+  <menu>
+      <list x="480" y="100" spaceBetween="10" justifyContents="center">
+        <frame></frame>
+        <label text="SETTINGS MENU"></label>
+
+        <list orientation="h">
+          <label text="Game Resolution:"></label>
+          <arrowSelect options="[960x540, 1280x720, Fullscreeen]"></arrowSelect>
+        </list>
+
+        <list orientation="h" spaceBetween="10">
+          <button text="Apply Changes" callback="updateSettings"></button>
+          <button text="Back" callback="goToPreviousState"></button>
+        </list>
+
+      </list>
+  </menu>
+</file>

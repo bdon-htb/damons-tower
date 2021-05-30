@@ -2,7 +2,7 @@
 <file>
   <header>
       <type>menu</type>
-      <name>mainMenu</name>
+      <name>debugMenu</name>
       <layout>floatLayout</layout>
   </header>
   <menu>

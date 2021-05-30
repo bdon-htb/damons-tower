@@ -218,7 +218,17 @@ GUIManager.prototype.updateMenuGraphics = function(widget){
       widget.graphic.width = widget.graphic.texture.width * widget.spriteScale * renderer.horizontalRatio;
       widget.graphic.height = widget.graphic.texture.height * widget.spriteScale * renderer.verticalRatio;
       break;
+    case ArrowSelect:
+      widget.options.forEach(o => recursiveFunc(o));
+      for(const btn of [widget.rightBtn, widget.leftBtn]){
+        for(const graphicType of ["graphic", "disabledGraphic", "overlayGraphic", "pressedGraphic"]){
+          btn[graphicType].width = btn[graphicType].texture.width * this.parent.spriteScale * renderer.horizontalRatio;
+          btn[graphicType].height = btn[graphicType].texture.height * this.parent.spriteScale * renderer.verticalRatio;
+        };
+      };
+      break;
     case Button:
+      renderer.scale(widget.disabledGraphic);
       renderer.scale(widget.overlayGraphic);
       renderer.scale(widget.pressedGraphic);
       renderer.scale(widget.graphic);

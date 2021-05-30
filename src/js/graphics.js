@@ -351,6 +351,7 @@ Renderer.prototype.drawGUIObject = function(entity){
   };
 
   graphic.position.set(entity.x * this.horizontalRatio, entity.y * this.verticalRatio)
+  this.drawRect()
   this.draw(graphic);
 };
 

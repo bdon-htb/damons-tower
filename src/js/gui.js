@@ -83,9 +83,15 @@ GUIManager.prototype._createButton = function(buttonTag){
 GUIManager.prototype._createListWidget = function(listTag){
   let createFunc = this._createGUIObject.bind(this);
   let parentObj = createFunc(listTag);
-  let listAttributes = parentObj.attributes
   let listItems = this._createAllGUIObjects(listTag);
+  return new ListWidget(parentObj, listItems);
+};
 
+GUIManager.prototype._positionListWidgetItems = function(listWidget){
+  let listAttributes = listWidget.attributes;
+  let listItems = listWidget.listItems;
+
+  // Overwrite listItems positions to reflect orientation.
   let orientation = listAttributes.get("orientation");
   if(["h", "v", "horizontal", "vertical"].includes(orientation) != true){
     orientation = "v";
@@ -94,31 +100,29 @@ GUIManager.prototype._createListWidget = function(listTag){
 
   let spaceBetween = listAttributes.has("spaceBetween") ? Number(listAttributes.get("spaceBetween")) : 0;
 
-  // Overwrite listItems positions to reflect orientation.
-  let nextX = parentObj.x;
-  let nextY = parentObj.y;
+  let nextX = listWidget.x;
+  let nextY = listWidget.y;
   for(const item of listItems){
     if(item.constructor === Frame){continue};
     item.x = nextX;
     item.y = nextY;
 
+    // center-contents only applies for vertical orientations.
+    if(["v", "vertical"].includes(orientation) && listAttributes.get("justifyContents") === "center"){
+      item.x -= item.width / 2
+    }
+
+    if(item.constructor === ListWidget){this._positionListWidgetItems(item)};
+
     if(["h", "horizontal"].includes(orientation) === true){
-      nextX += item.width + spaceBetween;
+      nextX = item.x + item.width + spaceBetween;
     }
     else {
-      // center-contents only applies for vertical orientations.
-      if(listAttributes.get("justifyContents") === "center"){
-        item.x -= item.width / 2
-      };
-      nextY += item.height + spaceBetween; // assume orientation is vertical.
+      nextY = item.y + item.height + spaceBetween; // assume orientation is vertical.
     };
-
     if(item.constructor === ArrowSelect){this._positionArrowSelectItems(item)};
   };
-
-  let listWidget = new ListWidget(parentObj, listItems);
-  return listWidget;
-};
+}
 
 GUIManager.prototype._createFrame = function(frameTag){
   let createFunc = this._createGUIObject.bind(this);
@@ -275,6 +279,7 @@ GUIManager.prototype._createAllGUIObjects = function(menuTag){
     };
 
     guiObject = createFunc();
+    if(guiObjectName === "list"){this._positionListWidgetItems(guiObject)};
 
     // Set graphic size.
     // We set the graphics of the frames AFTER everything else in this.setWidgetFrames();
@@ -284,9 +289,7 @@ GUIManager.prototype._createAllGUIObjects = function(menuTag){
       guiObject.height = guiObject.graphic.height;
     };
 
-    if(guiObjectName === "list"){
-      this.setWidgetFrames(guiObject);
-    };
+    if(guiObjectName === "list"){this.setWidgetFrames(guiObject)};
 
     guiObjectArray.push(guiObject);
   };

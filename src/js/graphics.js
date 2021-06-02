@@ -323,6 +323,8 @@ Renderer.prototype.drawTiles = function(scene){
 // =====================
 
 Renderer.prototype.drawMenu = function(menu){
+  let screenSize = this.getScreenSize();
+
   menu.frames.forEach(f => this.drawGUIObject(f));
   menu.guiObjects.forEach(e => this.drawGUIObject(e));
 };
@@ -367,7 +369,7 @@ Renderer.prototype.drawGUIObject = function(entity){
 };
 */
 
-/*
+
 Renderer.prototype.createGUIGraphic = function(entity){
   let graphic;
   let createGraphicFunc;
@@ -393,7 +395,6 @@ Renderer.prototype.createGUIGraphic = function(entity){
   };
   return createGraphicFunc(entity)
 };
-*/
 
 Renderer.prototype.setGUIGraphic = function(entity){
   let graphic;

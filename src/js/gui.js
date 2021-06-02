@@ -212,9 +212,11 @@ GUIManager.prototype.updateMenuGraphics = function(widget){
   let renderer = this.parent.renderer;
   let recursiveFunc = this.updateMenuGraphics.bind(this);
   switch(widget.constructor){
+    case DebugMenu:
     case Menu:
       widget.frames.forEach(f => recursiveFunc(f));
       widget.guiObjects.forEach(o => recursiveFunc(o));
+      widget.screenSize = renderer.getScreenSize();
       break;
     case Label:
     case Frame:
@@ -559,11 +561,12 @@ function DebugMenu(parent){
   this.parent = parent;
   this.debugVariables = new Map();
   this.textStyle = "debug"
-  this.topLeft = [0, 0];
+  this.topLeft = [650, 0];
 
   let titleLabel = this._createLabel("Debug Display", "debug")
   titleLabel.x = this.topLeft[0]
   titleLabel.y = this.topLeft[1]
+  this.setGUIGraphic(titleLabel);
   this.guiObjects.push(titleLabel);
 };
 
@@ -596,12 +599,18 @@ DebugMenu.prototype.updateVariable = function(varName, varValue){
     if(this.debugVariables.has(varName) === true){
       let valueLabel = this.debugVariables.get(varName)[1];
       valueLabel.text = String(varValue);
+      this.setGUIGraphic(valueLabel);
       this._updateSize(valueLabel);
+      // You can uncomment this if you want this to scale. but this just seems really performant
+      // (I don't get much of a hit though).
+      // this.parent.engine.guiManager.updateMenuGraphics(this);
     }
     else {
       // Create object.
       let nameLabel = this._createLabel(varName + ":");
+      this.setGUIGraphic(nameLabel);
       let valueLabel = this._createLabel(varValue);
+      this.setGUIGraphic(valueLabel);
 
       // Add gui objects.
       this.guiObjects.push(nameLabel);
@@ -610,6 +619,9 @@ DebugMenu.prototype.updateVariable = function(varName, varValue){
 
       // Update positions.
       this.organize();
+      // You can uncomment this if you want this to scale. but this just seems really performant
+      // (I don't get much of a hit though).
+      // this.parent.engine.guiManager.updateMenuGraphics(this);
     };
   };
 };
@@ -658,4 +670,16 @@ DebugMenu.prototype.organize = function(){
 
     nextY += spaceBetween
   };
+};
+
+DebugMenu.prototype.setGUIGraphic = function(entity){
+  let renderer = this.parent.renderer;
+
+  if(entity.graphic != undefined){
+    renderer.textureManager.addToPool(entity.graphic);
+  };
+
+  renderer.setGUIGraphic(entity);
+  entity.width = entity.graphic.width;
+  entity.height = entity.graphic.height;
 };

@@ -146,7 +146,6 @@ function Keyboard(){
     left:"KeyA", // A
     right:"KeyD", // D
     space: "Space", // Space
-    fullscreen: "F12"
   };
 
   InputDevice.call(this, "keyboard", defaultKeys);

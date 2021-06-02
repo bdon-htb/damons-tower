@@ -13,8 +13,8 @@ function Game(engine){
   this.animationManager = this.renderer.animationManager;
   this.timerManager = engine.timerManager;
 
-  this.debugModeOn = false;
-  this.debugMenu = new DebugMenu(this);
+  this.debugModeOn = true;
+  this.debugMenu = null;
 
   this.gameStateObject = {
     "events": new Map(), // A map of game events. Currently unused.
@@ -30,7 +30,7 @@ function Game(engine){
 
   let allStates = {
     "starting": null,
-    "mainMenu": [this._loadMenu.bind(this, "mainMenu"), this._clearGameStateObject.bind(this)],
+    "mainMenu": [this._loadGame.bind(this), this._clearGameStateObject.bind(this)],
     "settingsMenu": [this._loadMenu.bind(this, "settingsMenu"), this._clearGameStateObject.bind(this)],
     "credits": [this._loadMenu.bind(this, "creditsMenu"), this._clearGameStateObject.bind(this)],
     "inLevel": [this._loadTestLevel.bind(this), this._clearGameStateObject.bind(this)],
@@ -62,7 +62,10 @@ Game.prototype.update = function(){
   let inputs = this.engine.getInputEvents();
   events.set("inputEvents", this.engine.getInputEvents());
 
-  this.debugMenu.updateVariable("game fps", this.engine.frameData["fps"]);
+  if(this.debugMenu != null){
+    this.debugMenu.updateVariable("game fps", this.engine.frameData["fps"]);
+  };
+
   switch(currentState){
     case "starting": // For loading stuff specific to the game.
       this.controller.createPatterns(data["timeStamp"]);
@@ -146,8 +149,8 @@ Game.prototype.draw = function(){
       // renderer.drawRect(0xff0000, sceneOrigin[0], sceneOrigin[1], 4, 4);
   };
 
-  if(this.debugModeOn === true){
-    renderer.drawMenu(this.debugMenu);
+  if(this.debugModeOn === true && this.debugMenu != null){
+    this.renderer.drawMenu(this.debugMenu)
   };
 };
 
@@ -205,7 +208,16 @@ Game.prototype._loadMenu = function(menuName){
   if(gameStateObject["menu"] === undefined || gameStateObject["menu"].name !== menuName){
     gameStateObject["menu"] = this.engine.getLoadedAsset("menus").get(menuName);
   };
-  gameStateObject["menu"]
+  this.engine.guiManager.updateMenuGraphics(gameStateObject["menu"]);
+};
+
+Game.prototype._loadGame = function(){
+  this._loadMenu("mainMenu");
+
+  // We only want this occurring when the game boots up.
+  if(this.debugModeOn === true && this.debugMenu === null){
+    this.debugMenu = new DebugMenu(this);
+  };
 };
 
 // Set the gameStateObject's scene.

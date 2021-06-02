@@ -49,10 +49,8 @@ function Game(engine){
     "startGame":  this.stateMachine.changeState.bind(this.stateMachine,"inLevel"),
     "openSettings": this.stateMachine.changeState.bind(this.stateMachine, "settingsMenu", true),
     "openCredits": this.stateMachine.changeState.bind(this.stateMachine, "credits", true),
-    "goToPreviousState": this.stateMachine.goToPreviousState.bind(this.stateMachine),
-    "resizeTest": this.renderer.requestFullscreen.bind(this.renderer),
-    "resizeTest2": this._resizeScreen.bind(this, 1280, 720),
-    "resizeTest3": this._resizeScreen.bind(this, 960, 540)
+    "applySettings": this._applySettings.bind(this),
+    "goToPreviousState": this.stateMachine.goToPreviousState.bind(this.stateMachine)
   };
 };
 
@@ -73,12 +71,7 @@ Game.prototype.update = function(){
     case "mainMenu":
     case "settingsMenu":
     case "credits":
-      let menu = this.gameStateObject["menu"];
-      let mouseEvents = events.get("inputEvents").get("mouse");
-      this.engine.guiManager.checkHover(menu);
-      if(mouseEvents != undefined && (mouseEvents.includes("keyDown-leftPress") || mouseEvents.includes("leftClick"))){
-        this.engine.guiManager.checkPressesAndClicks(menu);
-      };
+      this._updateMenu(this.gameStateObject["menu"], events);
       break;
     case "inLevel":
       let scene = this.gameStateObject["scene"];
@@ -126,8 +119,7 @@ Game.prototype.draw = function(){
     case "mainMenu":
     case "settingsMenu":
     case "credits":
-      let menu = this.gameStateObject["menu"]
-      renderer.drawMenu(menu);
+      renderer.drawMenu(this.gameStateObject["menu"]);
       break;
     case "inLevel":
       let level = this.gameStateObject["scene"];
@@ -159,12 +151,46 @@ Game.prototype.draw = function(){
   };
 };
 
-Game.prototype._resizeScreen = function(newWidth, newHeight){
-  this.renderer.resizeScreen(newWidth, newHeight);
-  if(this.gameStateObject["menu"] != undefined){
-    this.engine.guiManager.updateMenuGraphics(this.gameStateObject["menu"]);
+// ===============
+// Game callbacks + menu related methods.
+// ===============
+Game.prototype._applySettings = function(){
+  if(this.stateMachine.currentState != "settingsMenu"){
+    console.error(`Invalid state to apply settings! Detected state: ${this.stateMachine.currentState}`)
+  }
+  else {
+    let menu = this.gameStateObject["menu"];
+
+    // Apply resolution.
+    let resolution = this.engine.guiManager.getWidgetbyId(menu, "gameResolution");
+    resolution = this.engine.guiManager.getCurrentSelection(resolution).text;
+    if(resolution.toLowerCase() === "fullscreen"){
+      this.renderer.requestFullscreen();
+    }
+    else {
+      // Assumes resolution text will be in the format "WidthxHeight"
+      let oldScreenSize = this.renderer.getScreenSize();
+      let newScreenSize = resolution.split('x').map(e => Number(e));
+      if(oldScreenSize[0] != newScreenSize[0] || oldScreenSize[1] != newScreenSize[1]){
+        this.renderer.resizeScreen(newScreenSize[0], newScreenSize[1]);
+        this.engine.guiManager.updateMenuGraphics(menu);
+      };
+    };
+
   };
 };
+
+Game.prototype._updateMenu = function(menu, events){
+  let currentState = this.stateMachine.currentState;
+  let mouseEvents = events.get("inputEvents").get("mouse");
+  let guiManager = this.engine.guiManager;
+
+  this.engine.guiManager.checkHover(menu);
+  if(mouseEvents != undefined && (mouseEvents.includes("keyDown-leftPress") || mouseEvents.includes("leftClick"))){
+    this.engine.guiManager.checkPressesAndClicks(menu);
+  };
+};
+
 // =========================
 // State transition methods.
 // =========================

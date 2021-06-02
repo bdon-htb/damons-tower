@@ -282,6 +282,7 @@ GUIManager.prototype._createAllGUIObjects = function(menuTag){
     };
 
     guiObject = createFunc();
+
     if(guiObjectName === "list"){this._positionListWidgetItems(guiObject)};
 
     // Set graphic size.
@@ -298,6 +299,21 @@ GUIManager.prototype._createAllGUIObjects = function(menuTag){
   return guiObjectArray;
 };
 
+
+GUIManager.prototype.setIdObjects = function(widget, idMap=null){
+  switch (widget.constructor) {
+    case Menu:
+      idMap = widget.idObjects;
+      widget.guiObjects.forEach(e => this.setIdObjects(e, idMap));
+      break;
+    case ListWidget:
+      widget.listItems.forEach(e => this.setIdObjects(e, idMap));
+      // The break not being here is intentional.
+    default:
+      let id = widget.attributes.get("id");
+      if(id != undefined){idMap.set(id, widget)};
+  };
+};
 
 // Parse menu data and return menu object based on it.
 // data is a XMLDocument object.
@@ -320,7 +336,12 @@ GUIManager.prototype.createMenuFromData = function(data){
 
   let menu = new Menu(menuName, menuLayoutType, menuLayoutSettings, menuGUIObjects);
   this.setWidgetFrames(menu);
+  this.setIdObjects(menu);
   return menu
+};
+
+GUIManager.prototype.getWidgetbyId = function(menu, id){
+  return menu.idObjects.get(id);
 };
 
 GUIManager.prototype.executeCallback = function(entity){
@@ -432,15 +453,30 @@ GUIManager.prototype.checkPressesAndClicks = function(widget){
   };
 };
 
+GUIManager.prototype.getCurrentSelection = function(widget){
+  let currentSelection;
+  switch(widget.constructor){
+    case ArrowSelect:
+      currentSelection = widget.options[widget.currentIndex];
+      break;
+    default:
+      currentSelection = null;
+  };
+
+  return currentSelection;
+};
 /**
  * Menu class represents a single instance of a menu.
  * Will contain gui objects and layout information.
+ * this.idObjects are guiObjects that are given ids in their menu files.
+ * Objects with ids will still exist in this.guiObjects.
 */
 function Menu(name, layoutType, layoutSettings, guiObjects){
   this.name = name;
   this.layoutType = layoutType;
   this.layoutSettings = layoutSettings;
   this.guiObjects = guiObjects;
+  this.idObjects = new Map();
   this.frames = [];
 };
 

@@ -12,6 +12,7 @@
       <button x="790" y="490" text="credits" callback="openCredits"></button>
 
       <list x="480" y="120" spaceBetween="10" justifyContents="center">
+        <frame></frame>
         <img type="gui" src="titleLogo"></img>
         <button text="Start" callback="startGame"></button>
         <button text="Tutorial" callback="startTutorial"></button>

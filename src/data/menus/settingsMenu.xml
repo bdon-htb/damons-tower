@@ -12,11 +12,11 @@
 
         <list orientation="h">
           <label text="Game Resolution:"></label>
-          <arrowSelect options="[960x540, 1280x720, Fullscreeen]"></arrowSelect>
+          <arrowSelect id="gameResolution" options="[960x540, 1280x720, Fullscreen]"></arrowSelect>
         </list>
 
         <list orientation="h" spaceBetween="10">
-          <button text="Apply Changes" callback="updateSettings"></button>
+          <button text="Apply Changes" callback="applySettings"></button>
           <button text="Back" callback="goToPreviousState"></button>
         </list>
 

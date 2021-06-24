@@ -522,8 +522,8 @@ Game.prototype._handlePlayerAttack = function(player, commands){
       player.attributes["state"] = "attacking";
       let direction = player.attributes["direction"];
       let animMap = {
-        "up": allAnims.get("player_basic_attack1_left"),
-        "down": allAnims.get("player_basic_attack1_right"),
+        "up": allAnims.get("player_basic_attack1_back"),
+        "down": allAnims.get("player_basic_attack1_front"),
         "left": allAnims.get("player_basic_attack1_left"),
         "right": allAnims.get("player_basic_attack1_right")
       };

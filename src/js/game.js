@@ -520,7 +520,7 @@ Game.prototype._handlePlayerAttack = function(scene, player, commands){
     // Start basic attack.
     else if(playerState != "attacking"){
       player.attributes["state"] = "attacking";
-      this._calculatePlayerAttackDirection(scene, player);
+      player.attributes["direction"] = this._calculatePlayerAttackDirection(scene, player);
       let direction = player.attributes["direction"];
       let animMap = {
         "up": allAnims.get("player_basic_attack1_back"),
@@ -560,7 +560,6 @@ Game.prototype._calculatePlayerAttackDirection = function(scene, player){
     // Mouse coordinates are relative to game canvas.
     let mouseCoords = this.engine.inputManager.inputDevices.get("mouse").getCoords();
     // if(this.renderer.isFullscreen === true){};
-    console.log(mouseCoords)
 
     // We want the center of where the player is being drawn on the screen.
     // So we calculate position the similar to how we calculate where to draw the player's sprite.
@@ -569,7 +568,25 @@ Game.prototype._calculatePlayerAttackDirection = function(scene, player){
     relPlayerCoords[1] *= this.renderer.verticalRatio;
 
     let mouseVector = new Vector2D([mouseCoords[0] - relPlayerCoords[0], mouseCoords[1] - relPlayerCoords[1]]);
-    console.log(Math.round(Vector2D.prototype.calculateAngle(mouseVector, true)))
+    let mouseAngle = Math.round(Vector2D.prototype.calculateAngle(mouseVector, true));
+    if(mouseAngle < 0){mouseAngle = 360 + mouseAngle};
+
+    // Map of directions and their corresponding angles.
+    // Format: {direction: [array(s) of angles]}
+    let angleMap = {
+      "right": [[315, 360], [0, 45]],
+      "down": [[46, 135]],
+      "left": [[136, 225]],
+      "up": [[226, 314]]
+    }
+
+    for(const [direction, angleArray] of Object.entries(angleMap)){
+      for(const anglePair of angleArray){
+        if(Engine.prototype.inBetween(mouseAngle, anglePair[0], anglePair[1], true) === true){
+          return direction;
+        };
+      };
+    };
   };
 };
 

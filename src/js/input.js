@@ -26,7 +26,7 @@ InputManager.prototype.captureInputs = function(clearFirst=true){
   // TODO: Maybe make more elaborate.
   // If the game is hosted on a regular site having it constantly focused.
   // might intercept navigating the website.
-  this.parent.context.focus();
+  // this.parent.context.focus();
   if (clearFirst === true) {
     this.clearEvents();
   };

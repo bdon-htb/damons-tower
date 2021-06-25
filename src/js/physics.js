@@ -198,7 +198,7 @@ Vector2D.prototype.crossProduct = function(vector1, vector2){
   return (vector1.p2[0] * vector2.p2[1]) - (vector1.p2[1] * vector2.p2[0])
 };
 
-//Returns the coordinate where two vectors intersect. Return null if they don't
+// Returns the coordinate where two vectors intersect. Return null if they don't
 // intersect at all.
 // This function assumes that vector1 and vector2 will be free vectors.
 Vector2D.prototype.vectorsIntersect = function(vector1, vector2){
@@ -225,4 +225,18 @@ Vector2D.prototype.vectorsIntersect = function(vector1, vector2){
     intersectionPoint = intersectionPoint.p2
   } else intersectionPoint = null;
   return intersectionPoint;
+};
+
+// Calculates the angle of the vector between its second point and the x axis.
+// can optionally have the output be in degrees by setting inDegrees = true
+// Precondition: vector.p1 = [0, 0]
+Vector2D.prototype.calculateAngle = function(vector, inDegrees=false){
+  let x = vector.p2[0];
+  let y = vector.p2[1];
+  let angle = Math.atan2(y, x);
+
+  if(inDegrees === true){
+    angle = Engine.prototype.convertRadiansToDegrees(angle);
+  };
+  return angle;
 };

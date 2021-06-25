@@ -324,6 +324,15 @@ Engine.prototype.boundNum = function(n, a, b){
   else if(n > b){n = b};
   return n;
 };
+
+Engine.prototype.convertRadiansToDegrees = function(radian){
+  return radian * (180 / Math.PI);
+};
+
+Engine.prototype.convertDegreesToRadians = function(degrees){
+  return degrees * (Math.PI / 180)
+};
+
 // ======================
 // Input related methods.
 // ======================

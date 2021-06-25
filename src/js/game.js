@@ -367,7 +367,7 @@ Game.prototype._handlePlayerStates = function(scene){
   }
   else if(playerState === "attacking" || player.attributes["canAttack"] === true && attackCommands.some(c => commands.includes(c))
   && ["idle", "walking", "sprinting", "attacking"].includes(playerState)){
-    this._handlePlayerAttack(player, commands);
+    this._handlePlayerAttack(scene, player, commands);
   }
   else {
     // This function also handles when the player is idling.
@@ -502,7 +502,7 @@ Game.prototype._walkPlayer = function(player, commands){
 
 // Handles all of player attacking, including animations.
 // Precondition: ["idle", "walking", "sprinting", "attacking"].includes(playerState)
-Game.prototype._handlePlayerAttack = function(player, commands){
+Game.prototype._handlePlayerAttack = function(scene, player, commands){
   let basicAttackCommand = "singleTap-leftPress";
   let playerState = player.attributes["state"];
   let allAnims = player.attributes["animations"];
@@ -520,6 +520,7 @@ Game.prototype._handlePlayerAttack = function(player, commands){
     // Start basic attack.
     else if(playerState != "attacking"){
       player.attributes["state"] = "attacking";
+      this._calculatePlayerAttackDirection(scene, player);
       let direction = player.attributes["direction"];
       let animMap = {
         "up": allAnims.get("player_basic_attack1_back"),
@@ -548,9 +549,27 @@ Game.prototype._handlePlayerAttack = function(player, commands){
     if(currentAnimation.return != null){
       this._changeEntityAnimation(player, currentAnimation, allAnims.get(currentAnimation.return))
     } else player.attributes["state"] = "idle";
-
     player.attributes["attackQueue"] = [];
+  };
+};
 
+
+// TODO: Implement support for fullscreen mode.
+Game.prototype._calculatePlayerAttackDirection = function(scene, player){
+  if(this.controller.mode === "keyboard"){
+    // Mouse coordinates are relative to game canvas.
+    let mouseCoords = this.engine.inputManager.inputDevices.get("mouse").getCoords();
+    // if(this.renderer.isFullscreen === true){};
+    console.log(mouseCoords)
+
+    // We want the center of where the player is being drawn on the screen.
+    // So we calculate position the similar to how we calculate where to draw the player's sprite.
+    let relPlayerCoords = scene.camera.getRelative(player.attributes["x"] * this.engine.spriteScale, player.attributes["y"] * this.engine.spriteScale);
+    relPlayerCoords[0] *= this.renderer.horizontalRatio;
+    relPlayerCoords[1] *= this.renderer.verticalRatio;
+
+    let mouseVector = new Vector2D([mouseCoords[0] - relPlayerCoords[0], mouseCoords[1] - relPlayerCoords[1]]);
+    console.log(Math.round(Vector2D.prototype.calculateAngle(mouseVector, true)))
   };
 };
 

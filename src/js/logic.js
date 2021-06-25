@@ -333,7 +333,7 @@ Camera.prototype.getRelative = function(trueX, trueY){
 function Controller(engine, mode="default"){
   this.engine = engine;
   this._allModes = ["keyboard"]; // Mostly for documentation purposes.
-  this._defaultMode = this._allModes[0];
+  this._defaultMode = "keyboard";
   this.mode = (mode === "default") ? this._defaultMode : mode;
   this.patterns = new Map();
   this.commands = [] // A stack of all active commands.

@@ -578,7 +578,7 @@ Game.prototype._calculatePlayerAttackDirection = function(scene, player){
       "down": [[46, 135]],
       "left": [[136, 225]],
       "up": [[226, 314]]
-    }
+    };
 
     for(const [direction, angleArray] of Object.entries(angleMap)){
       for(const anglePair of angleArray){
@@ -587,6 +587,7 @@ Game.prototype._calculatePlayerAttackDirection = function(scene, player){
         };
       };
     };
+
   };
 };
 

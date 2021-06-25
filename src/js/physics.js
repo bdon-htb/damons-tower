@@ -163,10 +163,16 @@ function Vector2D(point1, point2){
   };
 };
 
+Vector2D.prototype.copy = function(vector){
+  let p1 = [vector.p1[0], vector.p1[1]];
+  let p2 = [vector.p2[0], vector.p2[1]];
+  return new Vector2D(p1, p2);
+};
+
 // Return an array in the form [boolX, boolY] where each index
 // corresponds to whether the vector is positive or negative in that direction.
 Vector2D.prototype.isPositive = function(vector){
-  return [vector.p1[0] < vector.p2[0], vector.p1[1] < vector.p2[1]]
+  return [vector.p1[0] < vector.p2[0], vector.p1[1] < vector.p2[1]];
 };
 
 Vector2D.prototype.add = function(vector1, vector2){
@@ -182,8 +188,20 @@ Vector2D.prototype.subtract = function(vector1, vector2){
 };
 
 Vector2D.prototype.scalarMultiply = function(vector, s){
+  let p1 = [vector.p1[0], vector.p1[1]]; // Returning a new object, so I should copy p1.
   let p2 = [vector.p2[0] * s, vector.p2[1] * s];
-  return new Vector2D(vector.p1, p2);
+  return new Vector2D(p1, p2);
+};
+
+Vector2D.prototype.scalarDivide = function(vector, s){
+  if(s != 0){
+    let x = (vector.p2[0] - vector.p1[0]) / s;
+    let y = (vector.p2[1] - vector.p1[0]) / s;
+
+    let p1 = [vector.p1[0], vector.p1[1]]; // Returning a new object, so I should copy p1.
+    let p2 = [vector.p1[0] + x, vector.p1[1] + y];
+    return new Vector2D(p1, p2);
+  };
 };
 
 // Function assumes that both vectors originate from the same point.
@@ -239,4 +257,17 @@ Vector2D.prototype.calculateAngle = function(vector, inDegrees=false){
     angle = Engine.prototype.convertRadiansToDegrees(angle);
   };
   return angle;
+};
+
+Vector2D.prototype.length = function(vector){
+  let a = Math.abs(vector.p2[0] - vector.p1[0]);
+  let b = Math.abs(vector.p2[1] - vector.p1[1]);
+  return Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
+};
+
+Vector2D.prototype.normalize = function(vector){
+  let length = Vector2D.prototype.length(vector);
+  if(length > 0){
+    return Vector2D.prototype.scalarDivide(vector, length);
+  };
 };

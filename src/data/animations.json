@@ -94,6 +94,7 @@
       "followUp": "player_basic_attack2_front",
       "cancelIndex": 6,
       "queueIndex": 3,
+      "velocity": [null, null, null, 2, null, null, null, null, null],
       "return": "player_basic_attack_return_front"},
 
     "player_basic_attack1_back": {
@@ -106,6 +107,7 @@
       "followUp": "player_basic_attack2_back",
       "cancelIndex": 6,
       "queueIndex": 3,
+      "velocity": [null, null, null, 2, null, null, null, null, null],
       "return": "player_basic_attack_return_back"},
 
     "player_basic_attack1_left": {
@@ -118,6 +120,7 @@
       "followUp": "player_basic_attack2_left",
       "cancelIndex": 6,
       "queueIndex": 3,
+      "velocity": [null, null, null, 2, null, null, null, null, null],
       "return": "player_basic_attack_return_left"},
 
     "player_basic_attack1_right": {
@@ -130,6 +133,7 @@
       "followUp": "player_basic_attack2_right",
       "cancelIndex": 6,
       "queueIndex": 3,
+      "velocity": [null, null, null, 2, null, null, null, null, null],
       "return": "player_basic_attack_return_right"},
 
     "player_basic_attack2_front": {
@@ -142,6 +146,7 @@
       "followUp": "player_basic_attack3_front",
       "cancelIndex": 3,
       "queueIndex": 1,
+      "velocity": [3, null, null, null, null, null, null],
       "return": "player_basic_attack_return_front"},
 
     "player_basic_attack2_back": {
@@ -154,6 +159,7 @@
       "followUp": "player_basic_attack3_back",
       "cancelIndex": 3,
       "queueIndex": 1,
+      "velocity": [3, null, null, null, null, null, null],
       "return": "player_basic_attack_return_back"},
 
     "player_basic_attack2_left": {
@@ -166,6 +172,7 @@
       "followUp": "player_basic_attack3_left",
       "cancelIndex": 3,
       "queueIndex": 1,
+      "velocity": [3, null, null, null, null, null, null],
       "return": "player_basic_attack_return_left"},
 
     "player_basic_attack2_right": {
@@ -178,6 +185,7 @@
       "followUp": "player_basic_attack3_right",
       "cancelIndex": 3,
       "queueIndex": 1,
+      "velocity": [3, null, null, null, null, null, null],
       "return": "player_basic_attack_return_right"},
 
     "player_basic_attack3_front": {
@@ -187,6 +195,7 @@
       "type": "attack",
       "effects": ["iron_basic_attack3_front"],
       "timings": 5,
+      "velocity": [null, 1, 2, 3, null, null, null],
       "return": "player_basic_attack_return_front"},
 
     "player_basic_attack3_back": {
@@ -196,6 +205,7 @@
       "type": "attack",
       "effects": ["iron_basic_attack3_back"],
       "timings": 5,
+      "velocity": [null, 1, 2, 3, null, null, null],
       "return": "player_basic_attack_return_back"},
 
     "player_basic_attack3_left": {
@@ -205,6 +215,7 @@
       "type": "attack",
       "effects": ["iron_basic_attack3_left"],
       "timings": 5,
+      "velocity": [null, 1, 2, 3, null, null, null],
       "return": "player_basic_attack_return_left"},
 
     "player_basic_attack3_right": {
@@ -214,6 +225,7 @@
       "type": "attack",
       "effects": ["iron_basic_attack3_right"],
       "timings": 5,
+      "velocity": [null, 1, 2, 3, null, null, null],
       "return": "player_basic_attack_return_right"},
 
     "player_basic_attack_return_front": {

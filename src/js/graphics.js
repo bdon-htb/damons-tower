@@ -1097,6 +1097,7 @@ function Animation(id, spriteSheet, animationData){
 
   // Index of first frame where player can input for followUp.
   this.queueIndex = animationData.queueIndex === undefined ? "d" : animationData.queueIndex;
+
   // Default behaviour is that queue frame will be nth index to the left on the last index.
   if(["default", "d"].includes(this.queueIndex)){
     let n = 2;
@@ -1142,6 +1143,12 @@ function Animation(id, spriteSheet, animationData){
     this.offsetX = animationData.offsetX === undefined ? 0: animationData.offsetX;
     this.offsetY = animationData.offsetY === undefined ? 0: animationData.offsetY;
   };
+
+  // An array of integers that represents the magnitude of the velocity vector
+  // for applicable frames. Direction of velocity will be determined dynamically elsewhere.
+  // In other words, for a given x, if this.velocity[x] != undefined. then
+  // the associated entity will move by x for every frame that this.frames[x] is active.
+  this.velocity = animationData.velocity === undefined ? null: animationData.velocity;
 
 };
 

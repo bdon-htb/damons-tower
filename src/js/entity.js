@@ -53,6 +53,7 @@ function PlayerEntity(engine, gameObject){
   // Set relevant variables for player controls.
   this.attributes["canDodge"] = true;
   this.attributes["canAttack"] = true;
+  this.attributes["attackVector"] = null; // A unit vector representing the direction of a precise attack.
   this.attributes["attackQueue"] = [];
 
   let spriteSheet;

@@ -367,7 +367,7 @@ Game.prototype._handlePlayerStates = function(scene){
   }
   else if(playerState === "attacking" || player.attributes["canAttack"] === true && attackCommands.some(c => commands.includes(c))
   && ["idle", "walking", "sprinting", "attacking"].includes(playerState)){
-    this._handlePlayerAttack(scene, player, commands);
+    isMoving = this._handlePlayerAttack(scene, player, commands);
   }
   else {
     // This function also handles when the player is idling.
@@ -508,8 +508,9 @@ Game.prototype._handlePlayerAttack = function(scene, player, commands){
   let allAnims = player.attributes["animations"];
   let attackQueue = player.attributes["attackQueue"];
   let currentAnimation = player.attributes["currentAnimation"];
+  let isMoving = false;
 
-  // Check for basic attack.
+  // Check for basic attack command input.
   if(commands.includes(basicAttackCommand)){
 
     // Adding input to queue to continuing attack.
@@ -519,8 +520,12 @@ Game.prototype._handlePlayerAttack = function(scene, player, commands){
     }
     // Start basic attack.
     else if(playerState != "attacking"){
+      let directionArray = this._calculatePlayerAttackDirection(scene, player);
       player.attributes["state"] = "attacking";
-      player.attributes["direction"] = this._calculatePlayerAttackDirection(scene, player);
+      playerState = player.attributes["state"];
+      player.attributes["direction"] = directionArray[0];
+      player.attributes["attackVector"] = directionArray[1];
+
       let direction = player.attributes["direction"];
       let animMap = {
         "up": allAnims.get("player_basic_attack1_back"),
@@ -529,6 +534,7 @@ Game.prototype._handlePlayerAttack = function(scene, player, commands){
         "right": allAnims.get("player_basic_attack1_right")
       };
       this._changeEntityAnimation(player, currentAnimation, animMap[direction]);
+      currentAnimation = player.attributes["currentAnimation"];
     };
   }
   // If we're at the end of an attack with a followUp, and there is an input queued,
@@ -540,6 +546,7 @@ Game.prototype._handlePlayerAttack = function(scene, player, commands){
   && (currentAnimation.frameIndex === currentAnimation.cancelIndex ||
     currentAnimation.cancelIndex === undefined && currentAnimation.active === false)){
     this._changeEntityAnimation(player, currentAnimation, allAnims.get(currentAnimation.followUp));
+    currentAnimation = player.attributes["currentAnimation"];
     player.attributes["attackQueue"] = [];
   }
 
@@ -547,14 +554,39 @@ Game.prototype._handlePlayerAttack = function(scene, player, commands){
   else if(playerState === "attacking" && currentAnimation.active === false){
     // Go to return animation if there is one.
     if(currentAnimation.return != null){
-      this._changeEntityAnimation(player, currentAnimation, allAnims.get(currentAnimation.return))
-    } else player.attributes["state"] = "idle";
+      this._changeEntityAnimation(player, currentAnimation, allAnims.get(currentAnimation.return));
+      currentAnimation = player.attributes["currentAnimation"];
+    } else {
+      player.attributes["state"] = "idle";
+      playerState = player.attributes["state"];
+      player.attributes["attackVector"] = null;
+    };
     player.attributes["attackQueue"] = [];
   };
+
+  // TODO: Have it so that this code only runs whenever we're moving onto the next frame.
+  // The code below is FULLY FUNCTIONAL. However, collision detection at the time of writing is incredibly
+  // broken. I'll uncomment this once I get that fixed up.
+  /*
+  if(playerState === "attacking" && player.attributes["attackVector"] != null && currentAnimation.velocity != undefined
+    && currentAnimation.velocity[currentAnimation.frameIndex] != undefined){
+      let magnitude = currentAnimation.velocity[currentAnimation.frameIndex];
+      let movVector = Vector2D.prototype.scalarMultiply(player.attributes["attackVector"], magnitude);
+      player.attributes["dx"] = Math.round(movVector.p2[0] - movVector.p1[0]);
+      player.attributes["dy"] = Math.round(movVector.p2[1] - movVector.p1[1]);
+      isMoving = true;
+  };
+  */
+
+  return isMoving;
 };
 
 
 // TODO: Implement support for fullscreen mode.
+// Returns an array of 2 elements in the format ["direction", dirVector]
+// where "direction" is the direction of the attack animation
+// (can only be up, down, left, or right) and dirVector
+// is a Vector2D object representing the unit vector formed between the player and the mouse.
 Game.prototype._calculatePlayerAttackDirection = function(scene, player){
   if(this.controller.mode === "keyboard"){
     // Mouse coordinates are relative to game canvas.
@@ -583,7 +615,7 @@ Game.prototype._calculatePlayerAttackDirection = function(scene, player){
     for(const [direction, angleArray] of Object.entries(angleMap)){
       for(const anglePair of angleArray){
         if(Engine.prototype.inBetween(mouseAngle, anglePair[0], anglePair[1], true) === true){
-          return direction;
+          return [direction, Vector2D.prototype.normalize(mouseVector)];
         };
       };
     };

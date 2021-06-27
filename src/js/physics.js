@@ -20,9 +20,7 @@ PhysicsManager.prototype.calculateVelocity = function(velocity){
 
 // Returns the point where a vector intersects a rect.
 // Returns null if hits nothing.
-// We check only TWO of the rectangle's line segments.
-// because a straight line can't hit opposite sides (unless it goes through).
-// This function assumes the vector doesn't orignate inside the rect.
+/*
 PhysicsManager.prototype.rectPointofCollision = function(vector, rect){
   let vectorsIntersectFunc = Vector2D.prototype.vectorsIntersect;
   let rectVertical;
@@ -40,18 +38,17 @@ PhysicsManager.prototype.rectPointofCollision = function(vector, rect){
   };
   return null;
 };
+*/
 
-/*
+// Returns the point where a vector intersects a rect.
+// Returns null if hits nothing.
+// We check only TWO of the rectangle's line segments.
+// because a straight line can't hit opposite sides (unless it goes through).
+// This function assumes the vector doesn't orignate inside the rect.
 PhysicsManager.prototype.rectPointofCollision = function(vector, rect){
   let vectorsIntersectFunc = Vector2D.prototype.vectorsIntersect;
   let rectVertical;
   let rectHorizontal;
-  let lineSegments = [
-    new Vector2D(rect.topLeft, rect.bottomLeft),
-    new Vector2D(rect.topRight, rect.bottomRight),
-    new Vector2D(rect.topLeft, rect.topRight),
-    new Vector2D(rect.bottomLeft, rect.bottomRight)
-  ]
 
   // Check if vector originates to the left of rect topleft.
   if(vector.p1[0] <= rect.topLeft[0]){
@@ -69,7 +66,6 @@ PhysicsManager.prototype.rectPointofCollision = function(vector, rect){
   };
   return null;
 };
-*/
 
 PhysicsManager.prototype._checkForCollision = function(scene, rayVector, tileIndex){
   let tileMap = scene.tileMap;
@@ -160,12 +156,16 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
 
 // Return the coordinates of the point where rayVector hits something in the scene.
 // Return null if the rayVector does not hit anything.
+// Based on the simplified algorithm here https://playtechs.blogspot.com/2007/03/raytracing-on-grid.html
 PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
   let CELLSIZE = 32;
   let dx = Math.ceil(Math.abs(rayVector.p2[0] - rayVector.p1[0]) / CELLSIZE);
   let dy = Math.ceil(Math.abs(rayVector.p2[1] - rayVector.p1[1]) / CELLSIZE);
   let x_inc = (rayVector.p2[0] > rayVector.p1[0]) ? 1 : -1;
   let y_inc = (rayVector.p2[1] > rayVector.p1[1]) ? 1 : -1;
+  x_inc *= CELLSIZE;
+  y_inc *= CELLSIZE;
+
   // "error" is The difference between the next horizontal cell vs the next vertical cell.
   // if error is positive then horizontal is closer, otherwise vertical.
   let error = dx - dy;
@@ -184,17 +184,27 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
     };
 
     if(error > 0){
-      pos[0] += x_inc * CELLSIZE;
+      pos[0] += x_inc;
       error -= dy;
     }
     else {
-      pos[1] += y_inc * CELLSIZE;
+      pos[1] += y_inc;
       error += dx;
     };
 
   };
   return null;
 }
+
+PhysicsManager.prototype.stupidAlgorithm = function(rayVector, scene){
+  for(let i = 0; i < scene.tileMap.tiles.length; i++){
+    collision = this._checkForCollision(scene, rayVector, i);
+    if(collision != null){
+      return collision
+    };
+  };
+  return null;
+};
 
 /**
  * Custom rect class. Useful for getting information for rectangle calculations.

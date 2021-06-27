@@ -27,6 +27,31 @@ PhysicsManager.prototype.rectPointofCollision = function(vector, rect){
   let vectorsIntersectFunc = Vector2D.prototype.vectorsIntersect;
   let rectVertical;
   let rectHorizontal;
+  let lineSegments = [
+    new Vector2D(rect.topLeft, rect.bottomLeft),
+    new Vector2D(rect.topRight, rect.bottomRight),
+    new Vector2D(rect.topLeft, rect.topRight),
+    new Vector2D(rect.bottomLeft, rect.bottomRight)
+  ]
+
+  for(const line of lineSegments){
+    let collisionPoint = vectorsIntersectFunc(vector, line);
+    if(collisionPoint !== null){return collisionPoint};
+  };
+  return null;
+};
+
+/*
+PhysicsManager.prototype.rectPointofCollision = function(vector, rect){
+  let vectorsIntersectFunc = Vector2D.prototype.vectorsIntersect;
+  let rectVertical;
+  let rectHorizontal;
+  let lineSegments = [
+    new Vector2D(rect.topLeft, rect.bottomLeft),
+    new Vector2D(rect.topRight, rect.bottomRight),
+    new Vector2D(rect.topLeft, rect.topRight),
+    new Vector2D(rect.bottomLeft, rect.bottomRight)
+  ]
 
   // Check if vector originates to the left of rect topleft.
   if(vector.p1[0] <= rect.topLeft[0]){
@@ -44,6 +69,7 @@ PhysicsManager.prototype.rectPointofCollision = function(vector, rect){
   };
   return null;
 };
+*/
 
 PhysicsManager.prototype._checkForCollision = function(scene, rayVector, tileIndex){
   let tileMap = scene.tileMap;
@@ -55,6 +81,7 @@ PhysicsManager.prototype._checkForCollision = function(scene, rayVector, tileInd
   return null;
 };
 
+/*
 // Return the coordinates of the point where rayVector hits something in the scene.
 // Return null if the rayVector does not hit anything.
 PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
@@ -129,6 +156,45 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
     return null;
   };
 };
+*/
+
+// Return the coordinates of the point where rayVector hits something in the scene.
+// Return null if the rayVector does not hit anything.
+PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
+  let CELLSIZE = 32;
+  let dx = Math.ceil(Math.abs(rayVector.p2[0] - rayVector.p1[0]) / CELLSIZE);
+  let dy = Math.ceil(Math.abs(rayVector.p2[1] - rayVector.p1[1]) / CELLSIZE);
+  let x_inc = (rayVector.p2[0] > rayVector.p1[0]) ? 1 : -1;
+  let y_inc = (rayVector.p2[1] > rayVector.p1[1]) ? 1 : -1;
+  // "error" is The difference between the next horizontal cell vs the next vertical cell.
+  // if error is positive then horizontal is closer, otherwise vertical.
+  let error = dx - dy;
+
+  let tileMap = scene.tileMap;
+  let pos = [rayVector.p1[0], rayVector.p1[1]]; // Create copy because we're going to be mutating it.
+  let tileIndex;
+  let collision;
+
+  let n = 1 + dx + dy; // 1 represents thw tile we're starting from.
+  for(; n > 0; --n){
+    tileIndex = tileMap.getNearestTileIndex(pos);
+    collision = this._checkForCollision(scene, rayVector, tileIndex);
+    if(collision != null){
+      return collision
+    };
+
+    if(error > 0){
+      pos[0] += x_inc * CELLSIZE;
+      error -= dy;
+    }
+    else {
+      pos[1] += y_inc * CELLSIZE;
+      error += dx;
+    };
+
+  };
+  return null;
+}
 
 /**
  * Custom rect class. Useful for getting information for rectangle calculations.
@@ -167,12 +233,6 @@ Vector2D.prototype.copy = function(vector){
   let p1 = [vector.p1[0], vector.p1[1]];
   let p2 = [vector.p2[0], vector.p2[1]];
   return new Vector2D(p1, p2);
-};
-
-// Return an array in the form [boolX, boolY] where each index
-// corresponds to whether the vector is positive or negative in that direction.
-Vector2D.prototype.isPositive = function(vector){
-  return [vector.p1[0] < vector.p2[0], vector.p1[1] < vector.p2[1]];
 };
 
 Vector2D.prototype.add = function(vector1, vector2){

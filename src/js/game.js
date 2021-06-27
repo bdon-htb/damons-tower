@@ -279,14 +279,14 @@ Game.prototype._handleCollision = function(x, y, dx, dy, scene){
   let newPos;
   let movVector = new Vector2D([x, y], [x + dx, y + dy]);
 
-  let positiveDirections = Vector2D.prototype.isPositive(movVector);
-  let directionX = positiveDirections[0] === true ? 1 : -1;
-  let directionY = positiveDirections[1] === true ? 1 : -1;
-
   let collision = this.physicsManager.raycastCollision(movVector, scene);
   if(collision !== null){
-    collision[0] = (collision[0] === x) ? x : collision[0] - (1 * directionX);
-    collision[1] = (collision[1] === y) ? y : collision[1] - (1 * directionY);
+    // We have to move the player 1 pixel back from the wall so they aren't
+    // stuck in it.
+    let x_inc = (movVector.p2[0] > movVector.p1[0]) ? 1 : -1;
+    let y_inc = (movVector.p2[1] > movVector.p1[1]) ? 1 : -1;
+    collision[0] = (collision[0] === x) ? x : collision[0] - x_inc;
+    collision[1] = (collision[1] === y) ? y : collision[1] - y_inc;
     newPos = collision;
   }
   else { // No collision so we just go the full distance.
@@ -567,7 +567,6 @@ Game.prototype._handlePlayerAttack = function(scene, player, commands){
   // TODO: Have it so that this code only runs whenever we're moving onto the next frame.
   // The code below is FULLY FUNCTIONAL. However, collision detection at the time of writing is incredibly
   // broken. I'll uncomment this once I get that fixed up.
-  /*
   if(playerState === "attacking" && player.attributes["attackVector"] != null && currentAnimation.velocity != undefined
     && currentAnimation.velocity[currentAnimation.frameIndex] != undefined){
       let magnitude = currentAnimation.velocity[currentAnimation.frameIndex];
@@ -576,7 +575,6 @@ Game.prototype._handlePlayerAttack = function(scene, player, commands){
       player.attributes["dy"] = Math.round(movVector.p2[1] - movVector.p1[1]);
       isMoving = true;
   };
-  */
 
   return isMoving;
 };

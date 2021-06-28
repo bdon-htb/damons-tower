@@ -280,7 +280,7 @@ Game.prototype._handleCollision = function(x, y, dx, dy, scene){
   let movVector = new Vector2D([x, y], [x + dx, y + dy]);
 
   // let collision = this.physicsManager.raycastCollision(movVector, scene);
-  let collision = this.physicsManager.stupidAlgorithm(movVector, scene);
+  let collision = this.physicsManager.raycastCollision(movVector, scene);
   this.debugMenu.updateVariable("collision? ", collision !== null);
   if(collision !== null){
     // We have to move the player 1 pixel back from the wall so they aren't

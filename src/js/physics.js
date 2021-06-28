@@ -20,7 +20,6 @@ PhysicsManager.prototype.calculateVelocity = function(velocity){
 
 // Returns the point where a vector intersects a rect.
 // Returns null if hits nothing.
-/*
 PhysicsManager.prototype.rectPointofCollision = function(vector, rect){
   let vectorsIntersectFunc = Vector2D.prototype.vectorsIntersect;
   let rectVertical;
@@ -38,170 +37,123 @@ PhysicsManager.prototype.rectPointofCollision = function(vector, rect){
   };
   return null;
 };
-*/
 
-// Returns the point where a vector intersects a rect.
-// Returns null if hits nothing.
-// We check only TWO of the rectangle's line segments.
-// because a straight line can't hit opposite sides (unless it goes through).
-// This function assumes the vector doesn't orignate inside the rect.
-PhysicsManager.prototype.rectPointofCollision = function(vector, rect){
-  let vectorsIntersectFunc = Vector2D.prototype.vectorsIntersect;
-  let rectVertical;
-  let rectHorizontal;
+// Carried by this helpful answer here:
+// Kinda bummed I couldn't figure it out using the article alone, but whatever I guess.
+// https://gamedev.stackexchange.com/questions/194356/need-help-with-fixing-optimized-raycasting-line-of-sight-algorithm
 
-  // Check if vector originates to the left of rect topleft.
-  if(vector.p1[0] <= rect.topLeft[0]){
-    rectVertical = new Vector2D(rect.topLeft, rect.bottomLeft);
-  } else rectVertical = new Vector2D(rect.topRight, rect.bottomRight);
+// This function is a general rayMarch implementation. It takes in the
+// the rayVector being checked, the scene the ray is being casted in, and
+// an evaluator method as arguments.
+PhysicsManager.prototype.rayMarch = function(rayVector, scene, evaluator){
+    let CELLSIZE = scene.tileMap.tileSize;
+    let tileMap = scene.tileMap;
+    let cellVector = {
+      p1: [rayVector.p1[0] / CELLSIZE, rayVector.p1[1] / CELLSIZE],
+      p2: [rayVector.p2[0] / CELLSIZE, rayVector.p2[1] / CELLSIZE]
+    };
 
-  // Check if vector originates from above the rect topleft.
-  if(vector.p1[1] <= rect.topLeft[1]){
-    rectHorizontal = new Vector2D(rect.topLeft, rect.topRight);
-  } else rectHorizontal = new Vector2D(rect.bottomLeft, rect.bottomRight);
+    // Decompose vector coordinates.
+    let x0 = cellVector.p1[0];
+    let y0 = cellVector.p1[1];
+    let x1 = cellVector.p2[0];
+    let y1 = cellVector.p2[1];
 
-  for(lineSegment of [rectVertical, rectHorizontal]){
-    let collisionPoint = vectorsIntersectFunc(vector, lineSegment);
-    if(collisionPoint !== null){return collisionPoint};
-  };
+    let dx = x1 - x0;
+    let dy = y1 - y0;
+    dx = Math.abs(dx);
+    dy = Math.abs(dy);
+    //adjust dx / dy to avoid div-by-zero
+    let dtDx = 1.0 / dx;
+    let dtDy = 1.0 / dy;
+
+    let xInc = 0//dx / steps;
+    let yInc = 0//dy / steps;
+    let txNext = 0;
+    let tyNext = 0;
+
+    let x = Math.floor(x0);
+    let y = Math.floor(y0);
+
+    let n = 1;
+
+    if(dx === 0){
+      xInc = 0;
+      txNext = dtDx; // infinity
+    }
+    else if(x1 > x0){
+      xInc = 1;
+      n += Math.floor(x1) - x;
+      txNext = (Math.floor(x0) + 1 - x0) * dtDx;
+    }
+    else {
+      xInc = -1;
+      n += x - Math.floor(x1);
+      txNext = (x0 - Math.floor(x0)) * dtDx;
+    }
+
+    if(dy === 0){
+      yInc = 0;
+      tyNext = dtDy; // infinity
+    }
+    else if(y1 > y0){
+      yInc = 1;
+      n += Math.floor(y1) - y;
+      tyNext = (Math.floor(y0) + 1 - y0) * dtDy;
+    }
+    else {
+      yInc = -1;
+      n += y - Math.floor(y1);
+      tyNext = (y0 - Math.floor(y0)) * dtDy;
+    }
+
+    let t = 0;
+    for(; n > 0; --n){
+      tileIndex = tileMap.getNearestTileIndex([x * CELLSIZE, y * CELLSIZE]);
+      result = evaluator(rayVector, scene, tileIndex);
+      if(result != null){return result};
+
+      // Determine which intersection is closer and add to appropriate component.
+      if(tyNext < txNext){
+        y += yInc;
+        t = tyNext
+        tyNext += dtDy;
+      }
+      else {
+        x += xInc;
+        t = txNext;
+        txNext += dtDx;
+      }
+    }
   return null;
 };
 
-PhysicsManager.prototype._checkForCollision = function(scene, rayVector, tileIndex){
-  let tileMap = scene.tileMap;
-  if(tileMap.tileIsCollidable(tileIndex) === true){
-    let tilePos = tileMap.convertIndexToCoords(tileIndex, true);
-    let tileRect = new Rect(tilePos, tileMap.tileSize);
-    return this.rectPointofCollision(rayVector, tileRect);
+PhysicsManager.prototype.stupidAlgorithm = function(rayVector, scene){
+  for(let i = 0; i < scene.tileMap.tiles.length; i++){
+    collision = this._checkForCollision(rayVector, scene, i);
+    if(collision != null){
+      return collision
+    };
   };
   return null;
 };
-
-/*
-// Return the coordinates of the point where rayVector hits something in the scene.
-// Return null if the rayVector does not hit anything.
-PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
-  let tileMap = scene.tileMap;
-
-  let positiveDirections = Vector2D.prototype.isPositive(rayVector);
-  let directionX = positiveDirections[0] === true ? 1 : -1;
-  let directionY = positiveDirections[1] === true ? 1 : -1;
-
-  let initialTilePos = tileMap.convertIndexToCoords(tileMap.getNearestTileIndex(rayVector.p1));
-  let finalTilePos = tileMap.convertIndexToCoords(tileMap.getNearestTileIndex(rayVector.p2));
-  let tileRangeX = Math.ceil(Math.abs(rayVector.p2[0] - rayVector.p1[0]) / tileMap.tileSize);
-  if(tileRangeX === 0){tileRangeX = 1};
-  let tileRangeY = Math.ceil(Math.abs(rayVector.p2[1] - rayVector.p1[1]) / tileMap.tileSize);
-  if(tileRangeY === 0){tileRangeY = 1};
-  let tilePos;
-  let tileIndex;
-  let collision;
-
-  let rise = rayVector.p2[1] - rayVector.p1[1];
-  let run = rayVector.p2[0] - rayVector.p1[0];
-
-  if(run === 0){ // Line is vertical.
-    for(let i = 1; i <= tileRangeY; i++){
-      tilePos = [initialTilePos[0], initialTilePos[1] + (directionY * i)];
-      tileIndex = tileMap.convertCoordsToIndex(tilePos[0], tilePos[1]);
-      collision = this._checkForCollision(scene, rayVector, tileIndex);
-      if(collision !== null){return collision};
-    };
-    return null;
-  }
-  else {
-    // Line is some sort of diagonal.
-    // For diagonals, we utilize the equation of a line and calculate the nearest.
-    let m = Math.abs(rise / run);
-    let increment = ((rayVector.p1[0] % 32) / 32) * m;
-    let increaseY = 0;
-    let tileIndexX;
-    let j = 0;
-    while(j < tileRangeX) {
-      j += 1;
-      increment += m;
-      if (increment >= 1) {
-        break;
-      };
-    };
-    for(let i = 1; i <= tileRangeX; ++i) {
-      tileIndexX = tileMap.convertCoordsToIndex((initialTilePos[0] + (i * directionX)), initialTilePos[1]);
-      let collisionX = this._checkForCollision(scene, rayVector, tileIndexX);
-      if (collisionX == null) {
-        break;
-      };
-      increment -= m;
-    };
-    for(let i = 1; i <= tileRangeX; i++){
-      if (increment >= 1) {
-        increaseY += 1;
-        i -= 1;
-        tilePos = [initialTilePos[0] + (directionX * i), initialTilePos[1] + (directionY * increaseY)];
-        tileIndex = tileMap.convertCoordsToIndex(tilePos[0], tilePos[1]);
-        collision = this._checkForCollision(scene, rayVector, tileIndex);
-        if(collision !== null){return collision};
-        increment -= 1;
-      } else {
-        tilePos = [initialTilePos[0] + (directionX * i), initialTilePos[1] + (directionY * increaseY)];
-        tileIndex = tileMap.convertCoordsToIndex(tilePos[0], tilePos[1]);
-        collision = this._checkForCollision(scene, rayVector, tileIndex);
-        if(collision !== null){return collision};
-        increment += m;
-      };
-    };
-    return null;
-  };
-};
-*/
 
 // Return the coordinates of the point where rayVector hits something in the scene.
 // Return null if the rayVector does not hit anything.
 // Based on the simplified algorithm here https://playtechs.blogspot.com/2007/03/raytracing-on-grid.html
 PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
-  let CELLSIZE = 32;
-  let dx = Math.ceil(Math.abs(rayVector.p2[0] - rayVector.p1[0]) / CELLSIZE);
-  let dy = Math.ceil(Math.abs(rayVector.p2[1] - rayVector.p1[1]) / CELLSIZE);
-  let x_inc = (rayVector.p2[0] > rayVector.p1[0]) ? 1 : -1;
-  let y_inc = (rayVector.p2[1] > rayVector.p1[1]) ? 1 : -1;
-  x_inc *= CELLSIZE;
-  y_inc *= CELLSIZE;
+  let evaluator = this._checkForCollision.bind(this);
+  result = this.rayMarch(rayVector, scene, evaluator);
+  // result = this.stupidAlgorithm(rayVector, scene);
+  return result;
+};
 
-  // "error" is The difference between the next horizontal cell vs the next vertical cell.
-  // if error is positive then horizontal is closer, otherwise vertical.
-  let error = dx - dy;
-
+PhysicsManager.prototype._checkForCollision = function(rayVector, scene, tileIndex){
   let tileMap = scene.tileMap;
-  let pos = [rayVector.p1[0], rayVector.p1[1]]; // Create copy because we're going to be mutating it.
-  let tileIndex;
-  let collision;
-
-  let n = 1 + dx + dy; // 1 represents thw tile we're starting from.
-  for(; n > 0; --n){
-    tileIndex = tileMap.getNearestTileIndex(pos);
-    collision = this._checkForCollision(scene, rayVector, tileIndex);
-    if(collision != null){
-      return collision
-    };
-
-    if(error > 0){
-      pos[0] += x_inc;
-      error -= dy;
-    }
-    else {
-      pos[1] += y_inc;
-      error += dx;
-    };
-
-  };
-  return null;
-}
-
-PhysicsManager.prototype.stupidAlgorithm = function(rayVector, scene){
-  for(let i = 0; i < scene.tileMap.tiles.length; i++){
-    collision = this._checkForCollision(scene, rayVector, i);
-    if(collision != null){
-      return collision
-    };
+  if(tileMap.tileIsCollidable(tileIndex) === true){
+    let tilePos = tileMap.convertIndexToCoords(tileIndex, true);
+    let tileRect = new Rect(tilePos, tileMap.tileSize);
+    return this.rectPointofCollision(rayVector, tileRect);
   };
   return null;
 };

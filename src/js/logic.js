@@ -227,11 +227,45 @@ TileMap.prototype.getNearestTile = function(position){
   return this.tiles[nearestTileFunc(position)];
 };
 
+// Returns the index of the nearby tile.
+// The coordinates of the tiles are calculated using the passed location.
+// the related operation calculates relative to the input tile index.
+// If no such tile exists (i.e. out of bounds) the method returns null
+TileMap.prototype.getNearbyTileIndex = function(index, location){
+  let convertFunc = this.convertPos.bind(this);
+  let inBetweenFunc = Engine.prototype.inBetween
+
+  let allOperations = {
+    "leftOf": pos => pos[0] -= 1,
+    "rightOf": pos => pos[0] += 1,
+    "above": pos => pos[1] -= 1,
+    "below": pos => pos[1] += 1,
+  }
+
+  let operation = allOperations[location];
+  let pos = convertFunc(index); // i -> [x, y]
+
+  operation(pos);
+
+  // calculated position is still in bounds.
+  if(inBetweenFunc(pos[0], 0, this.width - 1, true) === true && inBetweenFunc(pos[1], 0, this.height - 1, true) === true){
+    return convertFunc(pos) // [x, y] -> i
+  } else return null;
+};
+
+// Shorthand.
+TileMap.prototype.getNearbyTile = function(index, location){
+  let nearbyTileindex = this.getNearbyTileIndex(index, location);
+  if(nearbyTileindex !== null){
+    return this.tiles[nearbyTileindex];
+  } else return null;
+};
+
 // Shorthand for converting indexes to 1D/2D.
 // position is a TILE position. [col, row];
 TileMap.prototype.convertPos = function(position){
   if(Array.isArray(position) === true){
-    return this.convertCoordsToIndex(position);
+    return this.convertCoordsToIndex(position[0], position[1]);
   }
   else if(typeof position === "number"){
     return this.convertIndexToCoords(position);
@@ -240,10 +274,8 @@ TileMap.prototype.convertPos = function(position){
   };
 };
 
-// Moved the following over to Engine because it's a pretty widespread calculation.
 TileMap.prototype.convertIndexToCoords = function(index, getPixelCoords=false){
   let pos = Engine.prototype.convertIndexToCoords(index, this.width);
-
   // Convert coordinates from "array coordinates" -> pixel coordinates.
   if(getPixelCoords === true){
     pos = [pos[0] * this.tileSize, pos[1] * this.tileSize]

@@ -21,30 +21,78 @@ PhysicsManager.prototype.calculateVelocity = function(velocity){
 // Checks the two most relevant line segments of the rect and
 // Returns an array in the format: [collisionPoint, surfaceVector] if there's
 // a collision. Return null if vector hits nothing.
+// Can optionally specify edges to ignore using the edgesToIgnore parameter.
 // Precondition: vector originates from outside rect.
-PhysicsManager.prototype.rectPointofCollision = function(vector, rect){
+PhysicsManager.prototype.rectPointofCollision = function(vector, rect, edgesToIgnore=[]){
   let vectorsIntersectFunc = Vector2D.prototype.vectorsIntersect;
   let rectVertical;
   let rectHorizontal;
 
+  let lineSegments = {
+    "top": new Vector2D(rect.topLeft, rect.topRight),
+    "bottom": new Vector2D(rect.bottomLeft, rect.bottomRight),
+    "right": new Vector2D(rect.topRight, rect.bottomRight),
+    "left": new Vector2D(rect.topLeft, rect.bottomLeft),
+  }
+
+  // Remove references to edges that are specified to be ignored.
+  for(const edge of edgesToIgnore){
+    lineSegments[edge] = null;
+  };
+
   let x0 = vector.p1[0];
   let y0 = vector.p1[1];
+
   let tileX = rect.topLeft[0] + (rect.width / 2);
   let tileY = rect.topLeft[1] + (rect.height / 2);
 
+  // Remove references to edges that aren't relevant (according to vector initial position)
   if(x0 <= tileX){
-    rectVertical = new Vector2D(rect.topLeft, rect.bottomLeft);
-  } else rectVertical = new Vector2D(rect.topRight, rect.bottomRight);
+    lineSegments["right"] = null;
+  } else lineSegments["left"] = null;
 
   if(y0 <= tileY){
-    rectHorizontal = new Vector2D(rect.topLeft, rect.topRight);
-  } else rectHorizontal = new Vector2D(rect.bottomLeft, rect.bottomRight);
+    lineSegments["bottom"] = null;
+  } else lineSegments["top"] = null;
 
-  for(const line of [rectHorizontal, rectVertical]){
-    let collision = vectorsIntersectFunc(vector, line);
-    if(collision !== null){return [collision, line]};
+  for(const line of Object.values(lineSegments)){
+    if(line !== null){
+      let collision = vectorsIntersectFunc(vector, line);
+      if(collision !== null){return [collision, line]};
+    };
   };
   return null;
+};
+
+// Precondition: We can assume current tileIndex belongs to a collidable tile.
+PhysicsManager.prototype.tilePointofCollision = function(vector, scene, tileIndex){
+  let tileMap = scene.tileMap
+  let tilePos = tileMap.convertIndexToCoords(tileIndex);
+  let tilePixelPos = tileMap.convertIndexToCoords(tileIndex, true);
+  let tileRect = new Rect(tilePixelPos, tileMap.tileSize);
+  let edgesToIgnore = [];
+
+  let lineSegments = {
+    "top": "above",
+    "bottom": "below",
+    "right": "rightOf",
+    "left": "leftOf"
+  }
+
+  // Remove any reference to edges that are blocked by nearby wall / collidable tiles.
+  let line; // vector representing current edge.
+  let location; // relative tile location that may block line.
+  let nearbyTile;
+  for(const edge of Object.keys(lineSegments)){
+    location = lineSegments[edge];
+    nearbyTileIndex = tileMap.getNearbyTileIndex(tileIndex, location);
+    if(nearbyTileIndex !== null && tileMap.tileIsCollidable(nearbyTileIndex) === true){
+      edgesToIgnore.push(edge);
+    };
+  };
+
+  return this.rectPointofCollision(vector, tileRect, edgesToIgnore);
+
 };
 
 // Basically plagiarized this helpful answer here:
@@ -162,14 +210,8 @@ PhysicsManager.prototype.stupidAlgorithm = function(rayVector, scene){
 PhysicsManager.prototype._checkForCollision = function(rayVector, scene, tileIndex){
   let tileMap = scene.tileMap;
   if(tileMap.tileIsCollidable(tileIndex) === true){
-    let tilePos = tileMap.convertIndexToCoords(tileIndex, true);
-    let tileRect = new Rect(tilePos, tileMap.tileSize);
-    return this.rectPointofCollision(rayVector, tileRect);
-  }
-
-  // TODO:
-  // We're not in a wall or collidable tile. But we gotta check
-  // if the wall shares a line segment with one.
+    return this.tilePointofCollision(rayVector, scene, tileIndex);
+  };
   return null;
 };
 
@@ -184,7 +226,7 @@ PhysicsManager.prototype.collisionSlide = function(movVector, collisionPoint, co
   let surfaceNormal = vOrthogonal(collisionSurface);
   surfaceNormal = vNormalize(surfaceNormal);
 
-  let dotProduct = vDotProduct(movVector, surfaceNormal)
+  let dotProduct = vDotProduct(movVector, surfaceNormal);
   let undesired = vScalarMultiply(surfaceNormal, dotProduct);
   let desired = vSubtract(movVector, undesired);
 

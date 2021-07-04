@@ -277,16 +277,17 @@ Game.prototype._updateEvents = function(newEvents){
 // (x + dx, y + dy).
 Game.prototype._handleCollision = function(x, y, dx, dy, scene){
   let newPos;
+  let collision;
   let movVector = new Vector2D([x, y], [x + dx, y + dy]);
 
-  let collision = this.physicsManager.raycastCollision(movVector, scene);
+  collision = this.physicsManager.raycastCollision(movVector, scene);
   this.debugMenu.updateVariable("collision? ", collision !== null);
   if(collision !== null){
 
     // Initial collision.
     newPos = this.physicsManager.resolveCollision(movVector, collision[0]);
 
-    // Post collision; check for slide, and then slide + check for additional collision.
+    // Post collision; slide if applicable, and then check slide for additional collision.
     if(dx != 0 && dy != 0){
       movVector.p1 = newPos;
       movVector = this.physicsManager.collisionSlide(movVector, collision[0], collision[1]);

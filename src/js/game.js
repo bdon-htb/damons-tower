@@ -285,11 +285,14 @@ Game.prototype._handleCollision = function(x, y, dx, dy, scene){
   if(collision !== null){
     // We have to move the player 1 pixel back from the wall so they aren't
     // stuck in it.
-    let x_inc = (movVector.p2[0] > movVector.p1[0]) ? 1 : -1;
-    let y_inc = (movVector.p2[1] > movVector.p1[1]) ? 1 : -1;
-    collision[0] = (collision[0] === x) ? x : collision[0] - x_inc;
-    collision[1] = (collision[1] === y) ? y : collision[1] - y_inc;
-    newPos = collision;
+    let directionX = Math.sign(movVector.p2[0] - movVector.p1[0]);
+    let directionY = Math.sign(movVector.p2[1] - movVector.p1[1]);
+    collision[0][0] -= directionX;
+    collision[0][1] -= directionY;
+    newPos = collision[0];
+
+    movVector.p1 = newPos;
+    newPos = this.physicsManager.resolveCollision(movVector, collision[0], collision[1]);
   }
   else { // No collision so we just go the full distance.
     newPos = [movVector.p2[0], movVector.p2[1]];

@@ -18,27 +18,36 @@ PhysicsManager.prototype.calculateVelocity = function(velocity){
 };
 */
 
-// Returns the point where a vector intersects a rect.
-// Returns null if hits nothing.
+// Checks the two most relevant line segments of the rect and
+// Returns an array in the format: [collisionPoint, surfaceVector] if there's
+// a collision. Return null if vector hits nothing.
+// Precondition: vector originates from outside rect.
 PhysicsManager.prototype.rectPointofCollision = function(vector, rect){
   let vectorsIntersectFunc = Vector2D.prototype.vectorsIntersect;
   let rectVertical;
   let rectHorizontal;
-  let lineSegments = [
-    new Vector2D(rect.topLeft, rect.bottomLeft),
-    new Vector2D(rect.topRight, rect.bottomRight),
-    new Vector2D(rect.topLeft, rect.topRight),
-    new Vector2D(rect.bottomLeft, rect.bottomRight)
-  ]
 
-  for(const line of lineSegments){
-    let collisionPoint = vectorsIntersectFunc(vector, line);
-    if(collisionPoint !== null){return collisionPoint};
+  let x0 = vector.p1[0];
+  let y0 = vector.p1[1];
+  let tileX = rect.topLeft[0] + (rect.width / 2);
+  let tileY = rect.topLeft[1] + (rect.height / 2);
+
+  if(x0 <= tileX){
+    rectVertical = new Vector2D(rect.topLeft, rect.bottomLeft);
+  } else rectVertical = new Vector2D(rect.topRight, rect.bottomRight);
+
+  if(y0 <= tileY){
+    rectHorizontal = new Vector2D(rect.topLeft, rect.topRight);
+  } else rectHorizontal = new Vector2D(rect.bottomLeft, rect.bottomRight);
+
+  for(const line of [rectHorizontal, rectVertical]){
+    let collision = vectorsIntersectFunc(vector, line);
+    if(collision !== null){return [collision, line]};
   };
   return null;
 };
 
-// Carried by this helpful answer here:
+// Basically plagiarized this helpful answer here:
 // Kinda bummed I couldn't figure it out using the article alone, but whatever I guess.
 // https://gamedev.stackexchange.com/questions/194356/need-help-with-fixing-optimized-raycasting-line-of-sight-algorithm
 
@@ -48,6 +57,7 @@ PhysicsManager.prototype.rectPointofCollision = function(vector, rect){
 PhysicsManager.prototype.rayMarch = function(rayVector, scene, evaluator){
     let CELLSIZE = scene.tileMap.tileSize;
     let tileMap = scene.tileMap;
+    let sceneRect = new Rect([0, 0], tileMap.width * CELLSIZE, tileMap.height * CELLSIZE);
     let cellVector = {
       p1: [rayVector.p1[0] / CELLSIZE, rayVector.p1[1] / CELLSIZE],
       p2: [rayVector.p2[0] / CELLSIZE, rayVector.p2[1] / CELLSIZE]
@@ -63,6 +73,7 @@ PhysicsManager.prototype.rayMarch = function(rayVector, scene, evaluator){
     let dy = y1 - y0;
     dx = Math.abs(dx);
     dy = Math.abs(dy);
+
     //adjust dx / dy to avoid div-by-zero
     let dtDx = 1.0 / dx;
     let dtDy = 1.0 / dy;
@@ -108,8 +119,11 @@ PhysicsManager.prototype.rayMarch = function(rayVector, scene, evaluator){
     }
 
     let t = 0;
+    let tilePos;
     for(; n > 0; --n){
-      tileIndex = tileMap.getNearestTileIndex([x * CELLSIZE, y * CELLSIZE]);
+      tilePos = [x * CELLSIZE, y * CELLSIZE];
+
+      tileIndex = tileMap.getNearestTileIndex(tilePos);
       result = evaluator(rayVector, scene, tileIndex);
       if(result != null){return result};
 
@@ -128,23 +142,10 @@ PhysicsManager.prototype.rayMarch = function(rayVector, scene, evaluator){
   return null;
 };
 
-PhysicsManager.prototype.stupidAlgorithm = function(rayVector, scene){
-  for(let i = 0; i < scene.tileMap.tiles.length; i++){
-    collision = this._checkForCollision(rayVector, scene, i);
-    if(collision != null){
-      return collision
-    };
-  };
-  return null;
-};
-
 // Return the coordinates of the point where rayVector hits something in the scene.
-// Return null if the rayVector does not hit anything.
-// Based on the simplified algorithm here https://playtechs.blogspot.com/2007/03/raytracing-on-grid.html
 PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
   let evaluator = this._checkForCollision.bind(this);
   result = this.rayMarch(rayVector, scene, evaluator);
-  // result = this.stupidAlgorithm(rayVector, scene);
   return result;
 };
 
@@ -154,8 +155,30 @@ PhysicsManager.prototype._checkForCollision = function(rayVector, scene, tileInd
     let tilePos = tileMap.convertIndexToCoords(tileIndex, true);
     let tileRect = new Rect(tilePos, tileMap.tileSize);
     return this.rectPointofCollision(rayVector, tileRect);
-  };
+  }
+
+  // TODO:
+  // We're not in a wall or collidable tile. But we gotta check
+  // if the wall shares a line segment with one.
   return null;
+};
+
+PhysicsManager.prototype.resolveCollision = function(movVector, collisionPoint, collisionSurface){
+  let vScalarMultiply = Vector2D.prototype.scalarMultiply;
+  let vDotProduct = Vector2D.prototype.dotProduct;
+  let vOrthogonal =  Vector2D.prototype.orthogonal;
+  let vNormalize = Vector2D.prototype.normalize;
+  let vSubtract = Vector2D.prototype.subtract;
+
+  // let newPos = collisionPoint;
+  let surfaceNormal = vOrthogonal(collisionSurface);
+  surfaceNormal = vNormalize(surfaceNormal);
+
+  let dotProduct = vDotProduct(movVector, surfaceNormal)
+  let undesired = vScalarMultiply(surfaceNormal, dotProduct);
+  let desired = vSubtract(movVector, undesired);
+
+  return desired.p2;
 };
 
 /**
@@ -198,37 +221,51 @@ Vector2D.prototype.copy = function(vector){
 };
 
 Vector2D.prototype.add = function(vector1, vector2){
-  let p1 = [vector1.p1[0] + vector2.p1[0], vector1.p1[1] + vector2.p1[1]];
-  let p2 = [vector1.p2[0] + vector2.p2[0], vector1.p2[1] + vector2.p2[1]];
+  let dx = (vector1.p2[0] - vector1.p1[0]) + (vector2.p2[0] - vector2.p1[0]);
+  let dy = (vector1.p2[1] - vector1.p1[1]) + (vector2.p2[1] - vector2.p1[1]);
+
+  let p1 = [vector1.p1[0], vector1.p1[1]];
+  let p2 = [vector1.p1[0] + dx, vector1.p1[1] + dy];
   return new Vector2D(p1, p2);
 };
 
 Vector2D.prototype.subtract = function(vector1, vector2){
-  let p1 = [vector1.p1[0] - vector2.p1[0], vector1.p1[1] - vector2.p1[1]];
-  let p2 = [vector1.p2[0] - vector2.p2[0], vector1.p2[1] - vector2.p2[1]];
+  let dx = (vector1.p2[0] - vector1.p1[0]) - (vector2.p2[0] - vector2.p1[0]);
+  let dy = (vector1.p2[1] - vector1.p1[1]) - (vector2.p2[1] - vector2.p1[1]);
+
+  let p1 = [vector1.p1[0], vector1.p1[1]];
+  let p2 = [vector1.p1[0] + dx, vector1.p1[1] + dy];
   return new Vector2D(p1, p2);
 };
 
 Vector2D.prototype.scalarMultiply = function(vector, s){
-  let p1 = [vector.p1[0], vector.p1[1]]; // Returning a new object, so I should copy p1.
-  let p2 = [vector.p2[0] * s, vector.p2[1] * s];
+  let dx = (vector.p2[0] - vector.p1[0]) * s;
+  let dy = (vector.p2[1] - vector.p1[1]) * s;
+
+  let p1 = [vector.p1[0], vector.p1[1]];
+  let p2 = [vector.p1[0] + dx, vector.p1[1] + dy];
   return new Vector2D(p1, p2);
 };
 
 Vector2D.prototype.scalarDivide = function(vector, s){
   if(s != 0){
-    let x = (vector.p2[0] - vector.p1[0]) / s;
-    let y = (vector.p2[1] - vector.p1[0]) / s;
+    let dx = (vector.p2[0] - vector.p1[0]) / s;
+    let dy = (vector.p2[1] - vector.p1[1]) / s;
 
-    let p1 = [vector.p1[0], vector.p1[1]]; // Returning a new object, so I should copy p1.
-    let p2 = [vector.p1[0] + x, vector.p1[1] + y];
+    let p1 = [vector.p1[0], vector.p1[1]];
+    let p2 = [vector.p1[0] + dx, vector.p1[1] + dy];
     return new Vector2D(p1, p2);
   };
 };
 
-// Function assumes that both vectors originate from the same point.
 Vector2D.prototype.dotProduct = function(vector1, vector2){
-  return (vector1.p2[0] * vector2.p2[0]) + (vector1.p2[1] * vector2.p2[1]);
+  let dx1 = (vector1.p2[0] - vector1.p1[0]);
+  let dy1 = (vector1.p2[1] - vector1.p1[1]);
+
+  let dx2 = (vector2.p2[0] - vector2.p1[0]);
+  let dy2 = (vector2.p2[1] - vector2.p1[1]);
+
+  return (dx1 * dx2) + (dy1 * dy2);
 };
 
 // This function assumes that both vectors originate from the same point i.e. the origin..
@@ -246,7 +283,6 @@ Vector2D.prototype.vectorsIntersect = function(vector1, vector2){
   let vAdd = Vector2D.prototype.add;
   let vScalarMultiply = Vector2D.prototype.scalarMultiply;
   let vSubtract = Vector2D.prototype.subtract;
-  let vDotProduct = Vector2D.prototype.dotProduct;
   let vCrossProduct = Vector2D.prototype.crossProduct;
 
   let a = new Vector2D(vector1.p1);
@@ -281,9 +317,19 @@ Vector2D.prototype.calculateAngle = function(vector, inDegrees=false){
   return angle;
 };
 
+// Return magnitude of horizontal component of vector.
+Vector2D.prototype.width = function(vector){
+  return Math.abs(vector.p2[0] - vector.p1[0])
+};
+
+// Return magnitude of vertical component of vector.
+Vector2D.prototype.height = function(vector){
+  return Math.abs(vector.p2[1] - vector.p1[1])
+};
+
 Vector2D.prototype.length = function(vector){
-  let a = Math.abs(vector.p2[0] - vector.p1[0]);
-  let b = Math.abs(vector.p2[1] - vector.p1[1]);
+  let a = Vector2D.prototype.width(vector);
+  let b = Vector2D.prototype.height(vector);
   return Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
 };
 
@@ -292,4 +338,12 @@ Vector2D.prototype.normalize = function(vector){
   if(length > 0){
     return Vector2D.prototype.scalarDivide(vector, length);
   };
+};
+
+// Return the vector orthogonal to the input vector.
+Vector2D.prototype.orthogonal = function(vector){
+  let dx = vector.p2[0] - vector.p1[0];
+  let dy = vector.p2[1] - vector.p1[1];
+  let p1 = [vector.p1[0], vector.p1[1]];
+  return new Vector2D(p1, [vector.p1[0] - dy, vector.p1[1] + dx]);
 };

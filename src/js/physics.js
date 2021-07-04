@@ -149,6 +149,16 @@ PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
   return result;
 };
 
+PhysicsManager.prototype.stupidAlgorithm = function(rayVector, scene){
+  for(let i = 0; i < scene.tileMap.tiles.length; i++){
+    collision = this._checkForCollision(rayVector, scene, i);
+    if(collision != null){
+      return collision
+    };
+  };
+  return null;
+};
+
 PhysicsManager.prototype._checkForCollision = function(rayVector, scene, tileIndex){
   let tileMap = scene.tileMap;
   if(tileMap.tileIsCollidable(tileIndex) === true){
@@ -163,7 +173,7 @@ PhysicsManager.prototype._checkForCollision = function(rayVector, scene, tileInd
   return null;
 };
 
-PhysicsManager.prototype.resolveCollision = function(movVector, collisionPoint, collisionSurface){
+PhysicsManager.prototype.collisionSlide = function(movVector, collisionPoint, collisionSurface){
   let vScalarMultiply = Vector2D.prototype.scalarMultiply;
   let vDotProduct = Vector2D.prototype.dotProduct;
   let vOrthogonal =  Vector2D.prototype.orthogonal;
@@ -178,7 +188,15 @@ PhysicsManager.prototype.resolveCollision = function(movVector, collisionPoint, 
   let undesired = vScalarMultiply(surfaceNormal, dotProduct);
   let desired = vSubtract(movVector, undesired);
 
-  return desired.p2;
+  return desired;
+};
+
+PhysicsManager.prototype.resolveCollision = function(movVector, collisionPoint) {
+  let directionX = Math.sign(movVector.p2[0] - movVector.p1[0]);
+  let directionY = Math.sign(movVector.p2[1] - movVector.p1[1]);
+  collisionPoint[0] -= directionX;
+  collisionPoint[1] -= directionY;
+  return collisionPoint;
 };
 
 /**

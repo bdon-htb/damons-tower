@@ -279,20 +279,23 @@ Game.prototype._handleCollision = function(x, y, dx, dy, scene){
   let newPos;
   let movVector = new Vector2D([x, y], [x + dx, y + dy]);
 
-  // let collision = this.physicsManager.raycastCollision(movVector, scene);
   let collision = this.physicsManager.raycastCollision(movVector, scene);
   this.debugMenu.updateVariable("collision? ", collision !== null);
   if(collision !== null){
-    // We have to move the player 1 pixel back from the wall so they aren't
-    // stuck in it.
-    let directionX = Math.sign(movVector.p2[0] - movVector.p1[0]);
-    let directionY = Math.sign(movVector.p2[1] - movVector.p1[1]);
-    collision[0][0] -= directionX;
-    collision[0][1] -= directionY;
-    newPos = collision[0];
 
-    movVector.p1 = newPos;
-    newPos = this.physicsManager.resolveCollision(movVector, collision[0], collision[1]);
+    // Initial collision.
+    newPos = this.physicsManager.resolveCollision(movVector, collision[0]);
+
+    // Post collision; check for slide, and then slide + check for additional collision.
+    if(dx != 0 && dy != 0){
+      movVector.p1 = newPos;
+      movVector = this.physicsManager.collisionSlide(movVector, collision[0], collision[1]);
+      collision = this.physicsManager.raycastCollision(movVector, scene);
+      if(collision !== null){
+        newPos = this.physicsManager.resolveCollision(movVector, collision[0]);
+      } else newPos = [movVector.p2[0], movVector.p2[1]];
+    };
+
   }
   else { // No collision so we just go the full distance.
     newPos = [movVector.p2[0], movVector.p2[1]];

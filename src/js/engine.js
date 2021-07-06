@@ -56,10 +56,13 @@ function Engine(htmlDOM){
     "starting",
     "running",
     "loading assets",
+    "assets loaded",
     "loading menus",
+    "menus loaded",
     "loading textures",
-    "start loading fonts",
-    "loading fonts"
+    "textures loaded",
+    "loading fonts",
+    "fonts loaded",
   ];
 
   // Create components.
@@ -102,49 +105,36 @@ Engine.prototype.draw = function(){
 // Loader/Asset specific methods.
 // ==============================
 
-// loadAllAssets should be called before the game starts.
-Engine.prototype.loadAllAssets = function(){
-  let dataLocation = this.dataLocation;
-  let imgLocation = this.imgLocation;
+// This gets / fetches and loads in all STANDALONE assets.
+// Basically, if you have a self-contained file or a file that contains names
+// of other files, put them here!
+Engine.prototype.loadStandaloneAssets = function(){
+  let allAssets = [
+    "image.json", // image urls.
+    "animations.json", // animation data.
+    "menus.json", // menu filenames.
+    "fonts.json", // custom font names.
+    "inputs.json", // input commands / patterns.
+    "guiCustomStyle.json", // custom gui specifications.
+    "levels.json", // level data (currently only the single test level).
+  ]
 
-  this.assetLoader.getAsset(dataLocation + "/" + "image.json", true); // image urls.
-  this.assetLoader.getAsset(dataLocation + "/" + "animations.json", true); // animation data.
-  this.assetLoader.getAsset(dataLocation + "/" + "menus.json", true); // menu filenames.
-  this.assetLoader.getAsset(dataLocation + "/" + "fonts.json", true); // custom font names.
-  this.assetLoader.getAsset(dataLocation + "/" + "inputs.json", true); // input commands / patterns.
-  this.assetLoader.getAsset(dataLocation + "/" + "guiCustomStyle.json", true); // input commands / patterns.
-
-  this.assetLoader.getAsset(dataLocation + "/" + "levels.json", true); // (test) level data.
-};
-
-Engine.prototype.assetIsLoaded = function(id){
-  return this.assets.has(id);
-};
-
-Engine.prototype.allAssetsLoaded = function(){
-  let assetsKeys = [
-    this.imageKey,
-    this.animKey,
-    this.levelKey,
-    this.menuDataKey,
-    this.fontsKey,
-    this.inputsKey
-  ];
-
-  for(const key of assetsKeys){
-    if(this.assets.has(key) === false){return false};
+  let promises = [];
+  for(const filename of allAssets){
+    promises.push(this.assetLoader.getAsset(this.dataLocation + "/" + filename));
   };
-  return true;
+  return Promise.all(promises);
 };
 
 Engine.prototype.loadAllMenus = function(){
-  if(this.assets.has(this.menuDataKey)){
-    let menuURLS = this.assets.get(this.menuDataKey);
-    for(let [id, url] of menuURLS){
-      url = this.menuLocation + "/" + url;
-      this.assetLoader.getAsset(url, true);
-    };
-  } else console.error(`Cannot load menus. ${this.menuDataKey} does not exist in assets.`);
+  if(this.assetIsLoaded(this.menuDataKey) === false){console.error(`Cannot load menus. ${this.menuDataKey} does not exist in assets.`)};
+
+  let menuFiles = this.assets.get(this.menuDataKey);
+  let promises = [];
+  for(let [id, filename] of menuFiles){
+    promises.push(this.assetLoader.getAsset(this.menuLocation + "/" + filename));
+  };
+  return Promise.all(promises);
 };
 
 Engine.prototype.allMenusLoaded = function(){
@@ -179,11 +169,15 @@ Engine.prototype.getImage = function(id){
   return this.getLoadedAsset(this.imageKey).get(id);
 }
 
+Engine.prototype.assetIsLoaded = function(id){
+  return this.assets.has(id);
+};
+
 // Get asset from this.assets; includes error check. called getLoadedAsset to
 // differentiate from assetLoader.getAsset()
 Engine.prototype.getLoadedAsset = function(key){
   // Error handling.
-  if(this.assets.has(key) === false){
+  if(this.assetIsLoaded(key) === false){
     console.error(`Error while trying to get asset ${key}. ${key} does not exist in assets.`);
   };
   return this.assets.get(key);
@@ -353,42 +347,46 @@ Engine.prototype.getInputDevice = function(deviceName){
 // Private methods.
 // ================
 
-// In hindsight, I should've just bit the bullet and learned promises. Oh well :|
 Engine.prototype._runLoadingStates = function(){
   let state = this.stateMachine.currentState;
   // starting -> loading assets
   if(state === "starting"){
     this.stateMachine.changeState("loading assets");
-    this.loadAllAssets();
+    this.loadStandaloneAssets()
+    .then(() => this.stateMachine.changeState("assets loaded"));
   }
 
-  // loading assets -> loading textures -> loading fonts
-  else if(state === "loading assets" && this.allAssetsLoaded() === true){
+  // assets loaded -> loading textures
+  else if(state === "assets loaded"){
     this.stateMachine.changeState("loading textures");
-    const callback = () => {
-      this.stateMachine.changeState("start loading fonts");
-    };
+    const callback = () => {this.stateMachine.changeState("textures loaded")};
     this.loadAllTextures(callback);
   }
 
-  // loading fonts -> loading menus
-  else if(state === "start loading fonts"){
+  // textures loaded -> loading fonts
+  else if(state === "textures loaded"){
     this.stateMachine.changeState("loading fonts");
-    const callback = () => {
-      this.stateMachine.changeState("loading menus");
-      this.loadAllMenus();
-    };
-    this.loadAllFonts(callback);
+    const callback = () => {this.stateMachine.changeState("fonts loaded")};
+    this.loadAllFonts(callback)
   }
 
-  // loading menus -> running
-  else if(state === "loading menus" && this.allMenusLoaded() === true){
-    this.stateMachine.changeState("running");
-    this.app.stateMachine.changeState(this.app.startingState);
-  };
+  // fonts loaded -> loading menus
+  else if(state === "fonts loaded"){
+    this.stateMachine.changeState("loading menus");
+    this.loadAllMenus()
+    .then(() => {this.stateMachine.changeState("menus loaded")});
+  }
 
+  // menus loaded -> running
+  else if(state === "menus loaded"){
+    this._startGame();
+  };
 };
 
+Engine.prototype._startGame = function(){
+  this.stateMachine.changeState("running");
+  this.app.stateMachine.changeState(this.app.startingState);
+}
 // =======================
 // Game related functions.
 // =======================
@@ -405,29 +403,42 @@ function AssetLoader(parent){
   this.parent = parent;
 };
 
-// Method has the option to immediately load the asset into the game.
-AssetLoader.prototype.getAsset = function(url, load=false){
-  let loadFunc;
-  let loadMethods = {
-    '.json': this.loadJson.bind(this), // Have to do bind for this keyword to be preserved.
-    '.xml': this.loadXML.bind(this)};
+// If load is set to false then the request itself is returned.
+AssetLoader.prototype.getAsset = function(url){
+  return new Promise((resolve, reject) => {
+    let loadMethod;
+    let loadParams = {
+      '.json': {responseType: 'json', loadMethod: this.loadJson.bind(this)},
+      '.xml': {responseType: '', loadMethod: this.loadXML.bind(this)}
+    }
 
-  for(const [fileExt, method] of Object.entries(loadMethods)){
-    if(url.endsWith(fileExt)){loadFunc = method};
-  };
+    let req = new XMLHttpRequest();
 
-  let req = $.get(url);
+    for(const [fileExt, params] of Object.entries(loadParams)){
+      if(url.endsWith(fileExt)){
+        loadMethod = params.loadMethod;
+        req.responseType = params.responseType;
+        break;
+      };
+    };
 
-  // If the request fails...
-  req.fail((jqXHR, textStatus, errorThrown) => {
-    console.error(`Error while trying to get asset (${url}): ${errorThrown}`)});
+    req.onload = (req) => {
+      loadMethod(req);
+      resolve();
+    };
 
-  if (load === true){
-    req.done(loadFunc);
-  } else return req;
+    req.onerror = () => {
+      console.error(`Error while trying to get asset (${url}): ${req.response}`);
+      reject();
+    };
+
+    req.open("GET", url);
+    req.send();
+  });
 };
 
-AssetLoader.prototype.loadJson = function(data, success){
+AssetLoader.prototype.loadJson = function(req){
+  let data = req.target.response;
   let jsonKeys = Object.keys(data);
   jsonKeys.forEach((key) => {
     // If the value is an array just set it as an array.
@@ -444,7 +455,8 @@ AssetLoader.prototype.loadJson = function(data, success){
   });
 };
 
-AssetLoader.prototype.loadXML = function(data, success){
+AssetLoader.prototype.loadXML = function(req){
+  let data = req.target.responseXML;
   let verifyXML = this.parent.verifyXML;
   let getXMLType = this.parent.getXMLType.bind(this.parent);
   let loadFunc;
@@ -461,7 +473,9 @@ AssetLoader.prototype.loadXML = function(data, success){
   } else console.log('XML file is invalid!');
 };
 
-AssetLoader.prototype.loadMenu = function(data, success){
+// Creates and loads menu from data.
+// data is XMLDocument type
+AssetLoader.prototype.loadMenu = function(data){
   let engine = this.parent;
   // let menu = new Menu(this.parent, data);
   let menu = engine.guiManager.createMenuFromData(data);

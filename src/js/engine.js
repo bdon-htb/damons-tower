@@ -107,14 +107,14 @@ Engine.prototype.loadAllAssets = function(){
   let dataLocation = this.dataLocation;
   let imgLocation = this.imgLocation;
 
-  this.assetLoader.getAsset(dataLocation + "/" + "image.json", true); // image urls.
-  this.assetLoader.getAsset(dataLocation + "/" + "animations.json", true); // animation data.
-  this.assetLoader.getAsset(dataLocation + "/" + "menus.json", true); // menu filenames.
-  this.assetLoader.getAsset(dataLocation + "/" + "fonts.json", true); // custom font names.
-  this.assetLoader.getAsset(dataLocation + "/" + "inputs.json", true); // input commands / patterns.
-  this.assetLoader.getAsset(dataLocation + "/" + "guiCustomStyle.json", true); // input commands / patterns.
+  this.assetLoader.getAsset(dataLocation + "/" + "image.json"); // image urls.
+  this.assetLoader.getAsset(dataLocation + "/" + "animations.json"); // animation data.
+  this.assetLoader.getAsset(dataLocation + "/" + "menus.json"); // menu filenames.
+  this.assetLoader.getAsset(dataLocation + "/" + "fonts.json"); // custom font names.
+  this.assetLoader.getAsset(dataLocation + "/" + "inputs.json"); // input commands / patterns.
+  this.assetLoader.getAsset(dataLocation + "/" + "guiCustomStyle.json"); // input commands / patterns.
 
-  this.assetLoader.getAsset(dataLocation + "/" + "levels.json", true); // (test) level data.
+  this.assetLoader.getAsset(dataLocation + "/" + "levels.json"); // (test) level data.
 };
 
 Engine.prototype.assetIsLoaded = function(id){
@@ -406,28 +406,32 @@ function AssetLoader(parent){
 };
 
 // Method has the option to immediately load the asset into the game.
-AssetLoader.prototype.getAsset = function(url, load=false){
-  let loadFunc;
-  let loadMethods = {
-    '.json': this.loadJson.bind(this), // Have to do bind for this keyword to be preserved.
-    '.xml': this.loadXML.bind(this)};
+AssetLoader.prototype.getAsset = function(url, load=true){
+  let loadMethod;
+  let loadParams = {
+    '.json': {responseType: 'json', loadMethod: this.loadJson.bind(this)},
+    '.xml': {responseType: '', loadMethod: this.loadXML.bind(this)}
+  }
 
-  for(const [fileExt, method] of Object.entries(loadMethods)){
-    if(url.endsWith(fileExt)){loadFunc = method};
+  let req = new XMLHttpRequest();
+
+  for(const [fileExt, params] of Object.entries(loadParams)){
+    if(url.endsWith(fileExt)){
+      loadMethod = params.loadMethod;
+      req.responseType = params.responseType;
+    };
   };
 
-  let req = $.get(url);
+  if(load === true){req.addEventListener("load", loadMethod)};
+  req.addEventListener("error", (evt) => console.error(`Error while trying to get asset (${url}): ${evt}`));
+  req.open("GET", url);
+  req.send();
+  if(load === false){return req};
 
-  // If the request fails...
-  req.fail((jqXHR, textStatus, errorThrown) => {
-    console.error(`Error while trying to get asset (${url}): ${errorThrown}`)});
-
-  if (load === true){
-    req.done(loadFunc);
-  } else return req;
 };
 
-AssetLoader.prototype.loadJson = function(data, success){
+AssetLoader.prototype.loadJson = function(req){
+  let data = req.target.response;
   let jsonKeys = Object.keys(data);
   jsonKeys.forEach((key) => {
     // If the value is an array just set it as an array.
@@ -444,7 +448,8 @@ AssetLoader.prototype.loadJson = function(data, success){
   });
 };
 
-AssetLoader.prototype.loadXML = function(data, success){
+AssetLoader.prototype.loadXML = function(req){
+  let data = req.target.responseXML;
   let verifyXML = this.parent.verifyXML;
   let getXMLType = this.parent.getXMLType.bind(this.parent);
   let loadFunc;
@@ -461,7 +466,9 @@ AssetLoader.prototype.loadXML = function(data, success){
   } else console.log('XML file is invalid!');
 };
 
-AssetLoader.prototype.loadMenu = function(data, success){
+// Creates and loads menu from data.
+// data is XMLDocument type
+AssetLoader.prototype.loadMenu = function(data){
   let engine = this.parent;
   // let menu = new Menu(this.parent, data);
   let menu = engine.guiManager.createMenuFromData(data);

@@ -55,6 +55,8 @@ function PlayerEntity(engine, gameObject){
   this.attributes["canAttack"] = true;
   this.attributes["attackVector"] = null; // A unit vector representing the direction of a precise attack.
   this.attributes["attackQueue"] = [];
+  // Hitboxes / colliders coordinates are relative to the entity's topLeft.
+  this.attributes["wallCollider"] = new Circle([16, 25], 7);
 
   let spriteSheet;
   let animation;

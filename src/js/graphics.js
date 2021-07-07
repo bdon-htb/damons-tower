@@ -227,6 +227,16 @@ Renderer.prototype.drawText = function(msg, x=0, y=0, style="default"){
   this.draw(message);
 };
 
+Renderer.prototype.drawCircle = function(colour, x, y, radius){
+  let circle = new PIXI.Graphics();
+  circle.beginFill(colour);
+  circle.drawCircle(x, y, radius);
+  circle.endFill();
+  this.textureManager.addToPool(circle);
+  circle = this.scale(circle);
+  this.draw(circle);
+};
+
 Renderer.prototype.drawRect = function(colour, x, y, width, height){
   let rectangle = new PIXI.Graphics();
   rectangle.beginFill(colour);

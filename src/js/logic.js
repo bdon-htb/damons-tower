@@ -127,6 +127,13 @@ Scene.prototype.incrementEntityAttribute = function(id, key, amount=1){
   was told to increment ${value}, but it's not a number. id: ${id}. key: ${key}`);
 };
 
+// Calculates world coordinates of entity's topLeft.
+Scene.prototype.getEntityTopLeft = function(entity){
+  let topLeftX = entity.attributes["x"] - (entity.attributes["width"] / 2);
+  let topLeftY = entity.attributes["y"] - (entity.attributes["height"] / 2);
+  return [topLeftX, topLeftY];
+};
+
 /**
  * Custom scene manager object. Will be responsible for transition betweening
  * through different scenes.

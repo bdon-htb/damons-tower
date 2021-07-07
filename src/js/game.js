@@ -115,7 +115,7 @@ Game.prototype.update = function(){
 
 Game.prototype.draw = function(){
   let currentState = this.stateMachine.currentState;
-  let renderer = this.engine.renderer;
+  let renderer = this.renderer;
   switch(currentState){
     case "starting":
       break;
@@ -143,6 +143,8 @@ Game.prototype.draw = function(){
           this.renderer.drawEffect(level, player, player.attributes["animations"].get(effect));
         };
       };
+
+      // this._drawEntityColliders(player, level);
       // renderer.drawRect(0xff0000, playerCenter[0], playerCenter[1], 4, 4);
       // renderer.drawRect(0xff0000, playerCenter[0] - (16 * this.engine.spriteScale), playerCenter[1] - (16 * this.engine.spriteScale), 4, 4);
       // renderer.drawRect(0xff0000, playerCenter[0] + (16 * this.engine.spriteScale), playerCenter[1] + (16 * this.engine.spriteScale), 4, 4);
@@ -154,6 +156,31 @@ Game.prototype.draw = function(){
   };
 };
 
+Game.prototype._drawEntityColliders = function(entity, scene){
+  let renderer = this.renderer;
+  let camera = scene.camera;
+  let entityTopLeft = [entity.attributes["x"] - (entity.attributes["width"] / 2), entity.attributes["y"] - (entity.attributes["height"] / 2)];
+
+  let colliders = [
+    entity.attributes["wallCollider"]
+  ];
+
+  let x;
+  let y;
+  let scaledPos;
+  for(const c of colliders){
+    switch(c.constructor){
+      case Circle:
+        x = entityTopLeft[0] + c.center[0];
+        y = entityTopLeft[1] + c.center[1];
+        scaledPos = this.engine.getSpriteScaledPosition(x, y);
+        scaledPos = camera.getRelative(scaledPos[0], scaledPos[1]);
+        renderer.drawCircle(0xff0000, scaledPos[0], scaledPos[1], c.radius * this.engine.spriteScale);
+        break;
+    };
+  };
+
+};
 // ===============
 // Game callbacks + menu related methods.
 // ===============
@@ -272,6 +299,35 @@ Game.prototype._updateEvents = function(newEvents){
 // General entity related methods.
 // ===============================
 
+Game.prototype._handleEntityWallCollision = function(entity, scene){
+  let collider = entity.attributes["wallCollider"]; // Assumes wallCollider.constructor === Circle
+  let directionX = Math.sign(entity.attributes["dx"]);
+  let directionY = Math.sign(entity.attributes["dy"]);
+
+  // Player center relative to its top left.
+  let playerCenter = [entity.attributes["width"] / 2, entity.attributes["height"] / 2];
+
+  // Offset between the collider's center and the player's center.
+  let offsetX = collider.center[0] - playerCenter[0];
+  let offsetY = collider.center[1] - playerCenter[1];
+
+  let circleDx = collider.radius * directionX;
+  let circleDy = collider.radius * directionY;
+
+  let entityTopLeft = scene.getEntityTopLeft(entity);
+  // Calculate true world position of collider's center.
+  let colliderTruePos = [entityTopLeft[0] + collider.center[0], entityTopLeft[1] + collider.center[1]];
+
+  let dx = entity.attributes["dx"] + circleDx;
+  let dy = entity.attributes["dy"] + circleDy;
+  let x = colliderTruePos[0];
+  let y = colliderTruePos[1];
+  let newPos = this._handleCollision(x, y, dx, dy, scene);
+  newPos[0] -= offsetX + circleDx;
+  newPos[1] -= offsetY + circleDy;
+  return newPos;
+};
+
 // Checks for collision from point (x, y) to point (x + dx, y + dy)
 // If there is a collision point, return that point. Otherwise return
 // (x + dx, y + dy).
@@ -384,7 +440,8 @@ Game.prototype._handlePlayerStates = function(scene){
   };
 
   if(isMoving === true){
-    let newPos = this._handleCollision(player.attributes["x"], player.attributes["y"], player.attributes["dx"], player.attributes["dy"], scene);
+    let newPos = this._handleEntityWallCollision(player, scene)
+    // let newPos = this._handleCollision(player.attributes["x"], layer.attributes["y"], player.attributes["dx"],  player.attributes["dy"], scene);
     scene.moveEntity(player, newPos);
   };
 

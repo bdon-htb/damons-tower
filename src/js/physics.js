@@ -246,16 +246,58 @@ PhysicsManager.prototype.resolveCollision = function(movVector, collisionPoint) 
  * Note: use only for calculations. Use PIXI.Rectangle for drawing,
 */
 function Rect(topLeft, width, height=undefined){
+  this.topLeft;
+  this.topRight;
+  this.bottomLeft;
+  this.bottomRight;
+
+  this.width;
+  this.height;
+
+  this.setTopLeft(topLeft, update=false);
+  this.setDimensions(width, height, update=false);
+  this._update();
+};
+
+Rect.prototype.setTopLeft = function(topLeft, update=true){
+  this.topLeft = topLeft;
+  if(update === true){this._update()};
+};
+
+Rect.prototype.setDimensions = function(width, height=undefined, update=true){
   this.width = width;
   if(height === undefined){
     this.height = width
   } else this.height = height;
-  this.topLeft = topLeft;
 
+  if(update === true){this._update()};
+};
+
+Rect.prototype._update = function(){
   this.topRight = [this.topLeft[0] + this.width, this.topLeft[1]];
   this.bottomLeft = [this.topLeft[0], this.topLeft[1] + this.height];
   this.bottomRight = [this.topLeft[0] + this.width, this.topLeft[1] + this.height];
 };
+
+/**
+ * Custom circle class.
+*/
+function Circle(center, radius){
+  this.center;
+  this.radius;
+
+  this.setCenter(center);
+  this.setRadius(radius);
+};
+
+Circle.prototype.setCenter = function(center){
+  this.center = center;
+};
+
+Circle.prototype.setRadius = function(radius){
+  this.radius = radius;
+};
+
 
 /**
  * Custom vector class that doubles as an interface for basic vector calculations.

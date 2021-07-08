@@ -11,6 +11,8 @@ TILESIZE = 32
 EMPTY_TILE_ID = '00'
 TILE_ARRAY_SIZE = 3 # This is the number of elements in a tile id.
 
+LEVEL_KEY = "levels" # Corresponds to this.levelKey in engine.js
+
 SETTINGS = {
     'inRepo': True
 }

@@ -58,13 +58,14 @@ function PlayerEntity(engine, gameObject){
   // Hitboxes / colliders coordinates are relative to the entity's topLeft.
   this.attributes["wallCollider"] = new Circle([16, 25], 7);
 
+  let allAnimations = engine.getLoadedAsset(engine.animKey);
+  let x = Array.from(allAnimations.keys())
   let spriteSheet;
   let animation;
   // Create all player animations from data in animation.json
-  for(const [animationName, animationData] of engine.assets.get(engine.animKey).entries()){
+  for(const animationName of allAnimations.keys()){
     if(animationName.startsWith('player_') || animationName.startsWith('iron_')){
-      spriteSheet = engine.renderer.getSheetFromId(animationData["spriteSheet"]);
-      animation = new Animation(animationName, spriteSheet, animationData);
+      animation = engine.renderer.animationManager.createAnimation(animationName)
       this.attributes["animations"].set(animationName, animation);
     };
   };

@@ -1,0 +1,92 @@
+{
+  "animations": {
+    "TEMPLATES": {
+      "sword_basic_attack": {
+        "loops": false,
+        "type": "effect",
+        "timings": 5,
+        "offsetX": -32,
+        "offsetY": -32},
+
+      "iron_basic_attack1": {
+        "template": "sword_basic_attack",
+        "spriteSheet": "iron_basic_attack1"},
+
+      "iron_basic_attack2": {
+        "template": "sword_basic_attack",
+        "spriteSheet": "iron_basic_attack2"},
+
+      "iron_basic_attack3": {
+        "template": "sword_basic_attack",
+        "spriteSheet": "iron_basic_attack3"},
+
+      "iron_basic_attack_return": {
+        "template": "sword_basic_attack",
+        "spriteSheet": "iron_basic_attack_return"}
+    },
+
+    "iron_basic_attack1_front": {
+      "template": "iron_basic_attack1",
+      "frames": [null, null, null, [0,0], [1,0], [2,0], [3,0], [4,0], [5,0]]},
+
+    "iron_basic_attack1_back": {
+      "template": "iron_basic_attack1",
+      "frames": [null, null, null, [0,1], [1,1], [2,1], [3,1], [4,1], [5,1]]},
+
+    "iron_basic_attack1_left": {
+      "template": "iron_basic_attack1",
+      "frames": [null, null, null, [0,2], [1,2], [2,2], [3,2], [4,2], [5,2]]},
+
+    "iron_basic_attack1_right": {
+      "template": "iron_basic_attack1",
+      "frames": [null, null, null, [0,3], [1,3], [2,3], [3,3], [4,3], [5,3]]},
+
+    "iron_basic_attack2_front": {
+      "template": "iron_basic_attack2",
+      "frames": [[0,0], [1,0], [2,0], [3,0], [4,0], [5,0], [6,0]]},
+
+    "iron_basic_attack2_back": {
+      "template": "iron_basic_attack2",
+      "frames": [[0,1], [1,1], [2,1], [3,1], [4,1], [5,1], [6,1]]},
+
+    "iron_basic_attack2_left": {
+      "template": "iron_basic_attack2",
+      "frames": [[0,2], [1,2], [2,2], [3,2], [4,2], [5,2], [6,2]]},
+
+    "iron_basic_attack2_right": {
+      "template": "iron_basic_attack2",
+      "frames": [[0,3], [1,3], [2,3], [3,3], [4,3], [5,3], [6,3]]},
+
+    "iron_basic_attack3_front": {
+      "template": "iron_basic_attack3",
+      "frames": [[0,0], [1,0], [2,0], [3,0], [4,0], [5,0], [6,0]]},
+
+    "iron_basic_attack3_back": {
+      "template": "iron_basic_attack3",
+      "frames": [[0,1], [1,1], [2,1], [3,1], [4,1], [5,1], [6,1]]},
+
+    "iron_basic_attack3_left": {
+      "template": "iron_basic_attack3",
+      "frames": [[0,2], [1,2], [2,2], [3,2], [4,2], [5,2], [6,2]]},
+
+    "iron_basic_attack3_right": {
+      "template": "iron_basic_attack3",
+      "frames": [[0,3], [1,3], [2,3], [3,3], [4,3], [5,3], [6,3]]},
+
+    "iron_basic_attack_return_front": {
+      "template": "iron_basic_attack_return",
+      "frames": [[0,0], null, null, null]},
+
+    "iron_basic_attack_return_back": {
+      "template": "iron_basic_attack_return",
+      "frames": [[1,0], null, null, null]},
+
+    "iron_basic_attack_return_left": {
+      "template": "iron_basic_attack_return",
+      "frames": [[2,0], null, null, null]},
+
+    "iron_basic_attack_return_right": {
+      "template": "iron_basic_attack_return",
+      "frames": [[3,0], [4,0], [5,0], [6,0]]}
+    }
+}

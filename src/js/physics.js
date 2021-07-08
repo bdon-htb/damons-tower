@@ -55,13 +55,55 @@ PhysicsManager.prototype.rectPointofCollision = function(vector, rect, edgesToIg
     lineSegments["bottom"] = null;
   } else lineSegments["top"] = null;
 
-  for(const line of Object.values(lineSegments)){
-    if(line !== null){
-      let collision = vectorsIntersectFunc(vector, line);
-      if(collision !== null){return [collision, line]};
+  let collisions = [];
+
+  // At most one horizontal and one vertical line segment will be checked.
+  for(const edgeVector of Object.values(lineSegments)){
+    if(edgeVector !== null){
+      let collisionPoint = vectorsIntersectFunc(vector, edgeVector);
+      if(collisionPoint !== null){collisions.push([collisionPoint, edgeVector])};
     };
   };
-  return null;
+
+  if(collisions.length === 0){
+    return null;
+  }
+  // If two collisions are detected, then we've hit a corner.
+  else if(collisions.length === 2){
+    return this._handleCornerCollision(vector, rect, collisions)
+  }
+  else { // Only other case should be single collision, but you never know...
+    return collisions[0]; // Return first detected collision.
+  };
+};
+
+// Precondition: collisions.length === 2
+PhysicsManager.prototype._handleCornerCollision = function(vector, rect, collisions){
+  let pointsAreEqual = (p1, p2) => {return p1[0] === p2[0] && p1[1] === p2[1]};
+
+  // Define the edges.
+  let horizontal = collisions[0];
+  let vertical = collisions[1];
+
+  let verticalConditions;
+  if(pointsAreEqual(horizontal[0], vertical[0]) === true){ // Collision points are equal
+    let vertex = horizontal[0];
+    verticalConditions = [
+      pointsAreEqual(rect.topLeft, vertex) && vector.p1[0] < vertex[0] && vector.p1[1] > vertex[1],
+      pointsAreEqual(rect.bottomLeft, vertex) && vector.p1[0] < vertex[0] && vector.p1[1] < vertex[1],
+      pointsAreEqual(rect.topRight, vertex) && vector.p1[0] > vertex[0] && vector.p1[1] > vertex[1],
+      pointsAreEqual(rect.bottomRight, vertex) && vector.p1[0] > vertex[0] && vector.p1[1] < vertex[1],
+    ];
+  }
+  else {
+    // Calculate the manhatten distance between the two collision points.
+    var distanceH = Math.abs(vector.p1[0] - horizontal[0][0]) + Math.abs(vector.p1[1] - horizontal[0][1])
+    var distanceV = Math.abs(vector.p1[0] - vertical[0][0]) + Math.abs(vector.p1[1] - vertical[0][1])
+    verticalConditions = [distanceV < distanceH];
+  }
+
+  if(verticalConditions.includes(true)){return vertical}
+  else return horizontal;
 };
 
 // Precondition: We can assume current tileIndex belongs to a collidable tile.

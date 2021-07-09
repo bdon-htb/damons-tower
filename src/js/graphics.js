@@ -1082,7 +1082,7 @@ function SpriteSheet(imageURL, texture, sprite, imageObj){
  * Animation assumes that every frame of the animation is within
  * the spritesheet provided.
 */
-function Animation(id, spriteSheet, animationData, template){
+function Animation(id, spriteSheet, allAnimations){
   // A counter that keeps track of the game refreshes while the current animation frames is active.
   this.counter = 0;
   // Default number of refreshes before next animation frame.
@@ -1120,34 +1120,33 @@ function Animation(id, spriteSheet, animationData, template){
     offsetY: null
   };
 
-  if(template !== undefined){this._loadSettings(template)};
-  this._loadSettings(animationData, forceRequired=true);
+  // Apply default values.
+  this._applySettings(this._allSettings, allAnimations);
+
+  let animationData = allAnimations.get(id);
+
+  this._applySettings(animationData, allAnimations);
 
   this.currentFrame = this.frames[0];
   this._processQueueIndex();
-  this._processQueueIndex();
-};
+  this._processTimings();
 
-/*
-Animation.prototype._loadSettings = function(animationData){
-  for(const [setting, defaultValue] of Object.entries(this._allSettings)){
-    if(this[setting] === undefined)
+  // Error checking.
+  if([this.frames, this.loops, this.type].includes(undefined)){
+    console.error(`animation is missing required settings. animation: ${id}`)
   };
 };
-*/
 
-// loads the settings into the current animation object.
-// If forceRequired parameter is set to true then an error message will be
-// sent if a required setting is not defined.
-Animation.prototype._loadSettings = function(animationData, forceRequired=false){
-  for(const [setting, defaultValue] of Object.entries(this._allSettings)){
-    if(forceRequired === true && defaultValue === undefined && this[setting] === undefined){ // Required setting.
-      this[setting] = animationData[setting];
-      if(this[setting] === undefined){console.error(`animation is missing required setting: ${setting}. animation: ${this.id}`)}
-    }
-    else { // Optional.
-      this[setting] = (animationData[setting] === undefined) ? defaultValue: animationData[setting];
-    };
+Animation.prototype._applySettings = function(animationData, allAnimations){
+  // If the animationData references a template, apply those settings first.
+  if(animationData["template"] !== undefined){
+    let template = animationData["template"];
+    this._applySettings(allAnimations.get("TEMPLATES")[template], allAnimations); // hard coded here but whatever.
+  };
+
+  for(const [setting, value] of Object.entries(animationData)){
+    if(["spriteSheet", "id"].includes(setting)){continue};
+    this[setting] = animationData[setting];
   };
 };
 
@@ -1189,11 +1188,18 @@ AnimationManager.prototype.createAnimation = function(animationName){
   let engine = this.parent.parent;
   let allAnimations = engine.getLoadedAsset(engine.animKey);
   let animationData = allAnimations.get(animationName);
-  let template = allAnimations.get(engine.animTemplateKey)[animationData["template"]];
+  let animTemplateKey = engine.animTemplateKey;
   // Pulls spriteSheet from either the template or animationData object.
-  let spriteSheet = (animationData.spriteSheet === undefined) ? template.spriteSheet : animationData.spriteSheet;
-  spriteSheet = engine.renderer.getSheetFromId(spriteSheet);
-  return new Animation(animationName, spriteSheet, animationData, template);
+  let a = animationData
+
+  while(a.spriteSheet === undefined){
+    if(a.spriteSheet === undefined && a.template !== undefined){
+      a = allAnimations.get(animTemplateKey)[a.template];
+    } else break;
+  };
+
+  spriteSheet = engine.renderer.getSheetFromId(a.spriteSheet);
+  return new Animation(animationName, spriteSheet, allAnimations);
 };
 
 AnimationManager.prototype.setFrame = function(animation, index){

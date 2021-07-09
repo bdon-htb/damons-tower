@@ -630,9 +630,6 @@ Game.prototype._handlePlayerAttack = function(scene, player, commands){
     player.attributes["attackQueue"] = [];
   };
 
-  // TODO: Have it so that this code only runs whenever we're moving onto the next frame.
-  // The code below is FULLY FUNCTIONAL. However, collision detection at the time of writing is incredibly
-  // broken. I'll uncomment this once I get that fixed up.
   if(playerState === "attacking" && player.attributes["attackVector"] != null && currentAnimation.velocity != undefined
     && currentAnimation.velocity[currentAnimation.frameIndex] != undefined){
       let magnitude = currentAnimation.velocity[currentAnimation.frameIndex];

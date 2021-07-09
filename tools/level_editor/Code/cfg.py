@@ -4,7 +4,7 @@
 
 import os
 
-__version__ = '0.0.0'
+__version__ = '1.0.0'
 __name__ = 'js-roguelite Level Editor'
 
 TILESIZE = 32

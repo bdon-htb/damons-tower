@@ -24,7 +24,7 @@ def is_level(d: dict) -> bool:
     """Simply checks that the first key is 'levelData'
     For preventing the loading of non-level data .json files.
     """
-    return list(d.keys())[0] == 'levelData'
+    return list(d.keys())[0] == cfg.LEVEL_KEY
 
 
 class MainWindow(QMainWindow):

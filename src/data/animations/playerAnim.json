@@ -26,7 +26,7 @@
         "timings": 5,
         "cancelIndex": 6,
         "queueIndex": 3,
-        "velocity": [3, null, null, null, null, null, null]},
+        "velocity": [null, null, null, 2, null, null, null, null, null]},
 
       "player_basic_attack2": {
         "spriteSheet": "player_basic_attack2",

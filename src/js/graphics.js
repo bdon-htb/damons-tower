@@ -1082,7 +1082,7 @@ function SpriteSheet(imageURL, texture, sprite, imageObj){
  * Animation assumes that every frame of the animation is within
  * the spritesheet provided.
 */
-function Animation(id, spriteSheet, animationData){
+function Animation(id, spriteSheet, allAnimations){
   // A counter that keeps track of the game refreshes while the current animation frames is active.
   this.counter = 0;
   // Default number of refreshes before next animation frame.
@@ -1090,36 +1090,79 @@ function Animation(id, spriteSheet, animationData){
   this.frameIndex = 0;
   this.active = false;
 
-  // Required settings.
-
   this.id = id;
   this.spriteSheet = spriteSheet;
-  // An array of indexes; each index corresponds to the frame's sprite index in the sheet.
-  this.frames = animationData.frames;
+
+  // this._allSettings defines all accepted animation properties and their default values.
+  // Required settings do not have defined default values.
+  this._allSettings = {
+
+    // Required settings.
+
+    frames: undefined, // An array of indexes; each index corresponds to the frame's sprite index in the sheet.
+    loops: undefined,
+    type: undefined, // Type of animation.
+
+    // Optional settings.
+
+    followUp: null, // Name of animation that comes after current animation. If cancelIndex is defined, then followUp will trigger at the index.
+    queueIndex: "d", // Index of first frame where player can input for followUp.
+    timings: this._defaultTiming, // The number of game refreshes it takes to reach the next animation frame.
+    cancelIndex: null, // If defined, sets the frame index to cancel the animation if applicable.
+    return: null, // Similar to followUp but will only trigger once the animation completes.
+
+    velocity: null, // An array of integers telling the game how much to move (if applicable). Direction not included.
+    hitBoxes: null, // An array of rectangle dimensions and locations tied to frames.
+
+    effects: [],  // An array of names of corresponding effect animations.
+    // For effects only. Tells the game where to position the effects relative to its host.
+    offsetX: null,
+    offsetY: null
+  };
+
+  // Apply default values.
+  this._applySettings(this._allSettings, allAnimations);
+
+  let animationData = allAnimations.get(id);
+
+  this._applySettings(animationData, allAnimations);
+
   this.currentFrame = this.frames[0];
-  this.loops = animationData.loops;
-  // Type of animation. Can be used for checking.
-  this.type = animationData.type;
+  this._processQueueIndex();
+  this._processTimings();
 
-  // Optional settings.
-  // Name of animation that comes after current animation. If cancelIndex is defined, then followUp will trigger at the index.
-  this.followUp = animationData.followUp === undefined ? null : animationData.followUp;
+  // Error checking.
+  if([this.frames, this.loops, this.type].includes(undefined)){
+    console.error(`animation is missing required settings. animation: ${id}`)
+  };
+};
 
-  // Index of first frame where player can input for followUp.
-  this.queueIndex = animationData.queueIndex === undefined ? "d" : animationData.queueIndex;
+Animation.prototype._applySettings = function(animationData, allAnimations){
+  // If the animationData references a template, apply those settings first.
+  if(animationData["template"] !== undefined){
+    let template = animationData["template"];
+    this._applySettings(allAnimations.get("TEMPLATES")[template], allAnimations); // hard coded here but whatever.
+  };
 
-  // Default behaviour is that queue frame will be nth index to the left on the last index.
+  for(const [setting, value] of Object.entries(animationData)){
+    if(["spriteSheet", "id"].includes(setting)){continue};
+    this[setting] = animationData[setting];
+  };
+};
+
+// Default behaviour is queued frame will start from the nth index to the left on the last index.
+Animation.prototype._processQueueIndex = function(){
   if(["default", "d"].includes(this.queueIndex)){
     let n = 2;
     if(this.frames.length < n){
       this.queueIndex = 0;
     } else this.queueIndex = this.frames.length - n;
   };
+};
 
-  // Number of game refreshes it takes to reach the next animation frame.
-  // Can be an integer (which makes all frames have the same timing)
-  // Or an array of integers (so each frame can have its own unique timing)
-  this.timings = animationData.timings === undefined ? this._defaultTiming : animationData.timings;
+// this.timings can be an integer (which makes all frames have the same timing)
+// Or an array of integers (so each frame can have its own unique timing)
+Animation.prototype._processTimings = function(){
   if(this.timings.constructor === Array){
     // Error checking.
     if(this.timings.length != this.frames.length){
@@ -1131,35 +1174,6 @@ function Animation(id, spriteSheet, animationData){
       };
     };
   } else if(this.timings === "d"){this.timings = this._defaultTiming};
-
-  // An array of rectangle dimensions and locations tied to frames.
-  this.hitBoxes = animationData.hitBoxes === undefined ? null : animationData.hitBoxes;
-
-  // If there are movements tied to the animation, use this to set the speed for the frame(s) (without direction!)
-  // can be a number or an array.
-  this.speed = animationData.speed === undefined ? null : animationData.speed;
-
-  // If exists, dictates what frame to cancel the animation at if applicable.
-  this.cancelIndex = animationData.cancelIndex === undefined ? null: animationData.cancelIndex;
-
-  // Similar to followUp but will only trigger once the animation completes
-  this.return = animationData.return === undefined ? null: animationData.return;
-
-  // An array of "effect" animations. These are names of animations that are added ontop of the existing animation.
-  // Each frame of an effect animation should correspond to a frame in the main animation.
-  this.effects = animationData.effects === undefined ? []: animationData.effects;
-
-  if(this.type === "effect"){
-    this.offsetX = animationData.offsetX === undefined ? 0: animationData.offsetX;
-    this.offsetY = animationData.offsetY === undefined ? 0: animationData.offsetY;
-  };
-
-  // An array of integers that represents the magnitude of the velocity vector
-  // for applicable frames. Direction of velocity will be determined dynamically elsewhere.
-  // In other words, for a given x, if this.velocity[x] != undefined. then
-  // the associated entity will move by x for every frame that this.frames[x] is active.
-  this.velocity = animationData.velocity === undefined ? null: animationData.velocity;
-
 };
 
 /**
@@ -1168,6 +1182,24 @@ function Animation(id, spriteSheet, animationData){
 */
 function AnimationManager(parent){
   this.parent = parent; // Reference to the renderer.
+};
+
+AnimationManager.prototype.createAnimation = function(animationName){
+  let engine = this.parent.parent;
+  let allAnimations = engine.getLoadedAsset(engine.animKey);
+  let animationData = allAnimations.get(animationName);
+  let animTemplateKey = engine.animTemplateKey;
+  // Pulls spriteSheet from either the template or animationData object.
+  let a = animationData
+
+  while(a.spriteSheet === undefined){
+    if(a.spriteSheet === undefined && a.template !== undefined){
+      a = allAnimations.get(animTemplateKey)[a.template];
+    } else break;
+  };
+
+  spriteSheet = engine.renderer.getSheetFromId(a.spriteSheet);
+  return new Animation(animationName, spriteSheet, allAnimations);
 };
 
 AnimationManager.prototype.setFrame = function(animation, index){

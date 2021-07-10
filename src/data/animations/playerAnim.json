@@ -1,0 +1,202 @@
+{
+  "animations": {
+    "TEMPLATES": {
+      "player_idle": {
+        "spriteSheet": "player_idle",
+        "loops": true,
+        "type": "idle",
+        "timings": "d"},
+
+      "player_walk": {
+        "spriteSheet": "player_walk",
+        "loops": true,
+        "type": "walk",
+        "timings": "d"},
+
+      "player_dodge": {
+        "spriteSheet": "player_dodge",
+        "loops": false,
+        "type": "dodge",
+        "timings": 5},
+
+      "player_basic_attack1": {
+        "spriteSheet": "player_basic_attack1",
+        "loops": false,
+        "type": "attack",
+        "timings": 5,
+        "cancelIndex": 6,
+        "queueIndex": 3,
+        "velocity": [null, null, null, 2, null, null, null, null, null]},
+
+      "player_basic_attack2": {
+        "spriteSheet": "player_basic_attack2",
+        "loops": false,
+        "type": "attack",
+        "timings": 5,
+        "cancelIndex": 3,
+        "queueIndex": 1,
+        "velocity": [3, null, null, null, null, null, null]},
+
+      "player_basic_attack3": {
+        "spriteSheet": "player_basic_attack3",
+        "loops": false,
+        "type": "attack",
+        "timings": 5,
+        "velocity": [null, 1, 2, 3, null, null, null]},
+
+      "player_basic_attack_return": {
+        "spriteSheet": "player_basic_attack_return",
+        "loops": false,
+        "type": "return",
+        "timings": 5}
+    },
+
+    "player_idle_front": {
+      "template": "player_idle",
+      "frames": [[0,0], [1,0], [2,0], [3,0], [4,0], [5,0], [6,0], [7,0]]},
+
+    "player_idle_back": {
+      "template": "player_idle",
+      "frames": [[0,1], [1,1], [2,1], [3,1], [4,1], [5,1], [6,1], [7,1]]},
+
+    "player_idle_left": {
+      "template": "player_idle",
+      "frames": [[0,2], [1,2], [2,2], [3,2], [4,2], [5,2], [6,2], [7,2]]},
+
+    "player_idle_right": {
+      "template": "player_idle",
+      "frames": [[0,3], [1,3], [2,3], [3,3], [4,3], [5,3], [6,3], [7,3]]},
+
+    "player_walk_front": {
+      "template": "player_walk",
+      "frames": [[0,0], [1,0], [2,0], [3,0], [4,0], [5,0], [6,0], [7,0]]},
+
+    "player_walk_back": {
+      "template": "player_walk",
+      "frames": [[0,1], [1,1], [2,1], [3,1], [4,1], [5,1], [6,1], [7,1]]},
+
+    "player_walk_left": {
+      "template": "player_walk",
+      "frames": [[0,2], [1,2], [2,2], [3,2], [4,2], [5,2], [6,2], [7,2]]},
+
+    "player_walk_right": {
+      "template": "player_walk",
+      "frames": [[0,3], [1,3], [2,3], [3,3], [4,3], [5,3], [6,3], [7,3]]},
+
+    "player_dodge_front": {
+      "template": "player_dodge",
+      "frames": [[0,0], [1,0], [2,0], [3,0], [4,0], [5,0], [6,0]]},
+
+    "player_dodge_back": {
+      "template": "player_dodge",
+      "frames": [[0,1], [1,1], [2,1], [3,1], [4,1], [5,1], [6,1]]},
+
+    "player_dodge_left": {
+      "template": "player_dodge",
+      "frames": [[0,2], [1,2], [2,2], [3,2], [4,2], [5,2], [6,2]]},
+
+    "player_dodge_right": {
+      "template": "player_dodge",
+      "frames": [[0,3], [1,3], [2,3], [3,3], [4,3], [5,3], [6,3]]},
+
+    "player_basic_attack1_front": {
+      "template": "player_basic_attack1",
+      "frames": [[0,0], [1,0], [2,0], [3,0], [4,0], [5,0], [6,0], [7,0], [8,0]],
+      "effects": ["iron_basic_attack1_front"],
+      "followUp": "player_basic_attack2_front",
+      "return": "player_basic_attack_return_front"},
+
+    "player_basic_attack1_back": {
+      "template": "player_basic_attack1",
+      "frames": [[0,1], [1,1], [2,1], [3,1], [4,1], [5,1], [6,1], [7,1], [8,1]],
+      "effects": ["iron_basic_attack1_back"],
+      "followUp": "player_basic_attack2_back",
+      "return": "player_basic_attack_return_back"},
+
+    "player_basic_attack1_left": {
+      "template": "player_basic_attack1",
+      "frames": [[0,2], [1,2], [2,2], [3,2], [4,2], [5,2], [6,2], [7,2], [8,2]],
+      "effects": ["iron_basic_attack1_left"],
+      "followUp": "player_basic_attack2_left",
+      "return": "player_basic_attack_return_left"},
+
+    "player_basic_attack1_right": {
+      "template": "player_basic_attack1",
+      "frames": [[0,3], [1,3], [2,3], [3,3], [4,3], [5,3], [6,3], [7,3], [8,3]],
+      "effects": ["iron_basic_attack1_right"],
+      "followUp": "player_basic_attack2_right",
+      "return": "player_basic_attack_return_right"},
+
+    "player_basic_attack2_front": {
+      "template": "player_basic_attack2",
+      "frames": [[0,0], [1,0], [2,0], [3,0], [4,0], [5,0], [6,0]],
+      "effects": ["iron_basic_attack2_front"],
+      "followUp": "player_basic_attack3_front",
+      "return": "player_basic_attack_return_front"},
+
+    "player_basic_attack2_back": {
+      "template": "player_basic_attack2",
+      "frames": [[0,1], [1,1], [2,1], [3,1], [4,1], [5,1], [6,1]],
+      "effects": ["iron_basic_attack2_back"],
+      "followUp": "player_basic_attack3_back",
+      "return": "player_basic_attack_return_back"},
+
+    "player_basic_attack2_left": {
+      "template": "player_basic_attack2",
+      "frames": [[0,2], [1,2], [2,2], [3,2], [4,2], [5,2], [6,2]],
+      "effects": ["iron_basic_attack2_left"],
+      "followUp": "player_basic_attack3_left",
+      "return": "player_basic_attack_return_left"},
+
+    "player_basic_attack2_right": {
+      "template": "player_basic_attack2",
+      "frames": [[0,3], [1,3], [2,3], [3,3], [4,3], [5,3], [6,3]],
+      "effects": ["iron_basic_attack2_right"],
+      "followUp": "player_basic_attack3_right",
+      "return": "player_basic_attack_return_right"},
+
+    "player_basic_attack3_front": {
+      "template": "player_basic_attack3",
+      "frames": [[0,0], [1,0], [2,0], [3,0], [4,0], [5,0], [6,0]],
+      "effects": ["iron_basic_attack3_front"],
+      "return": "player_basic_attack_return_front"},
+
+    "player_basic_attack3_back": {
+      "template": "player_basic_attack3",
+      "frames": [[0,1], [1,1], [2,1], [3,1], [4,1], [5,1], [6,1]],
+      "effects": ["iron_basic_attack3_back"],
+      "return": "player_basic_attack_return_back"},
+
+    "player_basic_attack3_left": {
+      "template": "player_basic_attack3",
+      "frames": [[0,2], [1,2], [2,2], [3,2], [4,2], [5,2], [6,2]],
+      "effects": ["iron_basic_attack3_left"],
+      "return": "player_basic_attack_return_left"},
+
+    "player_basic_attack3_right": {
+      "template": "player_basic_attack3",
+      "frames": [[0,3], [1,3], [2,3], [3,3], [4,3], [5,3], [6,3]],
+      "effects": ["iron_basic_attack3_right"],
+      "return": "player_basic_attack_return_right"},
+
+    "player_basic_attack_return_front": {
+      "template": "player_basic_attack_return",
+      "frames": [[0,0], [1,0], [2,0], [3,0]],
+      "effects": ["iron_basic_attack_return_front"]},
+
+    "player_basic_attack_return_back": {
+      "template": "player_basic_attack_return",
+      "frames": [[0,1], [1,1], [2,1], [3,1]],
+      "effects": ["iron_basic_attack_return_back"]},
+
+    "player_basic_attack_return_left": {
+      "template": "player_basic_attack_return",
+      "frames": [[0,2], [1,2], [2,2], [3,2]],
+      "effects": ["iron_basic_attack_return_left"]},
+
+    "player_basic_attack_return_right": {
+      "template": "player_basic_attack_return",
+      "frames": [[0,3], [1,3], [2,3], [3,3]],
+      "effects": ["iron_basic_attack_return_right"]}
+    }
+}

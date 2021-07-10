@@ -41,7 +41,7 @@ def _get_pretty_tile_data(level_name: str, file: dict, indent: int) -> str:
     """Return a string representation of a level's tileData in a
     more readable format.
     """
-    level_data = file["levelData"][level_name]
+    level_data = file[cfg.LEVEL_KEY][level_name]
     width = level_data["width"]
     height = level_data["height"]
     tile_data = level_data["tileData"]
@@ -70,13 +70,13 @@ def write_level_json(filename: str, file: dict):
     pretty_string = json.dumps(file, ensure_ascii=False, indent=INDENTATION)
 
     # prettify how arrays are displayed.
-    for level_name in list(file["levelData"].keys()):
+    for level_name in list(file[cfg.LEVEL_KEY].keys()):
         file_pattern = re.compile(f'"{level_name}"' + r':[^\]]*]')
         level_match = file_pattern.search(pretty_string).group()
         array_pattern = re.compile(r'"tileData": \[[^\]]*]', re.S)
 
-        array_width = int(file["levelData"][level_name]["width"])
-        array_height = int(file["levelData"][level_name]["height"])
+        array_width = int(file[cfg.LEVEL_KEY][level_name]["width"])
+        array_height = int(file[cfg.LEVEL_KEY][level_name]["height"])
 
         tile_data = array_pattern.search(level_match).group()
         pretty_tile_data = _get_pretty_tile_data(level_name, file, INDENTATION)

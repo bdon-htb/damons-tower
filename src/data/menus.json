@@ -1,8 +1,8 @@
 {
-  "menuData": {
-    "debugMenu": "test_m1.xml",
-    "mainMenu": "mainMenu.xml",
-    "settingsMenu": "settingsMenu.xml",
-    "creditsMenu": "creditsMenu.xml"
-  }
+  "menuFiles": [
+    "test_m1.xml",
+    "mainMenu.xml",
+    "settingsMenu.xml",
+    "creditsMenu.xml"
+  ]
 }

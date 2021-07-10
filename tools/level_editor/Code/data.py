@@ -9,7 +9,7 @@ from . import cfg
 class LevelData:
     def __init__(self, file: dict):
         self.levelJson = file
-        self.currentLevel = list(file["levelData"].keys())[0] # This is the name of the first level in dictionary.
+        self.currentLevel = list(file[cfg.LEVEL_KEY].keys())[0] # This is the name of the first level in dictionary.
 
     def _getDefaultName(self, levelName: Optional[str]) -> str:
         """Return self.currentLevel if levelName is None otherwise
@@ -67,12 +67,12 @@ class LevelData:
         set level.
         """
         levelName = self._getDefaultName(levelName)
-        return self.levelJson["levelData"][levelName]
+        return self.levelJson[cfg.LEVEL_KEY][levelName]
 
     def getLevelNames(self) -> Tuple[str]:
         """Return the names of all levels in the file.
         """
-        return tuple(self.levelJson["levelData"].keys())
+        return tuple(self.levelJson[cfg.LEVEL_KEY].keys())
 
     def getSpriteURL(self, levelName=None) -> str:
         """Return the url of the specified level's spritesheet

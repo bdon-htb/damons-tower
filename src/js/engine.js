@@ -23,13 +23,17 @@ function Engine(htmlDOM){
   this.assets = new Map();
   // Key in this.assets that contains maps of image urls.
   this.imageKey = "images";
-  // contains maps of animation data.
-  this.animKey = "animationData";
-  // contains urls to menu data.
-  this.levelKey = "levelData";
-  // contains the urls to all the game's menus.
-  this.menuDataKey = "menuData";
-  // contains menu objects of the game's menus.
+  // An array containing all animation filenames.
+  this.animFilesKey = "animationFiles";
+  // map containing aLL animation data (but not animation objects).
+  this.animKey = "animations";
+  // key for accessing animation templates within the animations file.
+  this.animTemplateKey = "TEMPLATES";
+  // contains level data.
+  this.levelKey = "levels";
+  // An array containing all menu filenames.
+  this.menuFilesKey = "menuFiles";
+  // map containing menu objects of all the game's menus.
   this.menuKey = "menus";
   // contains the names of all the game's custom fonts.
   this.fontsKey = "fonts";
@@ -42,6 +46,7 @@ function Engine(htmlDOM){
   this.dataLocation = "data";
   this.imgLocation = "img";
   this.menuLocation = this.dataLocation + "/" + "menus";
+  this.animLocation = this.dataLocation + "/" + "animations";
   this.fontLocation = "fonts";
 
   this.frameData = {
@@ -54,15 +59,17 @@ function Engine(htmlDOM){
   // Array of all the engine's states.
   let allStates = [
     "starting",
-    "running",
     "loading assets",
     "assets loaded",
-    "loading menus",
-    "menus loaded",
     "loading textures",
     "textures loaded",
     "loading fonts",
     "fonts loaded",
+    "loading menus",
+    "menus loaded",
+    "loading animations",
+    "animations loaded",
+    "running"
   ];
 
   // Create components.
@@ -126,23 +133,20 @@ Engine.prototype.loadStandaloneAssets = function(){
   return Promise.all(promises);
 };
 
-Engine.prototype.loadAllMenus = function(){
-  if(this.assetIsLoaded(this.menuDataKey) === false){console.error(`Cannot load menus. ${this.menuDataKey} does not exist in assets.`)};
-
-  let menuFiles = this.assets.get(this.menuDataKey);
+Engine.prototype.loadAllFromList = function(filesList, fileLocation){
   let promises = [];
-  for(let [id, filename] of menuFiles){
-    promises.push(this.assetLoader.getAsset(this.menuLocation + "/" + filename));
-  };
+  filesList.forEach(f => promises.push(this.assetLoader.getAsset(fileLocation + "/" + f)))
   return Promise.all(promises);
 };
 
-Engine.prototype.allMenusLoaded = function(){
-  let menuURLS = this.assets.get(this.menuDataKey);
-  let menus = this.assets.get(this.menuKey);
-  if(menus === undefined || menuURLS === undefined){
-    return false;
-  } else return menus.size === menuURLS.size;
+Engine.prototype.loadAllMenus = function(){
+  let menuFiles = this.getLoadedAsset(this.menuFilesKey);
+  return this.loadAllFromList(menuFiles, this.menuLocation);
+};
+
+Engine.prototype.loadAllAnimations = function(){
+  let animFiles = this.getLoadedAsset(this.animFilesKey);
+  return this.loadAllFromList(animFiles, this.animLocation);
 };
 
 Engine.prototype.loadAllFonts = function(callback){
@@ -150,15 +154,15 @@ Engine.prototype.loadAllFonts = function(callback){
   this.renderer.loadBitmapFonts(allFonts, callback);
 };
 
-// ==========================
-// Renderer specific methods.
-// ==========================
-
 Engine.prototype.loadAllTextures = function(callback){
   let imageMap = this.getLoadedAsset(this.imageKey);
   let imageArray = Array.from(imageMap.values());
   this.renderer.loadTextures(imageMap, callback);
 };
+
+// ==========================
+// Renderer specific methods.
+// ==========================
 
 // Get the image information from its id in assets.
 Engine.prototype.getImage = function(id){
@@ -230,6 +234,21 @@ Engine.prototype.getXMLAttributes = function(tag){
     map.set(a.name, a.value);
   };
   return map;
+};
+
+Engine.prototype.mapifyObject = function(obj){
+  let map = new Map()
+  for(const [id, value] of Object.entries(obj)){
+    map.set(id, value);
+  };
+  return map;
+};
+
+// merges the contents of map2 into map1.
+Engine.prototype.mergeMaps = function(map1, map2){
+  for(const [key, value] of map2.entries()){
+    map1.set(key, value);
+  };
 };
 
 // Converts string input like "[1, 2, 3]" or  "1, 2, 3" to ["1", "2", "3"]
@@ -374,11 +393,18 @@ Engine.prototype._runLoadingStates = function(){
   else if(state === "fonts loaded"){
     this.stateMachine.changeState("loading menus");
     this.loadAllMenus()
-    .then(() => {this.stateMachine.changeState("menus loaded")});
+    .then(() => this.stateMachine.changeState("menus loaded"));
   }
 
-  // menus loaded -> running
+  // menus loaded -> animations loaded
   else if(state === "menus loaded"){
+    this.stateMachine.changeState("loading animations");
+    this.loadAllAnimations()
+    .then(() => this.stateMachine.changeState("animations loaded"));
+  }
+
+  // animations loaded -> running
+  else if(state === "animations loaded"){
     this._startGame();
   };
 };
@@ -438,18 +464,22 @@ AssetLoader.prototype.getAsset = function(url){
 };
 
 AssetLoader.prototype.loadJson = function(req){
+  let engine = this.parent;
   let data = req.target.response;
   let jsonKeys = Object.keys(data);
+
+  if(jsonKeys[0] === engine.animKey){
+    this.loadAnimation(data);
+    return;
+  };
+
   jsonKeys.forEach((key) => {
     // If the value is an array just set it as an array.
     if(data[key].constructor === Array){
       this.parent.assets.set(key, data[key])
     } // Otherwise create a map out of the data.
     else {
-      let assetMap = new Map();
-      for(const [id, value] of Object.entries(data[key])){
-        assetMap.set(id, value);
-      };
+      let assetMap = engine.mapifyObject(data[key]);
       this.parent.assets.set(key, assetMap);
     };
   });
@@ -477,13 +507,40 @@ AssetLoader.prototype.loadXML = function(req){
 // data is XMLDocument type
 AssetLoader.prototype.loadMenu = function(data){
   let engine = this.parent;
-  // let menu = new Menu(this.parent, data);
-  let menu = engine.guiManager.createMenuFromData(data);
   let menuKey = engine.menuKey;
+
+  // If first time loading menu, create the initial map.
+  let menu = engine.guiManager.createMenuFromData(data);
   if(engine.assets.has(menuKey) === false){
-    engine.assets.set(menuKey, new Map()); // If first time loading menu, create the initial map.
+    engine.assets.set(menuKey, new Map());
   };
   engine.assets.get(menuKey).set(menu.name, menu);
+};
+
+AssetLoader.prototype.loadAnimation = function(data){
+  let engine = this.parent;
+  let animKey = engine.animKey;
+  let templateKey = engine.animTemplateKey;
+
+  // If first time loading animation, create the initial map.
+  if(engine.assets.has(animKey) === false){
+    let m = new Map();
+    m.set("TEMPLATES", {});
+    engine.assets.set(animKey, m);
+  };
+
+  let currentAnims = engine.getLoadedAsset(animKey);
+  let currentTemplates = currentAnims.get(templateKey);
+
+  // Add new templates tp what we have.
+  Object.assign(currentTemplates, data[animKey][templateKey]);
+
+  // Remove reference from templates because we've assigned already.
+  delete data[animKey][templateKey];
+
+  // Add new animations to what we have.
+  let newAnims = engine.mapifyObject(data[animKey]);
+  engine.mergeMaps(currentAnims, newAnims);
 };
 
 /**

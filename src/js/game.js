@@ -93,9 +93,10 @@ Game.prototype.update = function(){
       // Update player graphic.
       // TODO: Make more elaborate and applicable to theoretically any entity.
       player.attributes["sprite"] = this.animationManager.getSprite(player.attributes["currentAnimation"]);
-      this.animationManager.nextFrame(player.attributes["currentAnimation"]);
-      if(player.attributes["currentAnimation"].effects.length > 0){
-        for(const effect of player.attributes["currentAnimation"].effects){
+      let currentAnimation = player.attributes["currentAnimation"];
+      this.animationManager.nextFrame(currentAnimation);
+      if(currentAnimation.effects.length > 0){
+        for(const effect of currentAnimation.effects){
           effectAnim = player.attributes["animations"].get(effect);
           this.animationManager.nextFrame(effectAnim);
         };
@@ -144,7 +145,7 @@ Game.prototype.draw = function(){
         };
       };
 
-      // this._drawEntityColliders(player, level);
+      this._drawEntityColliders(player, level);
       // renderer.drawRect(0xff0000, playerCenter[0], playerCenter[1], 4, 4);
       // renderer.drawRect(0xff0000, playerCenter[0] - (16 * this.engine.spriteScale), playerCenter[1] - (16 * this.engine.spriteScale), 4, 4);
       // renderer.drawRect(0xff0000, playerCenter[0] + (16 * this.engine.spriteScale), playerCenter[1] + (16 * this.engine.spriteScale), 4, 4);
@@ -165,10 +166,18 @@ Game.prototype._drawEntityColliders = function(entity, scene){
     entity.attributes["wallCollider"]
   ];
 
+  let currentAnimation = entity.attributes["currentAnimation"];
+  if(currentAnimation.active === true && currentAnimation.hitBoxes !== null && currentAnimation.hitBoxes[currentAnimation.frameIndex] !== undefined){
+    for(let rectData of Object.values(currentAnimation.hitBoxes[currentAnimation.frameIndex])){
+      colliders.push(new Rect([rectData[0], rectData[1]], rectData[2], rectData[3]));
+    };
+  };
+
   let x;
   let y;
   let scaledPos;
   for(const c of colliders){
+    // TODO: Scaling only works for default resolution right now. Change that.
     switch(c.constructor){
       case Circle:
         x = entityTopLeft[0] + c.center[0];
@@ -176,6 +185,13 @@ Game.prototype._drawEntityColliders = function(entity, scene){
         scaledPos = this.engine.getSpriteScaledPosition(x, y);
         scaledPos = camera.getRelative(scaledPos[0], scaledPos[1]);
         renderer.drawCircle(0xff0000, scaledPos[0], scaledPos[1], c.radius * this.engine.spriteScale);
+        break;
+      case Rect:
+        x = entityTopLeft[0] + c.topLeft[0];
+        y = entityTopLeft[1] + c.topLeft[1];
+        scaledPos = this.engine.getSpriteScaledPosition(x, y);
+        scaledPos = camera.getRelative(scaledPos[0], scaledPos[1]);
+        renderer.drawRect(0xff0000, scaledPos[0], scaledPos[1], c.width * this.engine.spriteScale, c.height * this.engine.spriteScale);
         break;
     };
   };
@@ -587,8 +603,6 @@ Game.prototype._handlePlayerAttack = function(scene, player, commands){
     // Start basic attack.
     else if(playerState != "attacking"){
       let directionArray = this._calculatePlayerAttackDirection(scene, player);
-      player.attributes["state"] = "attacking";
-      playerState = player.attributes["state"];
       player.attributes["direction"] = directionArray[0];
       player.attributes["attackVector"] = directionArray[1];
 
@@ -601,6 +615,9 @@ Game.prototype._handlePlayerAttack = function(scene, player, commands){
       };
       this._changeEntityAnimation(player, currentAnimation, animMap[direction]);
       currentAnimation = player.attributes["currentAnimation"];
+
+      player.attributes["state"] = "attacking";
+      playerState = player.attributes["state"];
     };
   }
   // If we're at the end of an attack with a followUp, and there is an input queued,

@@ -125,7 +125,8 @@
       "frames": [[0,3], [1,3], [2,3], [3,3], [4,3], [5,3], [6,3], [7,3], [8,3]],
       "effects": ["iron_basic_attack1_right"],
       "followUp": "player_basic_attack2_right",
-      "return": "player_basic_attack_return_right"},
+      "return": "player_basic_attack_return_right",
+      "hitBoxes": {"4": [[27, -5, 26, 40]]} },
 
     "player_basic_attack2_front": {
       "template": "player_basic_attack2",
@@ -153,7 +154,8 @@
       "frames": [[0,3], [1,3], [2,3], [3,3], [4,3], [5,3], [6,3]],
       "effects": ["iron_basic_attack2_right"],
       "followUp": "player_basic_attack3_right",
-      "return": "player_basic_attack_return_right"},
+      "return": "player_basic_attack_return_right",
+      "hitBoxes": {"0": [[27, -5, 26, 40]]} },
 
     "player_basic_attack3_front": {
       "template": "player_basic_attack3",
@@ -177,7 +179,8 @@
       "template": "player_basic_attack3",
       "frames": [[0,3], [1,3], [2,3], [3,3], [4,3], [5,3], [6,3]],
       "effects": ["iron_basic_attack3_right"],
-      "return": "player_basic_attack_return_right"},
+      "return": "player_basic_attack_return_right",
+      "hitBoxes": {"4": [[27, -5, 26, 40]]} },
 
     "player_basic_attack_return_front": {
       "template": "player_basic_attack_return",

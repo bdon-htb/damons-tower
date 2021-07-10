@@ -1,22 +1,11 @@
 /*
  * physics.js is where all the game physics and some other math related calculations go.
- * all game physics should account for the framerate.
 */
 
 function PhysicsManager(engine){
   this.engine = engine; // Keep a persistant reference to the engine.
   this.FPS = engine.FPS;
 };
-
-/*
-PhysicsManager.prototype.calculateVelocity = function(velocity){
-  return velocity;
-  if(this.engine.frameData["fps"] === 0){
-    console.warn("fps detected as 0.")
-    return velocity;
-  } return Math.round(velocity * (1/this.engine.frameData["fps"]) * this.FPS);
-};
-*/
 
 // Checks the two most relevant line segments of the rect and
 // Returns an array in the format: [collisionPoint, surfaceVector] if there's

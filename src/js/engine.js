@@ -466,6 +466,13 @@ AssetLoader.prototype.getAsset = function(url){
 AssetLoader.prototype.loadJson = function(req){
   let engine = this.parent;
   let data = req.target.response;
+
+  // Error handling.
+  if(data === null){
+    try {a = JSON.parse(req)}
+    catch(e){console.error(`Error loading .json file! file: ${req.target.responseURL}. error: ${e}`)}
+  };
+
   let jsonKeys = Object.keys(data);
 
   if(jsonKeys[0] === engine.animKey){

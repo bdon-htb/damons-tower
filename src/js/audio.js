@@ -8,36 +8,49 @@
 */
 function AudioManager(parent){
   this.parent = parent;
-  this.songs = new Map();
+  this.bgm = new Map(); // Map containing all bgm names and their audio objects.
+  this.sfx = new Map(); // Map containing all sfx names and their audio objects.
+  this.activeSong = null;
   this.songStack = [] // Keeps track of songs in order.
 };
 
-// load songs into this.songs
-// songs is an array of audio urls.
-AudioManager.prototype.loadSound = function(sound){};
+AudioManager.prototype.loadAudio = function(name, url, type){
+  return new Promise((resolve, reject) => {
+    let audio = new Audio(url);
+    audio.oncanplaythrough = resolve;
+    audio.onerror = reject;
+
+    if(type === "bgm"){this.bgm.set(name, audio)}
+    else if(type === "sfx"){this.sfx.set(name, audio)}
+    else console.error(`type ${type} is an invalid audio type!`);
+  });
+};
 
 
-// Play single sound
-// possible to continue paused songs, or start song from
-// the beginning.
-// new songs should be added to stack
-AudioManager.prototype.playSound = function(){};
+AudioManager.prototype.playSound = function(name){
+  this.sfx.get(name).play();
+};
 
 // Play a song
 // would ideally contain options
-AudioManager.prototype.playSong = function(){};
+AudioManager.prototype.playSong = function(name, loop=false){
+  let newSong = this.bgm.get(name);
+
+  if(this.activeSong !== null){
+    this.activeSong.stop();
+    this.activeSong = null;
+  };
+
+  newSong.loop = loop;
+  newSong.play();
+  this.activeSong = newSong;
+};
 
 // Stops song / sound
-AudioManager.prototype.stop = function(){};
+AudioManager.prototype.stop = function(name){};
 
 // Pauses song.
 AudioManager.prototype.pause = function(){}
 
 // pop song from stack.
 AudioManager.prototype.pop = function(){}
-
-function Song(url){
-  this.audio = new Audio(url);
-  this.duration = 0;
-  this.paused = false;
-};

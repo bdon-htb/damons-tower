@@ -11,6 +11,7 @@
         <label text="CREDITS"></label>
         <label text="Created by: Brandon Phillips"></label>
         <label text="Additional Programming: Julien Ouellette"></label>
+        <label text="Music: Jeremiah George"></label>
         <button text="Back" callback="goToPreviousState"></button>
       </list>
   </menu>

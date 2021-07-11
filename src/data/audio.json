@@ -1,0 +1,11 @@
+{
+  "audioFiles": {
+    "bgm": {
+      "dungeon1": "Elusion.mp3"
+    },
+
+    "sfx": {
+      "woosh1": "mixkit-dagger-woosh-1487.wav"
+    }
+  }
+}

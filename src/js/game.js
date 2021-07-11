@@ -12,6 +12,7 @@ function Game(engine){
   this.renderer = engine.renderer;
   this.animationManager = this.renderer.animationManager;
   this.timerManager = engine.timerManager;
+  this.audioManager = engine.audioManager;
 
   this.debugModeOn = true;
   this.debugMenu = null;
@@ -269,6 +270,7 @@ Game.prototype._loadLevel = function(levelData){
   let level = new Scene(levelSpriteSheet, levelData);
   level.camera.setup(0, 0, this.engine.windowWidth, this.engine.windowHeight, this.engine.spriteScale);
   this.gameStateObject["scene"] = level;
+  this.audioManager.playSong("dungeon1", true);
 };
 
 Game.prototype._loadTestLevel = function(){

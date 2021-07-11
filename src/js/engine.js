@@ -42,12 +42,22 @@ function Engine(htmlDOM){
   // contains data for drawing custom gui objects based on a spritesheet.
   this.guiConfigKey = "guiCustomStyle";
 
+  // contains the locations of song and sound files.
+  this.audioFilesKey = "audioFiles";
+  // contains song ingame names and their corresponding filenames.
+  this.songsKey = "bgm";
+  // contains sounds ingame names and their corresponding filenames.
+  this.soundsKey = "sfx";
+
   // AssetLoader variables.
   this.dataLocation = "data";
   this.imgLocation = "img";
   this.menuLocation = this.dataLocation + "/" + "menus";
   this.animLocation = this.dataLocation + "/" + "animations";
   this.fontLocation = "fonts";
+  this.audioLocation = this.dataLocation +  "/" + "audio";
+  this.songsLocation = this.audioLocation + "/" + "bgm";
+  this.soundsLocation = this.audioLocation + "/" + "sfx";
 
   this.frameData = {
     "timeStamp": null,
@@ -69,6 +79,8 @@ function Engine(htmlDOM){
     "menus loaded",
     "loading animations",
     "animations loaded",
+    "loading audio",
+    "audio loaded",
     "running"
   ];
 
@@ -124,6 +136,7 @@ Engine.prototype.loadStandaloneAssets = function(){
     "inputs.json", // input commands / patterns.
     "guiCustomStyle.json", // custom gui specifications.
     "levels.json", // level data (currently only the single test level).
+    "audio.json"
   ]
 
   let promises = [];
@@ -147,6 +160,27 @@ Engine.prototype.loadAllMenus = function(){
 Engine.prototype.loadAllAnimations = function(){
   let animFiles = this.getLoadedAsset(this.animFilesKey);
   return this.loadAllFromList(animFiles, this.animLocation);
+};
+
+
+Engine.prototype.loadAllAudio = function(){
+  let allAudioFiles = this.getLoadedAsset(this.audioFilesKey);
+  let allSongs = allAudioFiles.get(this.songsKey);
+  let allSounds = allAudioFiles.get(this.soundsKey);
+  let promises = [];
+
+  let url;
+  for(const [name, filename] of Object.entries(allSongs)){
+    url = this.songsLocation + "/" + filename;
+    promises.push(this.audioManager.loadAudio(name, url, "bgm"));
+  };
+
+  for(const [name, filename] of Object.entries(allSounds)){
+    url = this.soundsLocation + "/" + filename;
+    promises.push(this.audioManager.loadAudio(name, url, "sfx"));
+  };
+
+  return Promise.all(promises);
 };
 
 Engine.prototype.loadAllFonts = function(callback){
@@ -403,8 +437,14 @@ Engine.prototype._runLoadingStates = function(){
     .then(() => this.stateMachine.changeState("animations loaded"));
   }
 
-  // animations loaded -> running
   else if(state === "animations loaded"){
+    this.stateMachine.changeState("loading audio");
+    this.loadAllAudio()
+    .then(() => this.stateMachine.changeState("audio loaded"))
+  }
+
+  // animations loaded -> running
+  else if(state === "audio loaded"){
     this._startGame();
   };
 };
@@ -475,21 +515,25 @@ AssetLoader.prototype.loadJson = function(req){
 
   let jsonKeys = Object.keys(data);
 
-  if(jsonKeys[0] === engine.animKey){
-    this.loadAnimation(data);
-    return;
+  // Check for certain .json files to see if they
+  // need to be loaded in a specific way.
+  switch (jsonKeys[0]) {
+    case engine.animKey:
+      this.loadAnimation(data);
+      break;
+    default:
+      jsonKeys.forEach((key) => {
+        // If the value is an array just set it as an array.
+        if(data[key].constructor === Array){
+          this.parent.assets.set(key, data[key])
+        } // Otherwise create a map out of the data.
+        else {
+          let assetMap = engine.mapifyObject(data[key]);
+          this.parent.assets.set(key, assetMap);
+        };
+      });
   };
 
-  jsonKeys.forEach((key) => {
-    // If the value is an array just set it as an array.
-    if(data[key].constructor === Array){
-      this.parent.assets.set(key, data[key])
-    } // Otherwise create a map out of the data.
-    else {
-      let assetMap = engine.mapifyObject(data[key]);
-      this.parent.assets.set(key, assetMap);
-    };
-  });
 };
 
 AssetLoader.prototype.loadXML = function(req){
@@ -524,6 +568,8 @@ AssetLoader.prototype.loadMenu = function(data){
   engine.assets.get(menuKey).set(menu.name, menu);
 };
 
+// Loads animation data from an animation file.
+// If animation data already exists, the new data is merged in.
 AssetLoader.prototype.loadAnimation = function(data){
   let engine = this.parent;
   let animKey = engine.animKey;

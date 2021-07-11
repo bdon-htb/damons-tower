@@ -169,7 +169,7 @@ Game.prototype._drawEntityColliders = function(entity, scene){
   let currentAnimation = entity.attributes["currentAnimation"];
   if(currentAnimation.active === true && currentAnimation.hitBoxes !== null && currentAnimation.hitBoxes[currentAnimation.frameIndex] !== undefined){
     for(let rectData of Object.values(currentAnimation.hitBoxes[currentAnimation.frameIndex])){
-      colliders.push(new Rect([rectData[0], rectData[1]], rectData[2], rectData[3]));
+      colliders.push(new Rect(rectData.topLeft, rectData.width, rectData.height));
     };
   };
 

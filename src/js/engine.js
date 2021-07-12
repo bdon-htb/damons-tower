@@ -92,6 +92,7 @@ function Engine(htmlDOM){
   this.timerManager = new TimerManager(this);
   this.guiManager = new GUIManager(this);
   this.audioManager = new AudioManager(this);
+  this.renderer.animationManager.audioManager = this.audioManager;
 
   this.app = new Game(this); // Create the game itself. Note that it must be created AFTER the components.
 

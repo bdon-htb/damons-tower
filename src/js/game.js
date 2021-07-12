@@ -83,7 +83,7 @@ Game.prototype.update = function(){
       let inputData = this.controller.getInputs(events, data);
       this.controller.addCommands(inputData); // Raw input data is added to command stack.
       this.controller.updatePatterns(inputData); // Check for complex command inputs.
-      this._updateLevel(scene);
+      this._updatePlayer(scene);
       let level = this.gameStateObject["scene"];
       let player = this.gameStateObject["scene"].getEntity("player");
       let camera = level.camera;
@@ -198,6 +198,7 @@ Game.prototype._drawEntityColliders = function(entity, scene){
   };
 
 };
+
 // ===============
 // Game callbacks + menu related methods.
 // ===============
@@ -292,11 +293,14 @@ Game.prototype._loadTestLevel = function(){
 // =======================
 // Gemeral update methods.
 // =======================
+// TODO: Make more elaborate.
+/*
 Game.prototype._updateLevel = function(scene){
   if(scene.entities.has("player") === true){
     this._updatePlayer(scene);
   };
 };
+*/
 
 // ===============================
 // gameStateObject update methods.
@@ -381,6 +385,12 @@ Game.prototype._handleCollision = function(x, y, dx, dy, scene){
 Game.prototype._resetEntityDisplacement = function(entity){
   entity.attributes["dx"] = 0;
   entity.attributes["dy"] = 0;
+};
+
+// Updates the sprite of an entity.
+// Currently assumes the entity is animated.
+Game.prototype._updateEntitySprite = function(entity){
+  entity.attributes["sprite"]
 };
 
 Game.prototype._changeEntityAnimation = function(entity, oldAnimation, newAnimation){

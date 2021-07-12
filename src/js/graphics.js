@@ -1112,7 +1112,8 @@ function Animation(id, spriteSheet, allAnimations){
     return: null, // Similar to followUp but will only trigger once the animation completes.
 
     velocity: null, // An array of integers telling the game how much to move (if applicable). Direction not included.
-    hitBoxes: null, // An array of rectangle dimensions and locations tied to frames.
+    hitBoxes: null, // An object containing frame indexes and their corresponding hitbox dimensions and positions.
+    sounds: null, // An object containing frame indexes and their corresponding sound name.
 
     effects: [],  // An array of names of corresponding effect animations.
     // For effects only. Tells the game where to position the effects relative to its host.
@@ -1182,6 +1183,7 @@ Animation.prototype._processTimings = function(){
 */
 function AnimationManager(parent){
   this.parent = parent; // Reference to the renderer.
+  this.audioManager; // This is set in engine.js where it's more convenient.
 };
 
 AnimationManager.prototype.createAnimation = function(animationName){
@@ -1211,6 +1213,14 @@ AnimationManager.prototype.setDefaultFrame = function(animation){
   this.setFrame(animation, 0);
 };
 
+AnimationManager.prototype._playSounds = function(animation){
+  // Check for sounds and play on change.
+  // The way this is setup, sounds on frame 0 will not play. Hopefully I don't need that...
+  if(animation.sounds !== null && animation.sounds[animation.frameIndex] !== undefined){
+    animation.sounds[animation.frameIndex].forEach(s => this.audioManager.playSound(s));
+  };
+};
+
 // Play this function every frame the animation is active.
 AnimationManager.prototype.nextFrame = function(animation){
   if(animation.active === false){return}; // Stop any incrementing if the animation is inactive.
@@ -1222,6 +1232,7 @@ AnimationManager.prototype.nextFrame = function(animation){
     // If there are still frames in the animation...
     if(animation.frameIndex + 1 < animation.frames.length){
       this.setFrame(animation, animation.frameIndex + 1); // Set to the next frame.
+      this._playSounds(animation);
     }
     // If the animation is complete and it DOESN'T loop
     else if(animation.loops === false){
@@ -1246,6 +1257,7 @@ AnimationManager.prototype.getSprite = function(animation){
 
 AnimationManager.prototype.activateAnimation = function(animation){
   animation.active = true;
+  this._playSounds(animation);
 };
 
 AnimationManager.prototype.deactivateAnimation = function(animation){

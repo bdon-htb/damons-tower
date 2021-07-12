@@ -225,6 +225,14 @@ Game.prototype._applySettings = function(){
       };
     };
 
+    let bgmVolume = this.engine.guiManager.getWidgetbyId(menu, "bgmVolume");
+    bgmVolume = this.engine.guiManager.getCurrentSelection(bgmVolume).text;
+    this.audioManager.setVolume(Number(bgmVolume.replace("%", '')) / 100, "bgm")
+
+    let sfxVolume = this.engine.guiManager.getWidgetbyId(menu, "sfxVolume");
+    sfxVolume = this.engine.guiManager.getCurrentSelection(sfxVolume).text;
+    this.audioManager.setVolume(Number(sfxVolume.replace("%", '')) / 100, "sfx")
+
   };
 };
 

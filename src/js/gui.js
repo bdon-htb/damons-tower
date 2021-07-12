@@ -150,7 +150,8 @@ GUIManager.prototype._createArrowSelect = function(frameTag){
   parentAttributes.delete("options");
   let optionsLoop = parentAttributes.has("optionsLoop") ? parentAttributes.get("optionsLoop") : "false";
   parentAttributes.delete("optionsLoop");
-  widget = new ArrowSelect(parentObj, options, optionsLoop);
+  let currentIndex = parentAttributes.has("currentIndex") ? Number(parentAttributes.get("currentIndex")) : 0;
+  widget = new ArrowSelect(parentObj, options, optionsLoop, currentIndex);
   if(optionsLoop === "false"){widget.leftBtn.state = "disabled"};
   return widget;
 };
@@ -527,9 +528,10 @@ function ImageWidget(guiObject, spriteScale){
   this.spriteScale = spriteScale;
 };
 
-function ArrowSelect(guiObject, options, optionsLoop){
+function ArrowSelect(guiObject, options, optionsLoop, currentIndex){
   Object.assign(this, guiObject);
-  this.currentIndex = 0; // Index of active option.
+  if(this.currentIndex < 0 || this.currentIndex > options.length){console.error(`Invalid currentIndex! object options: ${options}`)}
+  this.currentIndex = currentIndex; // Index of active option.
   this.options = options.map(e => new Label(guiObject, e));
   this.optionsLoop = optionsLoop;
   this.leftBtn = new Button(guiObject);

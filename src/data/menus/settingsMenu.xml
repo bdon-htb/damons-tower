@@ -15,6 +15,16 @@
           <arrowSelect id="gameResolution" options="[960x540, 1280x720, Fullscreen]"></arrowSelect>
         </list>
 
+        <list orientation="h">
+          <label text="BGM Volume:"></label>
+          <arrowSelect id="bgmVolume" options="[0%, 10%, 20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100%]" currentIndex="10"></arrowSelect>
+        </list>
+
+        <list orientation="h">
+          <label text="SFX Volume:"></label>
+          <arrowSelect id="sfxVolume" options="[0%, 10%, 20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100%]" currentIndex="10"></arrowSelect>
+        </list>
+
         <list orientation="h" spaceBetween="10">
           <button text="Apply Changes" callback="applySettings"></button>
           <button text="Back" callback="goToPreviousState"></button>

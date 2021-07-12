@@ -26,7 +26,8 @@
         "timings": 5,
         "cancelIndex": 6,
         "queueIndex": 3,
-        "velocity": [null, null, null, 2, null, null, null, null, null]},
+        "velocity": [null, null, null, 2, null, null, null, null, null],
+        "sounds": {"3": ["woosh1"]} },
 
       "player_basic_attack2": {
         "spriteSheet": "player_basic_attack2",
@@ -35,14 +36,16 @@
         "timings": 5,
         "cancelIndex": 3,
         "queueIndex": 1,
-        "velocity": [3, null, null, null, null, null, null]},
+        "velocity": [3, null, null, null, null, null, null],
+        "sounds": {"0": ["woosh1"]} },
 
       "player_basic_attack3": {
         "spriteSheet": "player_basic_attack3",
         "loops": false,
         "type": "attack",
         "timings": 5,
-        "velocity": [null, 1, 2, 3, null, null, null]},
+        "velocity": [null, 1, 2, 3, null, null, null],
+        "sounds": {"3": ["woosh1"]} },
 
       "player_basic_attack_return": {
         "spriteSheet": "player_basic_attack_return",
@@ -106,7 +109,7 @@
       "followUp": "player_basic_attack2_front",
       "return": "player_basic_attack_return_front",
       "hitBoxes": {
-        "4": [{"topLeft": [-10, 27], "width": 52, "height": 26}] }},
+        "3": [{"topLeft": [-10, 27], "width": 52, "height": 26}] }},
 
     "player_basic_attack1_back": {
       "template": "player_basic_attack1",
@@ -115,7 +118,7 @@
       "followUp": "player_basic_attack2_back",
       "return": "player_basic_attack_return_back",
       "hitBoxes": {
-        "4": [{"topLeft": [-10, -21], "width": 52, "height": 26}] }},
+        "3": [{"topLeft": [-10, -21], "width": 52, "height": 26}] }},
 
     "player_basic_attack1_left": {
       "template": "player_basic_attack1",
@@ -124,7 +127,7 @@
       "followUp": "player_basic_attack2_left",
       "return": "player_basic_attack_return_left",
       "hitBoxes": {
-        "4": [{"topLeft": [-21, -5], "width": 26, "height": 40}] }},
+        "3": [{"topLeft": [-21, -5], "width": 26, "height": 40}] }},
 
     "player_basic_attack1_right": {
       "template": "player_basic_attack1",
@@ -133,7 +136,7 @@
       "followUp": "player_basic_attack2_right",
       "return": "player_basic_attack_return_right",
       "hitBoxes": {
-        "4": [{"topLeft": [27, -5], "width": 26, "height": 40}] }},
+        "3": [{"topLeft": [27, -5], "width": 26, "height": 40}] }},
 
     "player_basic_attack2_front": {
       "template": "player_basic_attack2",
@@ -177,7 +180,7 @@
       "effects": ["iron_basic_attack3_front"],
       "return": "player_basic_attack_return_front",
       "hitBoxes": {
-        "4": [{"topLeft": [-10, 27], "width": 52, "height": 26}] }},
+        "3": [{"topLeft": [-10, 27], "width": 52, "height": 26}] }},
 
     "player_basic_attack3_back": {
       "template": "player_basic_attack3",
@@ -185,7 +188,7 @@
       "effects": ["iron_basic_attack3_back"],
       "return": "player_basic_attack_return_back",
       "hitBoxes": {
-        "4": [{"topLeft": [-10, -21], "width": 52, "height": 26}] }},
+        "3": [{"topLeft": [-10, -21], "width": 52, "height": 26}] }},
 
     "player_basic_attack3_left": {
       "template": "player_basic_attack3",
@@ -193,7 +196,7 @@
       "effects": ["iron_basic_attack3_left"],
       "return": "player_basic_attack_return_left",
       "hitBoxes": {
-        "4": [{"topLeft": [-21, -5], "width": 26, "height": 40}] }},
+        "3": [{"topLeft": [-21, -5], "width": 26, "height": 40}] }},
 
     "player_basic_attack3_right": {
       "template": "player_basic_attack3",
@@ -201,7 +204,7 @@
       "effects": ["iron_basic_attack3_right"],
       "return": "player_basic_attack_return_right",
       "hitBoxes": {
-        "4": [{"topLeft": [27, -5], "width": 26, "height": 40}] }},
+        "3": [{"topLeft": [27, -5], "width": 26, "height": 40}] }},
 
     "player_basic_attack_return_front": {
       "template": "player_basic_attack_return",

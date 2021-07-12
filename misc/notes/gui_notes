@@ -115,3 +115,4 @@ functionality from its first definition:
     horizontalPadding:
     options: Comma separated list of option names.
     optionsLoop: Determines if the arrowSelect will cycle through the options or not.
+    currentIndex: Sets the default index / choice that the arrowSelect will display.

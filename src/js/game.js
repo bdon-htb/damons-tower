@@ -12,6 +12,7 @@ function Game(engine){
   this.renderer = engine.renderer;
   this.animationManager = this.renderer.animationManager;
   this.timerManager = engine.timerManager;
+  this.audioManager = engine.audioManager;
 
   this.debugModeOn = true;
   this.debugMenu = null;
@@ -82,7 +83,7 @@ Game.prototype.update = function(){
       let inputData = this.controller.getInputs(events, data);
       this.controller.addCommands(inputData); // Raw input data is added to command stack.
       this.controller.updatePatterns(inputData); // Check for complex command inputs.
-      this._updateLevel(scene);
+      this._updatePlayer(scene);
       let level = this.gameStateObject["scene"];
       let player = this.gameStateObject["scene"].getEntity("player");
       let camera = level.camera;
@@ -197,6 +198,7 @@ Game.prototype._drawEntityColliders = function(entity, scene){
   };
 
 };
+
 // ===============
 // Game callbacks + menu related methods.
 // ===============
@@ -222,6 +224,14 @@ Game.prototype._applySettings = function(){
         this.engine.guiManager.updateMenuGraphics(menu);
       };
     };
+
+    let bgmVolume = this.engine.guiManager.getWidgetbyId(menu, "bgmVolume");
+    bgmVolume = this.engine.guiManager.getCurrentSelection(bgmVolume).text;
+    this.audioManager.setVolume(Number(bgmVolume.replace("%", '')) / 100, "bgm")
+
+    let sfxVolume = this.engine.guiManager.getWidgetbyId(menu, "sfxVolume");
+    sfxVolume = this.engine.guiManager.getCurrentSelection(sfxVolume).text;
+    this.audioManager.setVolume(Number(sfxVolume.replace("%", '')) / 100, "sfx")
 
   };
 };
@@ -269,6 +279,7 @@ Game.prototype._loadLevel = function(levelData){
   let level = new Scene(levelSpriteSheet, levelData);
   level.camera.setup(0, 0, this.engine.windowWidth, this.engine.windowHeight, this.engine.spriteScale);
   this.gameStateObject["scene"] = level;
+  this.audioManager.playSong("dungeon1", true);
 };
 
 Game.prototype._loadTestLevel = function(){
@@ -290,11 +301,14 @@ Game.prototype._loadTestLevel = function(){
 // =======================
 // Gemeral update methods.
 // =======================
+// TODO: Make more elaborate.
+/*
 Game.prototype._updateLevel = function(scene){
   if(scene.entities.has("player") === true){
     this._updatePlayer(scene);
   };
 };
+*/
 
 // ===============================
 // gameStateObject update methods.
@@ -379,6 +393,12 @@ Game.prototype._handleCollision = function(x, y, dx, dy, scene){
 Game.prototype._resetEntityDisplacement = function(entity){
   entity.attributes["dx"] = 0;
   entity.attributes["dy"] = 0;
+};
+
+// Updates the sprite of an entity.
+// Currently assumes the entity is animated.
+Game.prototype._updateEntitySprite = function(entity){
+  entity.attributes["sprite"]
 };
 
 Game.prototype._changeEntityAnimation = function(entity, oldAnimation, newAnimation){

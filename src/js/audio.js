@@ -9,14 +9,15 @@
 
 function AudioManager(parent){
   this.parent = parent;
-  
+
   this.audioContext = new AudioContext();
   this.bgm = new Map(); // Map containing all bgm names and their audio objects.
   this.sfx = new Map(); // Map containing all sfx names and their audio objects.
   this.activeSong = null;
 
-  this.bgmVolume = 1;
-  this.sfxVolume = 1;
+  // Setting these to 0 for now, so I don't get sick of the song playing.
+  this.bgmVolume = 0;
+  this.sfxVolume = 0;
 
   this.gainNode = this.audioContext.createGain(); // For sounds.
   this.gainNode.connect(this.audioContext.destination);

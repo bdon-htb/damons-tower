@@ -129,6 +129,7 @@ Game.prototype.draw = function(){
     case "inLevel":
       let level = this.gameStateObject["scene"];
       let player = this.gameStateObject["scene"].getEntity("player");
+      let dummy = this.gameStateObject["scene"].getEntity("dummyMan");
       let camera = level.camera;
       let sceneOrigin = camera.getRelative(0, 0);
       let playerCenter = this.engine.getSpriteScaledPosition(player.attributes["x"], player.attributes["y"]);
@@ -137,6 +138,7 @@ Game.prototype.draw = function(){
 
       renderer.drawTiles(this.gameStateObject["scene"]);
       this.renderer.drawEntity(level, player);
+      this.renderer.drawEntity(level, dummy);
 
       //
       let currentAnimation = player.attributes["currentAnimation"];
@@ -146,7 +148,7 @@ Game.prototype.draw = function(){
         };
       };
 
-      this._drawEntityColliders(player, level);
+      // this._drawEntityColliders(player, level);
       // renderer.drawRect(0xff0000, playerCenter[0], playerCenter[1], 4, 4);
       // renderer.drawRect(0xff0000, playerCenter[0] - (16 * this.engine.spriteScale), playerCenter[1] - (16 * this.engine.spriteScale), 4, 4);
       // renderer.drawRect(0xff0000, playerCenter[0] + (16 * this.engine.spriteScale), playerCenter[1] + (16 * this.engine.spriteScale), 4, 4);
@@ -287,11 +289,16 @@ Game.prototype._loadTestLevel = function(){
   let levelData = this.engine.getLoadedAsset(this.engine.levelKey).get("testLevel");
   this._loadLevel(levelData);
   let scene = this.gameStateObject["scene"];
-  let player = new PlayerEntity(this.engine, this);
+  let player = new PlayerEntity(this.engine);
   player.attributes["x"] = spawnpoint[0];
   player.attributes["y"] = spawnpoint[1];
 
+  let dummy = new DummyManEntity(this.engine);
+  dummy.attributes["x"] = spawnpoint[0] + 64;
+  dummy.attributes["y"] = spawnpoint[1] + 64;
+
   scene.addEntity(player);
+  scene.addEntity(dummy);
   this.sceneManager.setScene(scene);
   let camera = scene.camera;
   let posArray = [player.attributes["x"], player.attributes["y"]];
@@ -352,7 +359,7 @@ Game.prototype._handleEntityWallCollision = function(entity, scene){
   let dy = entity.attributes["dy"] + circleDy;
   let x = colliderTruePos[0];
   let y = colliderTruePos[1];
-  let newPos = this._handleCollision(x, y, dx, dy, scene);
+  let newPos = this._handleCollision(x, y, dx, dy, scene, entity);
   newPos[0] -= offsetX + circleDx;
   newPos[1] -= offsetY + circleDy;
   return newPos;
@@ -361,12 +368,12 @@ Game.prototype._handleEntityWallCollision = function(entity, scene){
 // Checks for collision from point (x, y) to point (x + dx, y + dy)
 // If there is a collision point, return that point. Otherwise return
 // (x + dx, y + dy).
-Game.prototype._handleCollision = function(x, y, dx, dy, scene){
+Game.prototype._handleCollision = function(x, y, dx, dy, scene, sourceEntity=undefined){
   let newPos;
   let collision;
   let movVector = new Vector2D([x, y], [x + dx, y + dy]);
 
-  collision = this.physicsManager.raycastCollision(movVector, scene);
+  collision = this.physicsManager.raycastCollision(movVector, scene, sourceEntity);
   this.debugMenu.updateVariable("collision? ", collision !== null);
   if(collision !== null){
 
@@ -377,7 +384,7 @@ Game.prototype._handleCollision = function(x, y, dx, dy, scene){
     if(dx != 0 && dy != 0){
       movVector.p1 = newPos;
       movVector = this.physicsManager.collisionSlide(movVector, collision[0], collision[1]);
-      collision = this.physicsManager.raycastCollision(movVector, scene);
+      collision = this.physicsManager.raycastCollision(movVector, scene, sourceEntity);
       if(collision !== null){
         newPos = this.physicsManager.resolveCollision(movVector, collision[0]);
       } else newPos = [movVector.p2[0], movVector.p2[1]];

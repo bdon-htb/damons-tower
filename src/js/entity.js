@@ -6,8 +6,6 @@
  * Simple entity object. The base of all other entities.
  * For player, enemy, items, doors, switches, etc.
  * note that position (x, y) represent the position of the CENTER of the Entity.
- * wallCollider is a rect used for wall collision detection. the topLeft of the Rect
- * is relative to the entity's CENTER position.
 */
 function Entity(id, sprite, type, state, x, y, width, height){
   this.id = id;
@@ -27,9 +25,8 @@ function Entity(id, sprite, type, state, x, y, width, height){
 
 /**
  * Player entity object.
- * gameObject is NOT the gameStateObject. it is an instance of the Game class.
 */
-function PlayerEntity(engine, gameObject){
+function PlayerEntity(engine){
   Entity.call(this, "player", null, "player", "idle", 0, 0, 32, 32);
   this._allStates = [
     "idle",
@@ -57,6 +54,7 @@ function PlayerEntity(engine, gameObject){
   this.attributes["attackQueue"] = [];
   // Hitboxes / colliders coordinates are relative to the entity's topLeft.
   this.attributes["wallCollider"] = new Circle([16, 25], 7);
+  this.attributes["entityCollider"] = new Rect([11, 9], 10, 19);
 
   let allAnimations = engine.getLoadedAsset(engine.animKey);
   let x = Array.from(allAnimations.keys())
@@ -72,7 +70,31 @@ function PlayerEntity(engine, gameObject){
 
   // Set the default sprite.
   let defaultAnimation = this.attributes["animations"].get("player_idle_front");
-  gameObject.animationManager.activateAnimation(defaultAnimation);
+  engine.app.animationManager.activateAnimation(defaultAnimation);
   this.attributes["currentAnimation"] = defaultAnimation;
-  this.attributes["sprite"] = gameObject.animationManager.getSprite(defaultAnimation);
+  this.attributes["sprite"] = engine.app.animationManager.getSprite(defaultAnimation);
+};
+
+/**
+ * "Dummy man" entity object.
+ * Serves as an entity for the player to practice attacks  on.
+*/
+function DummyManEntity(engine){
+  Entity.call(this, "dummyMan", null, "dummyMan", "idle", 0, 0, 32, 32);
+
+  let spriteSheet = engine.renderer.textureManager.getSheetFromId("dummy_man");
+  this.attributes["spriteSheet"] = spriteSheet;
+  // Indexes of all its sprites.
+  this.attributes["allSprites"] = {
+    "normal": [0, 0],
+    "damaged1": [1, 0],
+    "damaged2": [2, 0],
+    "damaged3": [3, 0]
+  };
+  // Set default sprite to normal.
+  this.attributes["sprite"] = engine.renderer.textureManager.getSpriteFromSheet(spriteSheet, 0, 0);
+
+  this.attributes["wallCollider"] = new Circle([16, 25], 7);
+  this.attributes["entityCollider"] = new Rect([11, 9], 10, 19);
+  this.attributes["hp"] = 100;
 };

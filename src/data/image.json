@@ -73,6 +73,12 @@
       "type": "variableSize"
     },
 
+    "dummy_man": {
+      "name": "dummy_man_full.png",
+      "width": 128,
+      "height": 32,
+      "spriteSize": 32},
+
     "outdoors_tileset": {
       "name": "outdoors_tileset.png",
       "width": 352,

@@ -5,7 +5,7 @@
 
 /**
  * Custom scene object. Will essentially represent a level in the game.
- *
+ * Also a de facto entity manager.
 */
 function Scene(spriteSheet, sceneData){
   this.name = sceneData.name;
@@ -21,18 +21,26 @@ function Scene(spriteSheet, sceneData){
   this.camera = new Camera();
 };
 
-Scene.prototype._createEntityRect = function(entity){
+Scene.prototype.entitiesInTile = function(tileIndex){
+  return this.spatialHashmap.has(tileIndex);
+};
+
+Scene.prototype.getTileEntities = function(tileIndex){
+  return this.spatialHashmap.get(tileIndex);
+};
+
+Scene.prototype.createEntityRect = function(entity){
   let entityWidth = entity.attributes["width"];
   let entityHeight = entity.attributes["height"];
   let entityX = entity.attributes["x"];
   let entityY = entity.attributes["y"];
-  let entityTopLeft = [entityX - (entityWidth / 2), entityY - (entityHeight / 2)];
+  let entityTopLeft = this.getEntityTopLeft(entity);
   return new Rect(entityTopLeft, entityWidth, entityHeight);
 };
 
 Scene.prototype._getTilesEntityIsIn = function(entity){
   let inBetween = Engine.prototype.inBetween;
-  let entityRect = this._createEntityRect(entity);
+  let entityRect = this.createEntityRect(entity);
   let rectPositions = [entityRect.topLeft, entityRect.topRight, entityRect.bottomLeft, entityRect.bottomRight];
   let encompassingTiles = new Set();
   // Check each corner to find which tile(s) the entity is currently in.
@@ -57,7 +65,7 @@ Scene.prototype._addEntityToHashmap = function(entity){
       this.spatialHashmap.set(tileIndex, [entity]);
     }
     else {
-      let entityArrray = this.spatialHashmap.get(tileIndex);
+      let entityArray = this.spatialHashmap.get(tileIndex);
       entityArray.push(entity);
     }
   });

@@ -62,11 +62,11 @@ Scene.prototype._addEntityToHashmap = function(entity){
 
   encompassingTiles.forEach(tileIndex => {
     if(this.spatialHashmap.has(tileIndex) === false){
-      this.spatialHashmap.set(tileIndex, [entity]);
+      this.spatialHashmap.set(tileIndex, new Set().add(entity));
     }
     else {
-      let entityArray = this.spatialHashmap.get(tileIndex);
-      entityArray.push(entity);
+      let entitySet = this.spatialHashmap.get(tileIndex);
+      entitySet.add(entity);
     }
   });
 };
@@ -77,14 +77,14 @@ Scene.prototype._removeEntityfromHashmap = function(entity){
   let encompassingTiles = tileGetterFunc(entity);
 
   encompassingTiles.forEach(tileIndex => {
-    let entityArray = this.spatialHashmap.get(tileIndex);
+    let entitySet = this.spatialHashmap.get(tileIndex);
 
-    if(entityArray.length <= 1){
+    if(entitySet.size <= 1){
       this.spatialHashmap.delete(tileIndex);
     }
     else {
-      // Remove entity from array.
-      entityArray.splice(entityArray.indexOf(entity), 1);
+      // Remove entity from set.
+      entitySet.delete(entity);
     }
   });
 };

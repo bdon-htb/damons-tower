@@ -54,7 +54,6 @@ function PlayerEntity(engine){
   this.attributes["attackQueue"] = [];
   // Hitboxes / colliders coordinates are relative to the entity's topLeft.
   this.attributes["wallCollider"] = new Circle([16, 25], 7);
-  this.attributes["entityCollider"] = new Rect([11, 9], 10, 19);
 
   let allAnimations = engine.getLoadedAsset(engine.animKey);
   let x = Array.from(allAnimations.keys())
@@ -95,6 +94,5 @@ function DummyManEntity(engine){
   this.attributes["sprite"] = engine.renderer.textureManager.getSpriteFromSheet(spriteSheet, 0, 0);
 
   this.attributes["wallCollider"] = new Circle([16, 25], 7);
-  this.attributes["entityCollider"] = new Rect([11, 9], 10, 19);
   this.attributes["hp"] = 100;
 };

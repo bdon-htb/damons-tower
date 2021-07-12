@@ -222,8 +222,8 @@ PhysicsManager.prototype.rayMarch = function(rayVector, scene, evaluator){
 };
 
 // Return the coordinates of the point where rayVector hits something in the scene.
-PhysicsManager.prototype.raycastCollision = function(rayVector, scene, sourceEntity=undefined){
-  let evaluator = this._checkForCollision.bind(this, rayVector, scene, sourceEntity);
+PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
+  let evaluator = this._checkForCollision.bind(this, rayVector, scene);
   result = this.rayMarch(rayVector, scene, evaluator);
   return result;
 };
@@ -238,33 +238,11 @@ PhysicsManager.prototype.stupidAlgorithm = function(rayVector, scene){
   return null;
 };
 
-PhysicsManager.prototype._checkForCollision = function(rayVector, scene, sourceEntity, tileIndex){
+PhysicsManager.prototype._checkForCollision = function(rayVector, scene, tileIndex){
   let tileMap = scene.tileMap;
   if(tileMap.tileIsCollidable(tileIndex) === true){
     return this.tilePointofCollision(rayVector, scene, tileIndex);
   }
-  else if(sourceEntity !== undefined && scene.entitiesInTile(tileIndex) === true){
-    let collision;
-    let entityCollider;
-    let entityTopLeft;
-    let rect;
-    for(let entity of scene.getTileEntities(tileIndex)){
-
-      if(entity !== sourceEntity && entity.attributes["entityCollider"] !== undefined){
-        entityTopLeft = scene.getEntityTopLeft(entity);
-        entityCollider = entity.attributes["entityCollider"];
-        rect = new Rect(
-          [entityTopLeft[0] + entityCollider.topLeft[0], entityTopLeft[1] + entityCollider.topLeft[1]],
-          entityCollider.width * 3,
-          entityCollider.height * 3,
-        )
-        collision = this.rectPointofCollision(rayVector, rect);
-        if(collision !== null){return collision};
-      };
-
-    };
-  };
-
   return null;
 };
 

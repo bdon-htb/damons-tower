@@ -352,6 +352,11 @@ Camera.prototype.center = function(sourceX, sourceY){
   this.calculateTopLeft();
 };
 
+// Shorthand centering method.
+Camera.prototype.centerOnEntity =  function(entity){
+  this.center(entity.attributes["x"], entity.attributes["y"]);
+};
+
 // Check if position is in view of camera.
 Camera.prototype.rectInView = function(rect){
   let engine = Engine.prototype;

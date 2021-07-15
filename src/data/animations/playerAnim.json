@@ -19,31 +19,30 @@
         "type": "dodge",
         "timings": 5},
 
-      "player_basic_attack1": {
-        "spriteSheet": "player_basic_attack1",
+      "player_basic_attack": {
         "loops": false,
         "type": "attack",
-        "timings": 5,
+        "timings": 5},
+
+      "player_basic_attack1": {
+        "template": "player_basic_attack",
+        "spriteSheet": "player_basic_attack1",
         "cancelIndex": 6,
         "queueIndex": 3,
         "velocity": [null, null, null, 2, null, null, null, null, null],
         "sounds": {"3": ["woosh1"]} },
 
       "player_basic_attack2": {
+        "template": "player_basic_attack",
         "spriteSheet": "player_basic_attack2",
-        "loops": false,
-        "type": "attack",
-        "timings": 5,
         "cancelIndex": 3,
         "queueIndex": 1,
         "velocity": [3, null, null, null, null, null, null],
         "sounds": {"0": ["woosh1"]} },
 
       "player_basic_attack3": {
+        "template": "player_basic_attack",
         "spriteSheet": "player_basic_attack3",
-        "loops": false,
-        "type": "attack",
-        "timings": 5,
         "velocity": [null, 1, 2, 3, null, null, null],
         "sounds": {"3": ["woosh1"]} },
 

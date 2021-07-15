@@ -107,7 +107,6 @@ Game.prototype.draw = function(){
       break;
     case "inLevel":
       this._drawLevel(this.gameStateObject["scene"]);
-      // this._drawEntityColliders(player, level);
   };
 
   if(this.debugModeOn === true && this.debugMenu != null){
@@ -178,7 +177,7 @@ Game.prototype._updateEntityAnimations = function(entity){
 // Precondition: entity.attributes["currentAnimation"] exists.
 Game.prototype._updateEntityHitboxes = function(entity){
   let currentAnimation = entity.attributes["currentAnimation"];
-  if(currentAnimation.hitBoxes !== null &&
+  if(currentAnimation.active === true && currentAnimation.hitBoxes !== null &&
     currentAnimation.hitBoxes[currentAnimation.frameIndex] !== undefined){
       entity.attributes["hitBoxes"] = currentAnimation.hitBoxes[currentAnimation.frameIndex];
   } else entity.attributes["hitBoxes"] = null;
@@ -192,6 +191,7 @@ Game.prototype._drawLevel = function(scene){
   this.renderer.drawTiles(scene);
   for(let entity of scene.entities.values()){
     this._drawEntity(scene, entity);
+    this._drawEntityColliders(scene, entity);
   };
 };
 
@@ -212,7 +212,7 @@ Game.prototype._drawEntity = function(scene, entity){
 };
 
 // Mostly for debugging purposes.
-Game.prototype._drawEntityColliders = function(entity, scene){
+Game.prototype._drawEntityColliders = function(scene, entity){
   let renderer = this.renderer;
   let camera = scene.camera;
   let entityTopLeft = [entity.attributes["x"] - (entity.attributes["width"] / 2), entity.attributes["y"] - (entity.attributes["height"] / 2)];
@@ -226,6 +226,8 @@ Game.prototype._drawEntityColliders = function(entity, scene){
       colliders.push(new Rect(rectData.topLeft, rectData.width, rectData.height));
     };
   };
+
+  if(entity.attributes["hurtBox"] !== null){colliders.push(entity.attributes["hurtBox"])}
 
   let x;
   let y;

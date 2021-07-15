@@ -7,11 +7,11 @@
  * For player, enemy, items, doors, switches, etc.
  * note that position (x, y) represent the position of the CENTER of the Entity.
 */
-function Entity(id, sprite, type, state, x, y, width, height){
+function Entity(id, type, state, x, y, width, height){
   this.id = id;
   // Default attributes.
   this.attributes = {
-    "sprite": sprite,
+    "sprite": null,
     "type": type,
     "state": state,
     "x": x,
@@ -24,39 +24,51 @@ function Entity(id, sprite, type, state, x, y, width, height){
 };
 
 /**
- * Player entity object.
+ * Character entity object. The base of entities like player and enemies.
 */
-function PlayerEntity(engine){
-  Entity.call(this, "player", null, "player", "idle", 0, 0, 32, 32);
+function Character(id, type, state, x, y, width, height){
+  Entity.call(this, id, type, state, x, y, width, height);
+
   this._allStates = [
     "idle",
     "walking",
-    "sprinting"
+    "sprinting",
+    "attacking",
+    "dodging"
   ];
+
   this._allDirections = [
     "up",
     "down",
     "left",
     "right"
   ];
-  // this.attributes["wallCollider"] = new Rect([-7, 9], 14, 7); // position relative to topLeft: [9, 25]
-  this.attributes["animations"] = new Map(); // Animations is a map of all the available animations.
+
+  this.attributes["animations"] = new Map(); // A map of all entity animations.
+  this.attributes["direction"] = "down"; // Default direction is down.
+  this.attributes["hitBoxes"] = null; // Contains a reference to any active hitboxes.
+  this.attributes["hurtBox"] = null; // Character hurtbox.
+};
+
+/**
+ * Player entity object.
+*/
+function PlayerEntity(engine){
+  Character.call(this, "player", "player", "idle", 0, 0, 32, 32);
   this.attributes["speed"] = 3; // Set the default player movement speed.
   this.attributes["sprintSpeed"] = this.attributes["speed"] * 2;
   this.attributes["dodgeSpeed"] = 4;
-  this.attributes["direction"] = "down";
   this.attributes["dodgeCooldown"] = 400 // In miliseconds.
 
   // Set relevant variables for player controls.
   this.attributes["canDodge"] = true;
   this.attributes["canAttack"] = true;
   this.attributes["attackVector"] = null; // A unit vector representing the direction of a precise attack.
-  this.attributes["attackQueue"] = [];
-  // Hitboxes / colliders coordinates are relative to the entity's topLeft.
-  this.attributes["wallCollider"] = new Circle([16, 25], 7);
+  this.attributes["attackQueue"] = []; // For input buffering.
+  this.attributes["wallCollider"] = new Circle([16, 25], 7); // For wall collision detection.
+  this.attributes["hurtBox"] = new Rect([12, 9], 8, 15);
 
   let allAnimations = engine.getLoadedAsset(engine.animKey);
-  let x = Array.from(allAnimations.keys())
   let spriteSheet;
   let animation;
   // Create all player animations from data in animation.json
@@ -79,7 +91,7 @@ function PlayerEntity(engine){
  * Serves as an entity for the player to practice attacks  on.
 */
 function DummyManEntity(engine){
-  Entity.call(this, "dummyMan", null, "dummyMan", "idle", 0, 0, 32, 32);
+  Character.call(this, "dummyMan", "dummyMan", "idle", 0, 0, 32, 32);
 
   let spriteSheet = engine.renderer.textureManager.getSheetFromId("dummy_man");
   this.attributes["spriteSheet"] = spriteSheet;
@@ -94,5 +106,5 @@ function DummyManEntity(engine){
   this.attributes["sprite"] = engine.renderer.textureManager.getSpriteFromSheet(spriteSheet, 0, 0);
 
   this.attributes["wallCollider"] = new Circle([16, 25], 7);
-  this.attributes["hp"] = 100;
+  this.attributes["hurtBox"] = new Rect([12, 9], 8, 15);
 };

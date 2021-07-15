@@ -38,10 +38,13 @@ Scene.prototype.createEntityRect = function(entity){
   return new Rect(entityTopLeft, entityWidth, entityHeight);
 };
 
+// Shorthand.
 Scene.prototype._getTilesEntityIsIn = function(entity){
-  let inBetween = Engine.prototype.inBetween;
-  let entityRect = this.createEntityRect(entity);
-  let rectPositions = [entityRect.topLeft, entityRect.topRight, entityRect.bottomLeft, entityRect.bottomRight];
+  return this.getTilesRectIntersects(this.createEntityRect(entity));
+};
+
+Scene.prototype.getTilesRectIntersects = function(rect){
+  let rectPositions = [rect.topLeft, rect.topRight, rect.bottomLeft, rect.bottomRight];
   let encompassingTiles = new Set();
   // Check each corner to find which tile(s) the entity is currently in.
   for(const p of rectPositions){
@@ -51,7 +54,6 @@ Scene.prototype._getTilesEntityIsIn = function(entity){
         encompassingTiles.add(nearestTile);
       };
   };
-
   return encompassingTiles;
 };
 

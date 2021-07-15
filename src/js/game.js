@@ -154,6 +154,7 @@ Game.prototype._updateEntity = function(scene, entity){
       this._updatePlayer(scene);
       scene.camera.centerOnEntity(entity);
       this._updateEntityAnimations(entity);
+      this._handleHitboxCollision(entity, scene)
       break;
   };
 };
@@ -169,6 +170,18 @@ Game.prototype._updateEntityAnimations = function(entity){
       this.animationManager.setFrame(effectAnim, currentAnimation.frameIndex);
     };
   };
+
+  this._updateEntityHitboxes(entity);
+};
+
+// Set entity.hitBoxes to the current Animation's hitboxes if applicable.
+// Precondition: entity.attributes["currentAnimation"] exists.
+Game.prototype._updateEntityHitboxes = function(entity){
+  let currentAnimation = entity.attributes["currentAnimation"];
+  if(currentAnimation.hitBoxes !== null &&
+    currentAnimation.hitBoxes[currentAnimation.frameIndex] !== undefined){
+      entity.attributes["hitBoxes"] = currentAnimation.hitBoxes[currentAnimation.frameIndex];
+  } else entity.attributes["hitBoxes"] = null;
 };
 
 // =====================
@@ -208,9 +221,8 @@ Game.prototype._drawEntityColliders = function(entity, scene){
     entity.attributes["wallCollider"]
   ];
 
-  let currentAnimation = entity.attributes["currentAnimation"];
-  if(currentAnimation.active === true && currentAnimation.hitBoxes !== null && currentAnimation.hitBoxes[currentAnimation.frameIndex] !== undefined){
-    for(let rectData of Object.values(currentAnimation.hitBoxes[currentAnimation.frameIndex])){
+  if(entity.attributes["hitBoxes"] !== null){
+    for(let rectData of Object.values(entity.attributes["hitBoxes"])){
       colliders.push(new Rect(rectData.topLeft, rectData.width, rectData.height));
     };
   };
@@ -411,15 +423,50 @@ Game.prototype._handleCollision = function(x, y, dx, dy, scene){
   return newPos;
 };
 
+Game.prototype._handleHitboxCollision = function(sourceEntity, scene){
+  if(sourceEntity.attributes["hitBoxes"] != null){
+    let attacked = this._getAttackedEntities(sourceEntity, scene);
+    if(attacked.size > 0){console.log(attacked)};
+  };
+};
+
+// Return a set of all entities that are being attacked by sourceEntity.
+// Precondition: sourceEntity.attributes["hitBoxes"] !== null.
+Game.prototype._getAttackedEntities = function(sourceEntity, scene){
+  let attacked = new Set();
+  // Iterate through active hitboxes.
+  for(let hitBox of sourceEntity.attributes["hitBoxes"]){
+    hitBox = this._getHitboxRect(sourceEntity, hitBox);
+    // get all tiles hitbox intersects.
+    for(let tileIndex of scene.getTilesRectIntersects(hitBox)){
+      if(scene.entitiesInTile(tileIndex)){
+        // Iterate through potential attacked enemies.
+        let hurtBox;
+        for(let otherEntity of scene.getTileEntities(tileIndex)){
+          if(otherEntity === sourceEntity){continue};
+          hurtBox = this._getHitboxRect(otherEntity, otherEntity.attributes["hurtBox"]);
+          if(Engine.prototype.rectIntersects(hitBox, hurtBox) === true){
+            attacked.add(otherEntity);
+          };
+        };
+      };
+    };
+  };
+  return attacked;
+};
+
+// Calculates the true world position of a given hitbox relative to its
+// sourceEntity and returns the information as a new Rect object.
+// this also works for hurtboxes too.
+Game.prototype._getHitboxRect = function(sourceEntity, hitBox){
+  let x = sourceEntity.attributes["x"] + hitBox.topLeft[0];
+  let y = sourceEntity.attributes["y"] + hitBox.topLeft[1];
+  return new Rect([x, y], hitBox.width, hitBox.height);
+};
+
 Game.prototype._resetEntityDisplacement = function(entity){
   entity.attributes["dx"] = 0;
   entity.attributes["dy"] = 0;
-};
-
-// Updates the sprite of an entity.
-// Currently assumes the entity is animated.
-Game.prototype._updateEntitySprite = function(entity){
-  entity.attributes["sprite"]
 };
 
 Game.prototype._changeEntityAnimation = function(entity, oldAnimation, newAnimation){
@@ -429,6 +476,7 @@ Game.prototype._changeEntityAnimation = function(entity, oldAnimation, newAnimat
 
   this._deactiveEntityEffects(entity, oldAnimation);
   this._activateEntityEffects(entity, newAnimation);
+  this._updateEntityHitboxes(entity);
 };
 
 Game.prototype._activateEntityEffects = function(entity, animation){
@@ -452,11 +500,10 @@ Game.prototype._deactiveEntityEffects = function(entity, animation){
 // =======================
 
 Game.prototype._updatePlayer = function(scene){
-  let updateControlAttribs = this._handlePlayerControlAttributes.bind(this);
   let handleStates = this._handlePlayerStates.bind(this);
   let updateAnim = this._updatePlayerAnimation.bind(this);
 
-  updateControlAttribs(scene);
+  this._handlePlayerControlAttributes(scene);
   handleStates(scene);
   updateAnim(scene);
 };

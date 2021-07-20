@@ -333,8 +333,8 @@ Circle.prototype.setRadius = function(radius){
  * point1 and point2 are its coordinates (lists in the form of [1, 2]).
  * If point2 is not provided, then it'll be assumed that the vector originates
  * from the origin (0, 0).
- * For all Vector2D methods, if the only parameter is the vector itself,
- * you can also call the method from the vector object itself.
+ * For all Vector2D methods, if the only parameter is the vector object,
+ * you can also call the method from witthin the vector itself.
  * i.e. vector1.dx() vs. Vector2D.prototype.dx(vector1)
 */
 function Vector2D(point1, point2){
@@ -348,9 +348,8 @@ function Vector2D(point1, point2){
   };
 };
 
-// If the vector parameter is undefined,
-// then return the vector object that the function is
-// being called from.
+// If the vector parameter is undefined, then return the vector
+// that the function is being called from.
 Vector2D.prototype._getVector = function(vector){
   if(vector === undefined){
     return this;

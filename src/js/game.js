@@ -149,28 +149,14 @@ Game.prototype._updateLevel = function(scene, events){
 Game.prototype._updateEntity = function(scene, entity){
   switch(entity.attributes["type"]){
     case "player":
+      this._handleHitboxCollision(entity, scene);
       this._updatePlayer(scene);
-      scene.camera.centerOnEntity(entity);
       this._updateEntityAnimations(entity);
-      this._handleHitboxCollision(entity, scene)
       break;
   };
-  // this._handleEntityMove(entity);
-};
 
-Game.prototype._updateEntityAnimations = function(entity){
-  entity.attributes["sprite"] = this.animationManager.getSprite(entity.attributes["currentAnimation"]);
-
-  let currentAnimation = entity.attributes["currentAnimation"];
-  this.animationManager.nextFrame(currentAnimation);
-  if(currentAnimation.effects.length > 0){
-    for(const effect of currentAnimation.effects){
-      effectAnim = entity.attributes["animations"].get(effect);
-      this.animationManager.setFrame(effectAnim, currentAnimation.frameIndex);
-    };
-  };
-
-  this._updateEntityHitboxes(entity);
+  this._handleEntityMove(entity, scene);
+  if(entity.attributes["type"] === "player"){scene.camera.centerOnEntity(entity)};
 };
 
 // Set entity.hitBoxes to the current Animation's hitboxes if applicable.
@@ -408,6 +394,16 @@ Game.prototype._handleEntityWallCollision = function(entity, scene){
   return newPos;
 };
 
+Game.prototype._handleEntityMove = function(entity, scene){
+  if(entity.attributes["appliedForces"] === null){return};
+
+  entity.attributes["dx"] = entity.attributes["appliedForces"].dx();
+  entity.attributes["dy"] = entity.attributes["appliedForces"].dy();
+  let newPos = this._handleEntityWallCollision(entity, scene);
+  scene.moveEntity(entity, newPos);
+  this._resetEntityForce(entity);
+};
+
 // Checks for collision from point (x, y) to point (x + dx, y + dy)
 // If there is a collision point, return that point. Otherwise return
 // (x + dx, y + dy).
@@ -488,6 +484,21 @@ Game.prototype._resetEntityDisplacement = function(entity){
   entity.attributes["dy"] = 0;
 };
 
+Game.prototype._updateEntityAnimations = function(entity){
+  entity.attributes["sprite"] = this.animationManager.getSprite(entity.attributes["currentAnimation"]);
+
+  let currentAnimation = entity.attributes["currentAnimation"];
+  this.animationManager.nextFrame(currentAnimation);
+  if(currentAnimation.effects.length > 0){
+    for(const effect of currentAnimation.effects){
+      effectAnim = entity.attributes["animations"].get(effect);
+      this.animationManager.setFrame(effectAnim, currentAnimation.frameIndex);
+    };
+  };
+
+  this._updateEntityHitboxes(entity);
+};
+
 Game.prototype._changeEntityAnimation = function(entity, oldAnimation, newAnimation){
   this.animationManager.deactivateAnimation(oldAnimation);
   this.animationManager.activateAnimation(newAnimation);
@@ -542,12 +553,11 @@ Game.prototype._handlePlayerStates = function(scene){
   let attackCommands = ["singleTap-leftPress", "singleTap-rightPress"];
   let playerState = player.attributes["state"];
   let oldPos = [player.attributes["x"], player.attributes["y"]];
-  let isMoving = false;
 
   let test = attackCommands.some(c => commands.includes(c))
 
   if(playerState === "dodging"){
-    isMoving = this._handlePlayerDodge(player, commands);
+    this._handlePlayerDodge(player, commands);
   }
   // Check if we want to dodge
   else if(player.attributes["canDodge"] === true && commands.includes("singleTap-space") && ["walking", "sprinting"].includes(playerState)){
@@ -556,21 +566,11 @@ Game.prototype._handlePlayerStates = function(scene){
   }
   else if(playerState === "attacking" || player.attributes["canAttack"] === true && attackCommands.some(c => commands.includes(c))
   && ["idle", "walking", "sprinting", "attacking"].includes(playerState)){
-    isMoving = this._handlePlayerAttack(scene, player, commands);
+    this._handlePlayerAttack(scene, player, commands);
   }
   else {
     // This function also handles when the player is idling.
-    isMoving = this._walkPlayer(player, commands);
-  };
-
-  if(isMoving === true){
-    let newPos = this._handleEntityWallCollision(player, scene)
-    // let newPos = this._handleCollision(player.attributes["x"], layer.attributes["y"], player.attributes["dx"],  player.attributes["dy"], scene);
-    scene.moveEntity(player, newPos);
-  };
-
-  if(playerState === "idle"){
-    this._resetEntityDisplacement(player);
+    this._walkPlayer(player, commands);
   };
 };
 
@@ -603,8 +603,7 @@ Game.prototype._handlePlayerDodgeStart = function(player, commands){
   };
 
   player.attributes["state"] = "dodging";
-  player.attributes["dx"] = dMap["dx"];
-  player.attributes["dy"] = dMap["dy"];
+  player.attributes["dodgeVector"] = new Vector2D([dMap["dx"], dMap["dy"]]);
 };
 
 // Precondition: player.attributes["state"] === "dodging"
@@ -612,23 +611,14 @@ Game.prototype._handlePlayerDodge = function(player, commands){
   let dodgeAnimation = player.attributes["currentAnimation"];
   if(dodgeAnimation.active === false){ // Dodge ends.
     player.attributes["state"] = "idle";
+    player.attributes["dodgeVector"] = null;
     this.timerManager.setTimer(player.attributes["dodgeCooldown"], 'playerDodgeCooldown');
     return false;
   }
   else {
-    let physicsManager = this.physicsManager;
     let dodgeSpeed = player.attributes["dodgeSpeed"];
-
-    for(const d of ["dx", "dy"]){
-      if(player.attributes[d] > 0){
-        player.attributes[d] = dodgeSpeed;
-      }
-      else if(player.attributes[d] < 0){
-        player.attributes[d] = -dodgeSpeed;
-      }
-      // We do nothing if displacement is 0.
-    };
-    return true;
+    let dodgeVector = player.attributes["dodgeVector"];
+    this._applyEntityForce(player, dodgeVector.dx() * dodgeSpeed, dodgeVector.dy() * dodgeSpeed);
   };
 };
 
@@ -681,13 +671,8 @@ Game.prototype._walkPlayer = function(player, commands){
       };
     };
 
-    player.attributes["dx"] = dMap["dx"];
-    player.attributes["dy"] = dMap["dy"];
-
-    return true; // Yes we are moving
+    this._applyEntityForce(player, dMap["dx"], dMap["dy"]);
   };
-  this._resetEntityDisplacement(player);
-  return false; // We are not moving this frame.
 };
 
 // Handles all of player attacking, including animations.
@@ -698,7 +683,6 @@ Game.prototype._handlePlayerAttack = function(scene, player, commands){
   let allAnims = player.attributes["animations"];
   let attackQueue = player.attributes["attackQueue"];
   let currentAnimation = player.attributes["currentAnimation"];
-  let isMoving = false;
 
   // Check for basic attack command input.
   if(commands.includes(basicAttackCommand)){
@@ -759,12 +743,8 @@ Game.prototype._handlePlayerAttack = function(scene, player, commands){
     && currentAnimation.velocity[currentAnimation.frameIndex] != undefined){
       let magnitude = currentAnimation.velocity[currentAnimation.frameIndex];
       let movVector = Vector2D.prototype.scalarMultiply(player.attributes["attackVector"], magnitude);
-      player.attributes["dx"] = Math.round(movVector.p2[0] - movVector.p1[0]);
-      player.attributes["dy"] = Math.round(movVector.p2[1] - movVector.p1[1]);
-      isMoving = true;
+      this._applyEntityForce(player, Math.round(movVector.dx()), Math.round(movVector.dy()));
   };
-
-  return isMoving;
 };
 
 

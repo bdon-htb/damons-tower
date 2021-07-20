@@ -48,6 +48,7 @@ function Character(id, type, state, x, y, width, height){
   this.attributes["direction"] = "down"; // Default direction is down.
   this.attributes["hitBoxes"] = null; // Contains a reference to any active hitboxes.
   this.attributes["hurtBox"] = null; // Character hurtbox.
+  this.attributes["appliedForces"] = null;
 };
 
 /**
@@ -59,6 +60,7 @@ function PlayerEntity(engine){
   this.attributes["sprintSpeed"] = this.attributes["speed"] * 2;
   this.attributes["dodgeSpeed"] = 4;
   this.attributes["dodgeCooldown"] = 400 // In miliseconds.
+  this.attributes["dodgeVector"] = null; // A unit vector representing the direction of a player dodge.
 
   // Set relevant variables for player controls.
   this.attributes["canDodge"] = true;

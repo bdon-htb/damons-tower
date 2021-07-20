@@ -145,26 +145,6 @@ Scene.prototype.getEntityTopLeft = function(entity){
 };
 
 /**
- * Custom scene manager object. Will be responsible for transition betweening
- * through different scenes.
-*/
-function SceneManager(){
-  this.currentScene;
-  this.sceneHistory = [];
-};
-
-SceneManager.prototype.setScene = function(newScene){
-  if(this.currentScene !== undefined){
-    this.sceneHistory.push(newScene);
-  };
-  this.currentScene = newScene;
-};
-
-SceneManager.prototype.clearHistory = function(){
-  this.sceneHistory = [];
-};
-
-/**
  * Custom tilemap object. Contains a 1D array of tile information,
  * the map's dimensions, and essential methods.
  * this class does NOT contain any graphics or other level information.

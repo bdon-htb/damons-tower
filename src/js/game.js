@@ -42,7 +42,6 @@ function Game(engine){
 
   // Create components.
   this.stateMachine = new StateMachine(this, allStates, this.startingState);
-  this.sceneManager = new SceneManager();
   this.physicsManager = new PhysicsManager(this.engine);
 
   // Setup callbacks.
@@ -156,6 +155,7 @@ Game.prototype._updateEntity = function(scene, entity){
       this._handleHitboxCollision(entity, scene)
       break;
   };
+  // this._handleEntityMove(entity);
 };
 
 Game.prototype._updateEntityAnimations = function(entity){
@@ -354,7 +354,6 @@ Game.prototype._loadTestLevel = function(){
 
   scene.addEntity(player);
   scene.addEntity(dummy);
-  this.sceneManager.setScene(scene);
   let camera = scene.camera;
   let posArray = [player.attributes["x"], player.attributes["y"]];
   camera.center(posArray[0], posArray[1], player.attributes["sprite"].height);
@@ -364,8 +363,24 @@ Game.prototype._loadTestLevel = function(){
 // Entity related methods.
 // =======================
 
+Game.prototype._applyEntityForce = function(entity, fx, fy){
+  let vAdd = Vector2D.prototype.add
+  let forceVector = new Vector2D([fx, fy]);
+  if(entity.attributes["appliedForces"] === null){
+    entity.attributes["appliedForces"] = forceVector;
+  }
+  else {
+    entity.attributes["appliedForces"] = vAdd(entity.attributes["appliedForces"], forceVector);
+  }
+};
+
+Game.prototype._resetEntityForce = function(entity){
+  entity.attributes["appliedForces"] = null;
+};
+
+// Assumes wallCollider.constructor === Circle
 Game.prototype._handleEntityWallCollision = function(entity, scene){
-  let collider = entity.attributes["wallCollider"]; // Assumes wallCollider.constructor === Circle
+  let collider = entity.attributes["wallCollider"];
   let directionX = Math.sign(entity.attributes["dx"]);
   let directionY = Math.sign(entity.attributes["dy"]);
 
@@ -425,10 +440,12 @@ Game.prototype._handleCollision = function(x, y, dx, dy, scene){
   return newPos;
 };
 
+// TODO: Implement.
 Game.prototype._handleHitboxCollision = function(sourceEntity, scene){
   if(sourceEntity.attributes["hitBoxes"] != null){
+    // Could probably combine this into one function, but whatever.
+    // Since entities can occupy more than one tile, attacked is returned as a Set object.
     let attacked = this._getAttackedEntities(sourceEntity, scene);
-    if(attacked.size > 0){console.log(attacked)};
   };
 };
 

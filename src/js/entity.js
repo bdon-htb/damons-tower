@@ -49,6 +49,7 @@ function Character(id, type, state, x, y, width, height){
   this.attributes["hitBoxes"] = null; // Contains a reference to any active hitboxes.
   this.attributes["hurtBox"] = null; // Character hurtbox.
   this.attributes["appliedForces"] = null;
+  this.attributes["lastHit"] = null; // Stores previous hit.
 };
 
 /**

@@ -279,6 +279,7 @@ function Rect(topLeft, width, height=undefined){
   this.topRight;
   this.bottomLeft;
   this.bottomRight;
+  this.center;
 
   this.width;
   this.height;
@@ -306,6 +307,7 @@ Rect.prototype._update = function(){
   this.topRight = [this.topLeft[0] + this.width, this.topLeft[1]];
   this.bottomLeft = [this.topLeft[0], this.topLeft[1] + this.height];
   this.bottomRight = [this.topLeft[0] + this.width, this.topLeft[1] + this.height];
+  this.center = [this.topLeft[0] + (this.width / 2), this.topLeft[1] + (this.height / 2)];
 };
 
 /**
@@ -357,7 +359,7 @@ Vector2D.prototype._getVector = function(vector){
 };
 
 Vector2D.prototype.copy = function(vector){
-  this._getVector()
+  vector = this._getVector()
   let p1 = [vector.p1[0], vector.p1[1]];
   let p2 = [vector.p2[0], vector.p2[1]];
   return new Vector2D(p1, p2);

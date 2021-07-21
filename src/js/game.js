@@ -371,11 +371,11 @@ Game.prototype._handleEntityWallCollision = function(entity, scene){
   let directionY = Math.sign(entity.attributes["dy"]);
 
   // Player center relative to its top left.
-  let playerCenter = [entity.attributes["width"] / 2, entity.attributes["height"] / 2];
+  let entityCenter = [entity.attributes["width"] / 2, entity.attributes["height"] / 2];
 
   // Offset between the collider's center and the player's center.
-  let offsetX = collider.center[0] - playerCenter[0];
-  let offsetY = collider.center[1] - playerCenter[1];
+  let offsetX = collider.center[0] - entityCenter[0];
+  let offsetY = collider.center[1] - entityCenter[1];
 
   let circleDx = collider.radius * directionX;
   let circleDy = collider.radius * directionY;
@@ -436,21 +436,15 @@ Game.prototype._handleCollision = function(x, y, dx, dy, scene){
   return newPos;
 };
 
-// TODO: Implement.
 Game.prototype._handleHitboxCollision = function(sourceEntity, scene){
-  if(sourceEntity.attributes["hitBoxes"] != null){
-    // Could probably combine this into one function, but whatever.
-    // Since entities can occupy more than one tile, attacked is returned as a Set object.
-    let attacked = this._getAttackedEntities(sourceEntity, scene);
-  };
-};
+  if(sourceEntity.attributes["hitBoxes"] == null){return};
 
-// Return a set of all entities that are being attacked by sourceEntity.
-// Precondition: sourceEntity.attributes["hitBoxes"] !== null.
-Game.prototype._getAttackedEntities = function(sourceEntity, scene){
-  let attacked = new Set();
+  let attacked = new Set(); // Since entities can occupy more than one tile, we keep track.
+  let attackForce;
+  let knockBack;
   // Iterate through active hitboxes.
   for(let hitBox of sourceEntity.attributes["hitBoxes"]){
+    knockBack = hitBox.knockBack;
     hitBox = this._getHitboxRect(sourceEntity, hitBox);
     // get all tiles hitbox intersects.
     for(let tileIndex of scene.getTilesRectIntersects(hitBox)){
@@ -458,17 +452,34 @@ Game.prototype._getAttackedEntities = function(sourceEntity, scene){
         // Iterate through potential attacked enemies.
         let hurtBox;
         for(let otherEntity of scene.getTileEntities(tileIndex)){
-          if(otherEntity === sourceEntity){continue};
+          if(otherEntity === sourceEntity || attacked.has(otherEntity)){continue};
           hurtBox = this._getHitboxRect(otherEntity, otherEntity.attributes["hurtBox"]);
           if(Engine.prototype.rectIntersects(hitBox, hurtBox) === true){
+            attackForce = this._calculateHitboxForce(sourceEntity, otherEntity, hitBox, hurtBox, knockBack);
+            this._applyEntityForce(otherEntity, Math.round(attackForce.dx()), Math.round(attackForce.dy()));
             attacked.add(otherEntity);
           };
         };
       };
     };
   };
-  return attacked;
 };
+
+// Precondition: hitBox.knockBack != null and
+// hitBox and hurtBox have already been converted via this._getHitboxRect()
+Game.prototype._calculateHitboxForce = function(sourceEntity, otherEntity, hitBoxRect, hurtBoxRect, knockBack){
+  let directionVector;
+
+  if(sourceEntity.attributes["attackVector"] != null){
+    directionVector = sourceEntity.attributes["attackVector"].copy();
+  }
+  else {
+    let dx = Engine.prototype.boundNum(hurtBoxRect.center[0] - hitBoxRect.center[0], -1, 1);
+    let dy = Engine.prototype.boundNum(hurtBoxRect.center[1] - hitBoxRect.center[1], -1, 1);
+    directionVector = new Vector2D([dx, dy]);
+  }
+  return Vector2D.prototype.scalarMultiply(sourceEntity.attributes["attackVector"], knockBack);
+}
 
 // Calculates the true world position of a given hitbox relative to its
 // sourceEntity and returns the information as a new Rect object.

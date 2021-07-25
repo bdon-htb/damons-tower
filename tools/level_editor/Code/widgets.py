@@ -564,12 +564,12 @@ class MapView(CustomView):
                 if tile_data[2] == cfg.EMPTY_TILE_ID:
                     tile_data[2] = 'FL'
                 new_id = '-'.join(tile_data)
-                levelData.fillTiles(index, source_id, new_id, fill_indexes=(0, 2))
+                levelData.fillTiles(index, new_id, fill_indexes=(0, 2))
             elif cursorMode == 'fill' and activeTileMenu == 'Tile Ids' and selectedTile:
                 source_id = '-'.join(tile_data)
                 tile_data[2] = str(selectedTile.getMetaData()["id"])
                 new_id = '-'.join(tile_data)
-                levelData.fillTiles(index, source_id, new_id, fill_indexes=(2, cfg.TILE_ARRAY_SIZE))
+                levelData.fillTiles(index, new_id, fill_indexes=(2, cfg.TILE_ARRAY_SIZE))
 
             # Checks if there was a change made.
             if oldTileData != levelData.getTileData():
@@ -1117,7 +1117,6 @@ class SpriteInput(QWidget):
             filename = get_filename_from_path(path).replace('.png', '')
             self.textInput.setText(filename)
 
-# TODO: Implement
 class ResizeMapWindow(QDialog):
     def __init__(self, parent):
         super().__init__(parent)

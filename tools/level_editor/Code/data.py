@@ -173,7 +173,6 @@ class LevelData:
                     if can_fill(source_id, tile_id):
                         stack.append(tile_index)
 
-
     def resizeTileArray(self, anchorPoint: str, newWidth: int, newHeight: int):
         #These are variables needed to resize the level
         anchorPointSplit = anchorPoint.split()

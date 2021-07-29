@@ -891,6 +891,7 @@ class TileSpriteMenu(TileMenu):
         """
         # Load tileset sprite into scene.
         spriteSheet = QPixmap(spriteSheetURL)
+        print(spriteSheetURL)
         self.scene().addPixmap(spriteSheet)
         # Note that this range only works because the tiles are squares.
         for y in range(0, spriteSheet.height(), cfg.TILESIZE):

@@ -73,6 +73,24 @@
       "type": "variableSize"
     },
 
+    "anna_idle": {
+      "name": "anna_idle.png",
+      "width": 64,
+      "height": 128,
+      "spriteSize": 32},
+
+    "darius_idle": {
+      "name": "darius_idle.png",
+      "width": 256,
+      "height": 128,
+      "spriteSize": 32},
+
+    "tower_watch_idle": {
+      "name": "tower_watch_idle.png",
+      "width": 256,
+      "height": 64,
+      "spriteSize": 32},
+
     "dummy_man": {
       "name": "dummy_man_full.png",
       "width": 128,

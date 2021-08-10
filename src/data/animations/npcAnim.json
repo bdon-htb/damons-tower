@@ -1,0 +1,63 @@
+{
+  "animations": {
+    "TEMPLATES": {
+      "anna_idle": {
+        "spriteSheet": "anna_idle",
+        "loops": true,
+        "type": "idle",
+        "timings": 32},
+
+      "darius_idle": {
+        "spriteSheet": "darius_idle",
+        "loops": true,
+        "type": "idle",
+        "timings": "d"},
+
+      "tower_watch_idle": {
+        "spriteSheet": "tower_watch_idle",
+        "loops": true,
+        "type": "idle",
+        "timings": "d"}
+    },
+
+    "anna_idle_front": {
+      "template": "anna_idle",
+      "frames": [[0,0], [1,0]]},
+
+    "anna_idle_back": {
+      "template": "anna_idle",
+      "frames": [[0,1], [1,1]]},
+
+    "anna_idle_left": {
+      "template": "anna_idle",
+      "frames": [[0,2], [1,2]]},
+
+    "anna_idle_right": {
+      "template": "anna_idle",
+      "frames": [[0,3], [1,3]]},
+
+    "darius_idle_front": {
+      "template": "darius_idle",
+      "frames": [[0,0], [1,0], [2,0], [3,0], [4,0], [5,0], [6,0], [7,0]]},
+
+    "darius_idle_back": {
+      "template": "darius_idle",
+      "frames": [[0,1], [1,1], [2,1], [3,1], [4,1], [5,1], [6,1], [7,1]]},
+
+    "darius_idle_left": {
+      "template": "darius_idle",
+      "frames": [[0,2], [1,2], [2,2], [3,2], [4,2], [5,2], [6,2], [7,2]]},
+
+    "darius_idle_right": {
+      "template": "darius_idle",
+      "frames": [[0,3], [1,3], [2,3], [3,3], [4,3], [5,3], [6,3], [7,3]]},
+
+    "tower_watch_idle_front1": {
+      "template": "tower_watch_idle",
+      "frames": [[0,0], [1,0], [2,0], [3,0], [4,0], [5,0], [6,0], [7,0]]},
+
+    "tower_watch_idle_front2": {
+      "template": "tower_watch_idle",
+      "frames": [[0,1], [1,1], [2,1], [3,1], [4,1], [5,1], [6,1], [7,1]]}
+    }
+}

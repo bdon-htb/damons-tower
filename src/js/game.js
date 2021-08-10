@@ -326,8 +326,8 @@ Game.prototype._loadLevel = function(levelData){
 };
 
 Game.prototype._loadTestLevel = function(){
-  let spawnpoint = [16 + 32, 16 + 32];
-  let levelData = this.engine.getLoadedAsset(this.engine.levelKey).get("testLevel");
+  let spawnpoint = [16 + (32 * 10), 16 + (32 * 18)];
+  let levelData = this.engine.getLoadedAsset(this.engine.levelKey).get("startingArea");
   this._loadLevel(levelData);
   let scene = this.gameStateObject["scene"];
   let player = new PlayerEntity(this.engine);

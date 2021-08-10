@@ -7,18 +7,45 @@
  * Custom scene object. Will essentially represent a level in the game.
  * Also a de facto entity manager.
 */
-function Scene(spriteSheet, sceneData){
+function Scene(engine, spriteSheet, sceneData){
+  this.engine = engine;
   this.name = sceneData.name;
   this.spriteSheet = spriteSheet; // Shared spriteSheet of all the tiles in the scene.
   this.tileMap = new TileMap(sceneData.width, sceneData.height, sceneData.tileData);
   // A map of all entities in the scene. keys are entity ids. values are entity objects.
   this.entities = new Map();
+  this._genericID = 0; // For creating ids for generic entities.
   // A spatial hashmap of all entities in the scene. keys are tile positions in the map occupied by entity(s).
   // values are an array of all entities contained in the tile.
   this.spatialHashmap = new Map();
   this.movingEntities = []; // An array of all entities currently moving.
   this.entityMovingStates = ["moving", "walking", "sprinting"];
   this.camera = new Camera();
+
+  if(sceneData.entities !== undefined){
+    this._addPresetEntities(sceneData.entities)
+  };
+};
+
+Scene.prototype._getGenericID = function(){
+  let id = this._genericID;
+  this._genericID += 1;
+  return 'entity_' + id.toString();
+};
+
+// Precondition: each entity in presetEntities is properly formatted.
+Scene.prototype._addPresetEntities = function(presetEntities){
+  let entity;
+  for(let entityData of presetEntities){
+    entity = this.createEntity(entityData.name, entityData.id);
+
+    // If an attribute value is defined in entityData, we update from the default here.
+    for(let attribute of Object.keys(entityData)){
+      if(attribute === "name" || attribute === "id"){continue};
+      entity.attributes[attribute] = entityData[attribute];
+    };
+    this.addEntity(entity);
+  };
 };
 
 Scene.prototype.entitiesInTile = function(tileIndex){
@@ -89,6 +116,34 @@ Scene.prototype._removeEntityfromHashmap = function(entity){
       entitySet.delete(entity);
     }
   });
+};
+
+Scene.prototype.createEntity = function(entityName, id=undefined){
+  let entity;
+  switch (entityName) {
+    case "player":
+      entity = new PlayerEntity(this.engine);
+      break;
+    case "anna":
+      entity = new AnnaEntity(this.engine);
+      break;
+    case "darius":
+      entity = new DariusEntity(this.engine);
+      break;
+    case "dummyMan":
+      entity = new DummyManEntity(this.engine);
+      break;
+    case "tower_watch1":
+    case "tower_watch2":
+      entity = new TowerWatchEntity(this.engine, entityName.slice(-1));
+      break;
+    default:
+      console.error(`entityName ${entityName} is invalid!`);
+  };
+
+  if(id != undefined){entity.id = id}
+  else entity.id = this._getGenericID();
+  return entity;
 };
 
 Scene.prototype.addEntity = function(entity){

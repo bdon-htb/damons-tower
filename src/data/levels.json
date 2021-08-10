@@ -20,6 +20,15 @@
       "spriteSheet": "outdoors_tileset",
       "width": 21,
       "height": 19,
+      "entities": [
+        {"name": "player", "x": 336, "y": 496, "direction": "up", "id": "player"},
+        {"name": "darius", "x": 336, "y": 368, "direction": "down", "id": "darius"},
+        {"name": "anna", "x": 464, "y": 464, "direction": "down", "id": "anna"},
+        {"name": "tower_watch2", "x": 432, "y": 368, "direction": "down"},
+        {"name": "tower_watch1", "x": 240, "y": 368, "direction": "down"},
+        {"name": "tower_watch2", "x": 240, "y": 176, "direction": "down"},
+        {"name": "tower_watch1", "x": 432, "y": 176, "direction": "down"}
+        ],
       "tileData": [
         "15-3-FL", "15-3-FL", "15-3-FL", "15-3-FL", "15-3-FL", "15-3-FL", "15-3-FL", "15-3-FL", "15-3-FL", "15-3-FL", "15-3-FL", "15-3-FL", "15-3-FL", "15-3-FL", "15-3-FL", "15-3-FL", "15-3-FL", "15-3-FL", "15-3-FL", "15-3-FL", "15-3-FL",
         "15-3-FL", "15-3-FL", "16-0-FL", "15-3-FL", "15-3-FL", "16-0-FL", "15-3-FL", "15-3-FL", "11-0-FL", "12-0-FL", "13-0-FL", "14-0-FL", "15-0-FL", "15-3-FL", "15-3-FL", "16-0-FL", "15-3-FL", "15-3-FL", "16-0-FL", "15-3-FL", "15-3-FL",

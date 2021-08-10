@@ -1,6 +1,7 @@
 {
   "animationFiles": [
     "playerAnim.json",
-    "playerWeaponAnim.json"
+    "playerWeaponAnim.json",
+    "npcAnim.json"
   ]
 }

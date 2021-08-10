@@ -18,7 +18,6 @@ function Game(engine){
   this.debugMenu = null;
 
   this.gameStateObject = {
-    "events": new Map(), // A map of game events. Currently unused.
     "frameData": null, // The main loop data.
     "scene": null, // Current scene.
   };
@@ -151,8 +150,16 @@ Game.prototype._updateEntity = function(scene, entity){
     case "player":
       this._handleHitboxCollision(entity, scene);
       this._updatePlayer(scene);
+      this._updateCharacterAnimation(entity);
       this._updateEntityAnimations(entity);
       break;
+    case "darius":
+    case "anna":
+    case "tower_watch1":
+    case "tower_watch2":
+    this._updateCharacterAnimation(entity);
+     this._updateEntityAnimations(entity);
+     break;
   };
 
   this._handleEntityMove(entity, scene);
@@ -177,7 +184,7 @@ Game.prototype._drawLevel = function(scene){
   this.renderer.drawTiles(scene);
   for(let entity of scene.entities.values()){
     this._drawEntity(scene, entity);
-    this._drawEntityColliders(scene, entity);
+    // this._drawEntityColliders(scene, entity);
   };
 };
 
@@ -317,9 +324,10 @@ Game.prototype._loadGame = function(){
 };
 
 // Set the gameStateObject's scene.
-Game.prototype._loadLevel = function(levelData){
+Game.prototype._loadLevel = function(levelName){
+  let levelData = this.engine.getLoadedAsset(this.engine.levelKey).get(levelName);
   let levelSpriteSheet = this.engine.renderer.getSheetFromId(levelData.spriteSheet);
-  let level = new Scene(levelSpriteSheet, levelData);
+  let level = new Scene(this.engine, levelSpriteSheet, levelData);
   level.camera.setup(0, 0, this.engine.windowWidth, this.engine.windowHeight, this.engine.spriteScale);
   this.gameStateObject["scene"] = level;
   this.audioManager.playSong("dungeon1", true);
@@ -327,8 +335,7 @@ Game.prototype._loadLevel = function(levelData){
 
 Game.prototype._loadTestLevel = function(){
   let spawnpoint = [16 + (32 * 10), 16 + (32 * 18)];
-  let levelData = this.engine.getLoadedAsset(this.engine.levelKey).get("startingArea");
-  this._loadLevel(levelData);
+  this._loadLevel("startingArea");
   let scene = this.gameStateObject["scene"];
   let player = new PlayerEntity(this.engine);
   player.attributes["x"] = spawnpoint[0];
@@ -542,11 +549,9 @@ Game.prototype._deactiveEntityEffects = function(entity, animation){
 
 Game.prototype._updatePlayer = function(scene){
   let handleStates = this._handlePlayerStates.bind(this);
-  let updateAnim = this._updatePlayerAnimation.bind(this);
 
   this._handlePlayerControlAttributes(scene);
   handleStates(scene);
-  updateAnim(scene);
 };
 
 Game.prototype._handlePlayerControlAttributes = function(scene){
@@ -800,48 +805,48 @@ Game.prototype._calculatePlayerAttackDirection = function(scene, player){
   };
 };
 
-Game.prototype._updatePlayerAnimation = function(scene){
-  // Can set aliases here because we we're just checking their values.
-  let player = scene.getEntity("player");
-  let playerState = player.attributes["state"];
-  let playerDirection = player.attributes["direction"];
-  let allAnims = player.attributes["animations"];
-  let animMap;
-  switch (playerState){
+// TODO: Implement
+Game.prototype._updateCharacterAnimation = function(entity){
+  let type = entity.attributes["type"];
+  let direction = entity.attributes["direction"];
+  let allAnims = entity.attributes["animations"];
+  let state = entity.attributes["state"];
+
+  switch (state){
     case "walking":
     case "sprinting":
       animMap = {
-        "up": allAnims.get("player_walk_back"),
-        "down": allAnims.get("player_walk_front"),
-        "left": allAnims.get("player_walk_left"),
-        "right": allAnims.get("player_walk_right")
+        "up": allAnims.get(type + "_walk_back"),
+        "down": allAnims.get(type + "_walk_front"),
+        "left": allAnims.get(type + "_walk_left"),
+        "right": allAnims.get(type + "_walk_right")
       };
       break;
     case "dodging":
       animMap = {
-        "up": allAnims.get("player_dodge_back"),
-        "down": allAnims.get("player_dodge_front"),
-        "left": allAnims.get("player_dodge_left"),
-        "right": allAnims.get("player_dodge_right")
+        "up": allAnims.get(type + "_dodge_back"),
+        "down": allAnims.get(type + "_dodge_front"),
+        "left": allAnims.get(type + "_dodge_left"),
+        "right": allAnims.get(type + "_dodge_right")
       };
       break;
     case "attacking":
       return; // Exit if we're in attacking state because that's handled elsewhere.
     default: // Let's treat idle as default.
       animMap = {
-        "up": allAnims.get("player_idle_back"),
-        "down": allAnims.get("player_idle_front"),
-        "left": allAnims.get("player_idle_left"),
-        "right": allAnims.get("player_idle_right")
+        "up": allAnims.get(type + "_idle_back"),
+        "down": allAnims.get(type + "_idle_front"),
+        "left": allAnims.get(type + "_idle_left"),
+        "right": allAnims.get(type + "_idle_right")
       };
   };
 
-  let oldAnimation = player.attributes["currentAnimation"];
-  let newAnimation = animMap[playerDirection];
+  let oldAnimation = entity.attributes["currentAnimation"];
+  let newAnimation = animMap[direction];
 
   // If there's a change in animation...
   if(oldAnimation !== newAnimation){
     // Switch to new animation.
-    this._changeEntityAnimation(player, oldAnimation, newAnimation);
+    this._changeEntityAnimation(entity, oldAnimation, newAnimation);
   };
 };

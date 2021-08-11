@@ -80,6 +80,7 @@ Game.prototype.update = function(){
 
       // Debug menu crap.
       let player = this.gameStateObject["scene"].getEntity("player")
+      let scene = this.gameStateObject["scene"]
       this.debugMenu.updateVariable("singleTap-space state", this.controller.patterns.get("singleTap-space")["state"]);
       this.debugMenu.updateVariable("player state", player.attributes["state"]);
       this.debugMenu.updateVariable("player x", player.attributes["x"]);
@@ -88,6 +89,7 @@ Game.prototype.update = function(){
       this.debugMenu.updateVariable("animation frame", player.attributes["currentAnimation"].frameIndex);
       this.debugMenu.updateVariable("current animation", player.attributes["currentAnimation"].id);
       this.debugMenu.updateVariable("commands", this.controller.getCommands());
+      this.debugMenu.updateVariable("camera topLeft", scene.camera.topleft);
       break;
   };
 };

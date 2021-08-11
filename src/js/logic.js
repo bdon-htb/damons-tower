@@ -382,6 +382,7 @@ Camera.prototype.center = function(x, y){
   this.centerX = x;
   this.centerY = y;
   this.calculateTopLeft();
+  this.clampView();
 };
 
 // Shorthand centering method.
@@ -390,8 +391,9 @@ Camera.prototype.centerOnEntity =  function(entity){
 };
 
 // Check if position is in view of camera.
+// Precondition: rect coordinates are relative to the view.
 Camera.prototype.rectInView = function(rect){
-  let engine = Engine.prototype;
+  let engine = this.parent.engine;
   let intersectFunc = engine.rectIntersects.bind(engine);
   let cameraRect = new Rect([0, 0], this.viewWidth, this.viewHeight);
   return intersectFunc(rect, cameraRect);
@@ -403,9 +405,52 @@ Camera.prototype.getRelative = function(trueX, trueY){
 };
 
 // Prevents the camera view from going off the level bounds.
-// TODO: Implement
-Camera.prototype.clampView = function(x, y){
+Camera.prototype.clampView = function(){
+  let engine = this.parent.engine;
+  let tileMap = this.parent.tileMap
+  let clampFunc = engine.clamp.bind(engine);
 
+  let sceneWidth = tileMap.width * tileMap.tileSize * engine.spriteScale;
+  let sceneHeight = tileMap.height * tileMap.tileSize * engine.spriteScale;
+  let sceneRect = new Rect([0, 0])
+
+  // If for whatever reason the level is smaller than the viewport,
+  // we should just not bother clamping it.
+  if(sceneWidth < this.viewWidth || sceneHeight < this.viewHeight){
+    return;
+  };
+
+  // topLeft
+  let x0 = this.topLeft[0];
+  let y0 = this.topLeft[1];
+
+  // bottomLeft
+  let x1 = this.topLeft[0] + this.viewWidth;
+  let y1 = this.topLeft[1] + this.viewHeight;
+
+  // center.
+  let newX = this.centerX;
+  let newY = this.centerY;
+
+  // check horizontal axises.
+  if(x0 < 0){
+    newX = 0 + (this.viewWidth / 2);
+  }
+  else if(x1 > sceneWidth){
+    newX = sceneWidth - (this.viewWidth / 2);
+  };
+
+  // check vertical axises.
+  if(y0 < 0){
+    newY = 0 + (this.viewHeight / 2);
+  }
+  else if(y1 > sceneHeight){
+    newY = sceneHeight - (this.viewHeight / 2);
+  };
+
+  if(newX !== this.centerX || newY !== this.centerY){
+    this.center(newX, newY);
+  };
 };
 
 /**

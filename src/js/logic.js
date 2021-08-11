@@ -20,7 +20,7 @@ function Scene(engine, spriteSheet, sceneData){
   this.spatialHashmap = new Map();
   this.movingEntities = []; // An array of all entities currently moving.
   this.entityMovingStates = ["moving", "walking", "sprinting"];
-  this.camera = new Camera();
+  this.camera = new Camera(this);
 
   if(sceneData.entities !== undefined){
     this._addPresetEntities(sceneData.entities)
@@ -348,23 +348,26 @@ TileMap.prototype._checkIsValidIndex = function(tileIndex){
 
 /*
  * Simple camera; will move based on what it's tracking.
- * NOTE: ALL coordinates will be relative to the SCENE.
+ * NOTE: All coordinates used by the camera are "world coordinates".
+ * - with the exception of centerOnEntity because it needs to account
+ * - for spriteScale.
 */
-function Camera(){
-  this.topLeft; // An ARRAY representing the x and y position of the camera viww's topelft.
+function Camera(parent){
+  this.parent = parent // A reference to the Scene the camera belongs to.
+  this.topLeft; // An array in format [x, y]
   this.centerX;
   this.centerY;
   this.viewWidth;
   this.viewHeight;
+  this.spriteScale = parent.engine.spriteScale;
 };
 
 // For initializing the camera.
-Camera.prototype.setup = function(centerX, centerY, viewWidth, viewHeight, spriteScale=1){
+Camera.prototype.setup = function(centerX, centerY, viewWidth, viewHeight){
   this.centerX = centerX;
   this.centerY = centerY;
   this.viewWidth = viewWidth;
   this.viewHeight = viewHeight;
-  this.spriteScale = spriteScale;
   this.calculateTopLeft();
 };
 
@@ -374,24 +377,16 @@ Camera.prototype.calculateTopLeft = function(){
   this.topLeft = [x, y];
 };
 
-// Change the position of the camera's CENTER.
-Camera.prototype.setPos = function(newX, newY){
-  this.centerX = newX;
-  this.centerY = newY;
-  this.calculateTopLeft();
-};
-
-// Center the camera based on the location of a source sprite.
-// Centers on the CENTER of the source sprite..
-Camera.prototype.center = function(sourceX, sourceY){
-  this.centerX = sourceX * this.spriteScale;
-  this.centerY = sourceY * this.spriteScale;
+// Centers the camera at (x, y)
+Camera.prototype.center = function(x, y){
+  this.centerX = x;
+  this.centerY = y;
   this.calculateTopLeft();
 };
 
 // Shorthand centering method.
 Camera.prototype.centerOnEntity =  function(entity){
-  this.center(entity.attributes["x"], entity.attributes["y"]);
+  this.center(entity.attributes["x"] * this.spriteScale, entity.attributes["y"] * this.spriteScale);
 };
 
 // Check if position is in view of camera.
@@ -405,6 +400,12 @@ Camera.prototype.rectInView = function(rect){
 // Get the relative position based on given coordinates.
 Camera.prototype.getRelative = function(trueX, trueY){
   return [trueX - this.topLeft[0], trueY - this.topLeft[1]];
+};
+
+// Prevents the camera view from going off the level bounds.
+// TODO: Implement
+Camera.prototype.clampView = function(x, y){
+
 };
 
 /**

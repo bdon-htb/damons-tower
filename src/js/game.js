@@ -348,8 +348,7 @@ Game.prototype._loadTestLevel = function(){
   scene.addEntity(player);
   scene.addEntity(dummy);
   let camera = scene.camera;
-  let posArray = [player.attributes["x"], player.attributes["y"]];
-  camera.center(posArray[0], posArray[1], player.attributes["sprite"].height);
+  camera.centerOnEntity(player);
 };
 
 // =======================
@@ -481,8 +480,8 @@ Game.prototype._calculateHitboxForce = function(sourceEntity, otherEntity, hitBo
     directionVector = sourceEntity.attributes["attackVector"].copy();
   }
   else {
-    let dx = Engine.prototype.boundNum(hurtBoxRect.center[0] - hitBoxRect.center[0], -1, 1);
-    let dy = Engine.prototype.boundNum(hurtBoxRect.center[1] - hitBoxRect.center[1], -1, 1);
+    let dx = Engine.prototype.clamp(hurtBoxRect.center[0] - hitBoxRect.center[0], -1, 1);
+    let dy = Engine.prototype.clamp(hurtBoxRect.center[1] - hitBoxRect.center[1], -1, 1);
     directionVector = new Vector2D([dx, dy]);
   }
   return Vector2D.prototype.scalarMultiply(sourceEntity.attributes["attackVector"], knockBack);

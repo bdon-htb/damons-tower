@@ -363,9 +363,7 @@ Engine.prototype.rectIntersects = function(rectA, rectB){
   return result;
 };
 
-// If n is outside the bounds, set it as the nearest endpoint value.
-// Precondition: a <= b
-Engine.prototype.boundNum = function(n, a, b){
+Engine.prototype.clamp = function(n, a, b){
   if(a > b){console.error(`interval bounds are invalid! bounds: [${a}, ${b}]`)}
 
   if(n < a){n = a}

@@ -133,6 +133,10 @@ PhysicsManager.prototype.tilePointofCollision = function(vector, scene, tileInde
 // This function is a general rayMarch implementation. It takes in the
 // the rayVector being checked, the scene the ray is being casted in, and
 // an evaluator method as arguments.
+
+// A null value is returned if there is no collision, and an undefined value is
+// returned if the ray goes out of bounds. The function will otherwise return
+// a precise collision point.
 PhysicsManager.prototype.rayMarch = function(rayVector, scene, evaluator){
     let CELLSIZE = scene.tileMap.tileSize;
     let tileMap = scene.tileMap;
@@ -203,6 +207,8 @@ PhysicsManager.prototype.rayMarch = function(rayVector, scene, evaluator){
       tilePos = [x * CELLSIZE, y * CELLSIZE];
 
       tileIndex = tileMap.getNearestTileIndex(tilePos);
+      if(tileIndex === undefined){return undefined};
+
       result = evaluator(tileIndex);
       if(result != null){return result};
 
@@ -221,7 +227,8 @@ PhysicsManager.prototype.rayMarch = function(rayVector, scene, evaluator){
   return null;
 };
 
-// Return the coordinates of the point where rayVector hits something in the scene.
+// Return the coordinates of the point where rayVector hits something in the scene
+// and the surface vector the point touches.
 PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
   let evaluator = this._checkForCollision.bind(this, rayVector, scene);
   result = this.rayMarch(rayVector, scene, evaluator);

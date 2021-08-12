@@ -423,6 +423,7 @@ Game.prototype._handleCollision = function(x, y, dx, dy, scene){
   collision = this.physicsManager.raycastCollision(movVector, scene);
   this.debugMenu.updateVariable("collision? ", collision !== null);
   if(collision !== null){
+    if(collision === undefined){collision = this._handleBoundaryCollision(movVector, scene)};
 
     // Initial collision.
     newPos = this.physicsManager.resolveCollision(movVector, collision[0]);
@@ -433,6 +434,7 @@ Game.prototype._handleCollision = function(x, y, dx, dy, scene){
       movVector = this.physicsManager.collisionSlide(movVector, collision[0], collision[1]);
       collision = this.physicsManager.raycastCollision(movVector, scene);
       if(collision !== null){
+        if(collision === undefined){collision = this._handleBoundaryCollision(movVector, scene)};
         newPos = this.physicsManager.resolveCollision(movVector, collision[0]);
       } else newPos = [movVector.p2[0], movVector.p2[1]];
     };
@@ -442,6 +444,44 @@ Game.prototype._handleCollision = function(x, y, dx, dy, scene){
     newPos = [movVector.p2[0], movVector.p2[1]];
   };
   return newPos;
+};
+
+// Precondition: movVector.p2 is out of bounds.
+Game.prototype._handleBoundaryCollision = function(movVector, scene){
+  console.log("Spanko!")
+  let engine = this.engine;
+  let tileMap = scene.tileMap;
+  let sceneWidth = tileMap.width * tileMap.tileSize;
+  let sceneHeight = tileMap.height * tileMap.tileSize;
+
+  let collision = [];
+  // Calculate the collision point with boundary.
+  let x = engine.clamp(movVector.p2[0], 0, sceneWidth);
+  let y = engine.clamp(movVector.p2[1], 0, sceneHeight);
+  collision.push([x, y]);
+
+  let boundaries = []
+  // Calculate the collision surface / collision boundary.
+  if(x !== movVector.p2[0]){
+    if(x === 0){
+      boundaries.push(new Vector2D([0, 0], [0, sceneHeight]));
+    }
+    else if(x === sceneWidth){
+      boundaries.push(new Vector2D([sceneWidth, 0], [sceneWidth, sceneHeight]));
+    }
+  }
+
+  if(y !== movVector.p2[1]){
+    if(y === 0){
+      boundaries.push(new Vector2D([0, 0], [sceneWidth, 0]));
+    }
+    else if(y === sceneHeight){
+      boundaries.push(new Vector2D([0, sceneHeight], [sceneWidth, sceneHeight]));
+    }
+  }
+  collision.push(boundaries[0]);
+
+  return collision
 };
 
 Game.prototype._handleHitboxCollision = function(sourceEntity, scene){

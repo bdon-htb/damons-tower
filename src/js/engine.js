@@ -364,7 +364,7 @@ Engine.prototype.rectIntersects = function(rectA, rectB){
 };
 
 Engine.prototype.clamp = function(n, min, max){
-  if(a > b){console.error(`interval bounds are invalid! bounds: [${min}, ${max}]`)}
+  if(min > max){console.error(`interval bounds are invalid! bounds: [${min}, ${max}]`)}
 
   if(n < min){n = min}
   else if(n > max){n = max};

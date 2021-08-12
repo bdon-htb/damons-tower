@@ -257,19 +257,30 @@ TileMap.prototype.getTileID = function(tileIndex){
   return id;
 };
 
-// Get the nearest TOPLEFT tile.
+// Return the index of the nearest TOPLEFT tile.
 // position is an object's TRUE position (i.e. in pixels).
+// If position is out of bounds a value of undefined is returned
 TileMap.prototype.getNearestTileIndex = function(position){
   let posX = position[0];
   let posY = position[1];
   // Create a rect representing the tileMap in pixels.
   let tileMapRect = new Rect([0, 0], this.width * this.tileSize, this.height * this.tileSize);
+  let errorFunc = () => console.error(`${position} is out of tileMap bounds.`);
 
   if(Engine.prototype.pointInRect(posX, posY, tileMapRect) === true){
     let tileX = Math.floor(posX / this.tileSize);
     let tileY = Math.floor(posY / this.tileSize);
-    return this.convertCoordsToIndex(tileX, tileY);
-  } else console.error(`${position} is out of tileMap bounds.`);
+    let tileIndex = this.convertCoordsToIndex(tileX, tileY);
+
+    // Potential edge cases.
+    if(tileIndex >= this.tiles.length || posX === tileMapRect.width ||
+      posY === tileMapRect.height){
+      return undefined
+    }
+
+    else return tileIndex;
+
+  } else return undefined
 }
 
 // Shorthand.
@@ -348,9 +359,8 @@ TileMap.prototype._checkIsValidIndex = function(tileIndex){
 
 /*
  * Simple camera; will move based on what it's tracking.
- * NOTE: All coordinates used by the camera are "world coordinates".
- * - with the exception of centerOnEntity because it needs to account
- * - for spriteScale.
+ * NOTE: most coordinates used by the camera are "world coordinates".
+ * with a few exceptions that need to account for spriteScaling.
 */
 function Camera(parent){
   this.parent = parent // A reference to the Scene the camera belongs to.
@@ -407,12 +417,10 @@ Camera.prototype.getRelative = function(trueX, trueY){
 // Prevents the camera view from going off the level bounds.
 Camera.prototype.clampView = function(){
   let engine = this.parent.engine;
-  let tileMap = this.parent.tileMap
-  let clampFunc = engine.clamp.bind(engine);
+  let tileMap = this.parent.tileMap;
 
   let sceneWidth = tileMap.width * tileMap.tileSize * engine.spriteScale;
   let sceneHeight = tileMap.height * tileMap.tileSize * engine.spriteScale;
-  let sceneRect = new Rect([0, 0])
 
   // If for whatever reason the level is smaller than the viewport,
   // we should just not bother clamping it.
@@ -448,6 +456,8 @@ Camera.prototype.clampView = function(){
     newY = sceneHeight - (this.viewHeight / 2);
   };
 
+  // Only center if there is a change.
+  // This also prevents infinite recursion.
   if(newX !== this.centerX || newY !== this.centerY){
     this.center(newX, newY);
   };

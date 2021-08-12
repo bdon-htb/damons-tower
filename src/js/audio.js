@@ -78,7 +78,7 @@ AudioManager.prototype.setVolume = function(v, type){
   if(type !== "bgm" || type !== "sfx"){
     console.error(`type ${type} is an invalid audio type!`);
   }
-  this[type + "Volume"] = Engine.prototype.boundNum(v, 0, 100);
+  this[type + "Volume"] = Engine.prototype.clamp(v, 0, 100);
 
   if(type === "bgm" && this.activeSong !== null){
     this.activeSong.volume = this.bgmVolume;

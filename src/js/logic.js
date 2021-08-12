@@ -265,7 +265,7 @@ TileMap.prototype.getNearestTileIndex = function(position){
   let posY = position[1];
   // Create a rect representing the tileMap in pixels.
   let tileMapRect = new Rect([0, 0], this.width * this.tileSize, this.height * this.tileSize);
-  let errorFunc = () => console.error(`${position} is out of tileMap bounds.`);
+  // let errorFunc = () => console.error(`${position} is out of tileMap bounds.`);
 
   if(Engine.prototype.pointInRect(posX, posY, tileMapRect) === true){
     let tileX = Math.floor(posX / this.tileSize);

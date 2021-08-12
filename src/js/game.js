@@ -448,7 +448,6 @@ Game.prototype._handleCollision = function(x, y, dx, dy, scene){
 
 // Precondition: movVector.p2 is out of bounds.
 Game.prototype._handleBoundaryCollision = function(movVector, scene){
-  console.log("Spanko!")
   let engine = this.engine;
   let tileMap = scene.tileMap;
   let sceneWidth = tileMap.width * tileMap.tileSize;
@@ -479,6 +478,8 @@ Game.prototype._handleBoundaryCollision = function(movVector, scene){
       boundaries.push(new Vector2D([0, sceneHeight], [sceneWidth, sceneHeight]));
     }
   }
+
+  // Corner case doesn't appaear to happen ever soooooo guess I'm good with this.
   collision.push(boundaries[0]);
 
   return collision

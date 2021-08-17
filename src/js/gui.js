@@ -18,18 +18,9 @@ function GUIManager(parent){
 // Return True if the mouse is hovering over a gui object.
 GUIManager.prototype._mouseOverGUIObject = function(mouse, guiObject){
   let engine = this.parent;
-  let horizontalRatio;
-  let verticalRatio;
-  // Account for fullscreen / screen resizing.
-  if(engine.renderer.isFullscreen === true){
-    let screenSize = engine.renderer.getScreenSize()
-    horizontalRatio = (screenSize[0] / engine.windowWidth);
-    verticalRatio = (screenSize[1] / engine.windowHeight);
-  }
-  else {
-    horizontalRatio = engine.renderer.horizontalRatio;
-    verticalRatio = engine.renderer.verticalRatio;
-  };
+
+  let horizontalRatio = engine.renderer.horizontalRatio;
+  let verticalRatio = engine.renderer.verticalRatio;
 
   let scaledX = guiObject.x * horizontalRatio;
   let scaledY = guiObject.y * verticalRatio;
@@ -605,7 +596,7 @@ DebugMenu.prototype.updateVariable = function(varName, varValue){
       this._updateSize(valueLabel);
       // You can uncomment this if you want this to scale. but this just seems really performant
       // (I don't get much of a hit though).
-      // this.parent.engine.guiManager.updateMenuGraphics(this);
+      this.parent.engine.guiManager.updateMenuGraphics(this);
     }
     else {
       // Create object.
@@ -623,7 +614,7 @@ DebugMenu.prototype.updateVariable = function(varName, varValue){
       this.organize();
       // You can uncomment this if you want this to scale. but this just seems really performant
       // (I don't get much of a hit though).
-      // this.parent.engine.guiManager.updateMenuGraphics(this);
+      this.parent.engine.guiManager.updateMenuGraphics(this);
     };
   };
 };

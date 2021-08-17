@@ -75,7 +75,7 @@ AudioManager.prototype.playSound = function(name){
 };
 
 AudioManager.prototype.setVolume = function(v, type){
-  if(type !== "bgm" || type !== "sfx"){
+  if(type !== "bgm" && type !== "sfx"){
     console.error(`type ${type} is an invalid audio type!`);
   }
   this[type + "Volume"] = Engine.prototype.clamp(v, 0, 100);

@@ -51,6 +51,8 @@ function Game(engine){
     "applySettings": this._applySettings.bind(this),
     "goToPreviousState": this.stateMachine.goToPreviousState.bind(this.stateMachine)
   };
+
+  this._addListeners();
 };
 
 Game.prototype.update = function(){
@@ -253,6 +255,17 @@ Game.prototype._drawEntityColliders = function(scene, entity){
 // Game callbacks + menu related methods.
 // ======================================
 
+Game.prototype._addListeners = function(){
+  let element = this.engine.context;
+  element.addEventListener("fullscreenchange", this._fullScreenHandler.bind(this));
+};
+
+Game.prototype._fullScreenHandler = function(){
+  if(this.gameStateObject["menu"]){
+    this.engine.guiManager.updateMenuGraphics(this.gameStateObject["menu"]);
+  };
+};
+
 Game.prototype._applySettings = function(){
   if(this.stateMachine.currentState != "settingsMenu"){
     console.error(`Invalid state to apply settings! Detected state: ${this.stateMachine.currentState}`)
@@ -267,6 +280,11 @@ Game.prototype._applySettings = function(){
       this.renderer.requestFullscreen();
     }
     else {
+      let screenChange = false;
+      if(this.renderer.isFullscreen === true){
+        this.renderer.exitFullscreen()
+      };
+
       // Assumes resolution text will be in the format "WidthxHeight"
       let oldScreenSize = this.renderer.getScreenSize();
       let newScreenSize = resolution.split('x').map(e => Number(e));
@@ -424,6 +442,9 @@ Game.prototype._handleCollision = function(x, y, dx, dy, scene){
   this.debugMenu.updateVariable("collision? ", collision !== null);
   if(collision !== null){
     if(collision === undefined){collision = this._handleBoundaryCollision(movVector, scene)};
+    if(collision[1] === undefined){
+      this._handleBoundaryCollision(movVector, scene);
+    }
 
     // Initial collision.
     newPos = this.physicsManager.resolveCollision(movVector, collision[0]);
@@ -815,7 +836,10 @@ Game.prototype._calculatePlayerAttackDirection = function(scene, player){
   if(this.controller.mode === "keyboard"){
     // Mouse coordinates are relative to game canvas.
     let mouseCoords = this.engine.inputManager.inputDevices.get("mouse").getCoords();
-    // if(this.renderer.isFullscreen === true){};
+
+    if(this.renderer.isFullscreen === true){
+      let screenSize = this.renderer.getScreenSize();
+    };
 
     // We want the center of where the player is being drawn on the screen.
     // So we calculate position the similar to how we calculate where to draw the player's sprite.

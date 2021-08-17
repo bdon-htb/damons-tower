@@ -22,6 +22,10 @@ function Renderer(parent){
   // Screen ratio compared to intended size.
   this.horizontalRatio = 1;
   this.verticalRatio = 1;
+
+  // For fullscreen functionality.
+  this._previousWidth = null;
+  this._previousHeight = null;
 };
 
 Renderer.prototype.verifyAPI = function(){
@@ -87,23 +91,41 @@ Renderer.prototype.addListeners = function(element){
 
 // Get the size of the renderer view.
 Renderer.prototype.getScreenSize = function(){
-  if(this.isFullscreen === true){
-    return [window.screen.width, window.screen.height]
-  } else return [this.app.renderer.width, this.app.renderer.height]
+  return [this.app.renderer.width, this.app.renderer.height]
 };
 
-Renderer.prototype.resizeScreen = function(newWidth, newHeight){
+Renderer.prototype.setScreenRatio = function(newWidth, newHeight){
   this.horizontalRatio = newWidth / this.parent.windowWidth;
   this.verticalRatio = newHeight / this.parent.windowHeight;
+}
+
+Renderer.prototype.resizeScreen = function(newWidth, newHeight){
+  this.setScreenRatio(newWidth, newHeight);
   this.app.renderer.resize(newWidth, newHeight);
 };
 
 Renderer.prototype.requestFullscreen = function(){
-  this.parent.context.requestFullscreen();
+  return this.parent.context.requestFullscreen().then(() => this.fullScreenHandler)
 };
+
+Renderer.prototype.exitFullscreen = function(){
+  return document.exitFullscreen().then(() => this.fullScreenHandler);
+}
 
 Renderer.prototype.fullScreenHandler = function(){
   this.isFullscreen = !this.isFullscreen; // Update flag.
+
+  if(this.isFullscreen){
+    this._previousWidth = this.app.renderer.width;
+    this._previousHeight = this.app.renderer.height;
+    this.resizeScreen(window.screen.width, window.screen.height);
+  }
+  else {
+    this.resizeScreen(this._previousWidth, this._previousHeight)
+    this._previousWidth = null;
+    this._previousHeight = null;
+  }
+
 };
 
 Renderer.prototype.brightenColor = function(hexString, percentage){

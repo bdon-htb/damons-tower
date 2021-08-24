@@ -481,23 +481,20 @@ Game.prototype._handleBoundaryCollision = function(movVector, scene){
   collision.push([x, y]);
 
   let boundaries = []
-  // Calculate the collision surface / collision boundary.
-  if(x !== movVector.p2[0]){
-    if(x === 0){
-      boundaries.push(new Vector2D([0, 0], [0, sceneHeight]));
-    }
-    else if(x === sceneWidth){
-      boundaries.push(new Vector2D([sceneWidth, 0], [sceneWidth, sceneHeight]));
-    }
+
+  // Figure out the collision boundary
+  if(x === 0){
+    boundaries.push(new Vector2D([0, 0], [0, sceneHeight])); // Left boundary.
+  }
+  else if(x === sceneWidth){
+    boundaries.push(new Vector2D([sceneWidth, 0], [sceneWidth, sceneHeight])); // Right boundary.
   }
 
-  if(y !== movVector.p2[1]){
-    if(y === 0){
-      boundaries.push(new Vector2D([0, 0], [sceneWidth, 0]));
-    }
-    else if(y === sceneHeight){
-      boundaries.push(new Vector2D([0, sceneHeight], [sceneWidth, sceneHeight]));
-    }
+  if(y === 0){
+    boundaries.push(new Vector2D([0, 0], [sceneWidth, 0])); // Top boundary.
+  }
+  else if(y === sceneHeight){
+    boundaries.push(new Vector2D([0, sceneHeight], [sceneWidth, sceneHeight])); // Bottom boundary.
   }
 
   // Corner case doesn't appaear to happen ever soooooo guess I'm good with this.

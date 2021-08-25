@@ -263,10 +263,16 @@ Game.prototype._addListeners = function(){
 Game.prototype._fullScreenHandler = function(){
   if(this.gameStateObject["menu"]){
     this.engine.guiManager.updateMenuGraphics(this.gameStateObject["menu"]);
+
+    // In settingsMenu and we're exiting fullscreen mode.
+    if(this.stateMachine.currentState === "settingsMenu" && this.renderer.isFullscreen === false){
+      // let resolution = this.engine.guiManager.getWidgetbyId(menu, "gameResolution");
+      console.log("test");
+    };
   };
 };
 
-Game.prototype._applySettings = function(){
+Game.prototype._applySettings = async function(){
   if(this.stateMachine.currentState != "settingsMenu"){
     console.error(`Invalid state to apply settings! Detected state: ${this.stateMachine.currentState}`)
   }
@@ -280,9 +286,8 @@ Game.prototype._applySettings = function(){
       this.renderer.requestFullscreen();
     }
     else {
-      let screenChange = false;
       if(this.renderer.isFullscreen === true){
-        this.renderer.exitFullscreen()
+        await this.renderer.exitFullscreen()
       };
 
       // Assumes resolution text will be in the format "WidthxHeight"
@@ -824,7 +829,6 @@ Game.prototype._handlePlayerAttack = function(scene, player, commands){
 };
 
 
-// TODO: Implement support for fullscreen mode.
 // Returns an array of 2 elements in the format ["direction", dirVector]
 // where "direction" is the direction of the attack animation
 // (can only be up, down, left, or right) and dirVector
@@ -833,10 +837,6 @@ Game.prototype._calculatePlayerAttackDirection = function(scene, player){
   if(this.controller.mode === "keyboard"){
     // Mouse coordinates are relative to game canvas.
     let mouseCoords = this.engine.inputManager.inputDevices.get("mouse").getCoords();
-
-    if(this.renderer.isFullscreen === true){
-      let screenSize = this.renderer.getScreenSize();
-    };
 
     // We want the center of where the player is being drawn on the screen.
     // So we calculate position the similar to how we calculate where to draw the player's sprite.
@@ -868,7 +868,6 @@ Game.prototype._calculatePlayerAttackDirection = function(scene, player){
   };
 };
 
-// TODO: Implement
 Game.prototype._updateCharacterAnimation = function(entity){
   let type = entity.attributes["type"];
   let direction = entity.attributes["direction"];

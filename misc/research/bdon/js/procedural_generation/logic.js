@@ -42,9 +42,13 @@ Rect.prototype._update = function(){
  * Helper functions
 */
 
-function getRandomInt(max) {
-  return Math.floor(Math.random() * max);
+// Stolen / borrowed from mdn. Why don't they just make a proper random library :/
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min) + min);
 }
+
 
 function inBetween(value, lower, upper, inclusive=false){
   let result;
@@ -98,8 +102,8 @@ function convertCoordsToIndex(index_X, index_Y, arrayWidth){
 
 // Rooms are simply rects here.
 function generateRoom(){
-  let width = getRandomInt(10);
-  let height = getRandomInt(10);
+  let width = getRandomInt(5, 20);
+  let height = getRandomInt(5, 20);
   let topLeft = [0, 0];
   return new Rect(topLeft, width, height);
 }
@@ -139,22 +143,23 @@ function addRoomToLevel(level, room, topLeft){
   };
 };
 
-function placeRoom(level, room, maxAttempts=1){
+function placeRoom(level, room, maxAttempts=10){
   let levelData = level.array;
-  let placed = false;
   let topLeft;
-  while(!placed || maxAttempts <= 0){
-    topLeft = [getRandomInt(level.width - room.width), getRandomInt(level.height - room.height)];
+
+  let placed = false;
+  let attempts = 0;
+  while(!placed && attempts <= maxAttempts){
+    topLeft = [getRandomInt(1, level.width - room.width), getRandomInt(1, level.height - room.height)];
     room.setTopLeft(topLeft);
 
-    if(!overlapsRooms(level, room) && inLevelBounds(level, room)){
+    if(!overlapsRooms(level, room)){
       addRoomToLevel(level, room, topLeft);
       placed = true;
-      break;
+      level.rooms.push(room)
     }
 
-    placed = true
-
+    attempts++;
   }
   return placed;
 }
@@ -169,9 +174,18 @@ function generateLevel(){
   };
   level.tileData = new Array(GRIDWIDTH * GRIDHEIGHT).fill(EMPTYVALUE) // Fill level with empty cells.
 
-  let r = generateRoom()
-  let result = placeRoom(level, r);
-  console.log(result)
+  let totalRooms = 10;
+  let roomCount = 0;
+
+  let room;
+  let placed;
+  while(roomCount < totalRooms){
+    room = generateRoom();
+    placed = placeRoom(level, room);
+    if(placed === true){
+      roomCount++;
+    }
+  };
 
   return level;
 }

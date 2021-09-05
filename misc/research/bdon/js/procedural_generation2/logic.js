@@ -135,17 +135,12 @@ function pointInRect(x, y, rect){
 function Room(width, height, margin=1){
   this.width = width;
   this.height = height;
-
-  this.margin = margin;
-
   this.rect = new Rect([0, 0], width, height);
-  // space outside room that cannot be occupied by other rooms.
-  this.boundRect = new Rect([0, 0], width + (2 * margin), height + (2 * margin));
+
 };
 
-Room.prototype.setTopLeft = function(topLeft, update=true){
+Room.prototype.setTopLeft = function(topLeft){
   this.rect.setTopLeft(topLeft);
-  this.boundRect.setTopLeft([topLeft[0] - this.margin, topLeft[1] - this.margin]);
 };
 
 /**
@@ -154,8 +149,8 @@ Room.prototype.setTopLeft = function(topLeft, update=true){
 
 // Rooms are simply rects here.
 function generateRoom(){
-  let width = getRandomInt(5, 20);
-  let height = getRandomInt(5, 20);
+  let width = getRandomInt(10, 20);
+  let height = getRandomInt(10, 20);
   return new Room(width, height);
 }
 
@@ -164,8 +159,8 @@ function inLevelBounds(level, room){
   let x;
   let y;
   for(let point of points){
-    x = room[point][0];
-    y = room[point][1];
+    x = room.rect[point][0];
+    y = room.rect[point][1];
     if(pointInRect(x, y, level.rect) === false){
       return false;
     }
@@ -175,7 +170,7 @@ function inLevelBounds(level, room){
 
 function overlapsRooms(level, room){
   for(let otherRoom of level.rooms){
-    if(rectIntersects(room.boundRect, otherRoom.boundRect)){return true}
+    if(rectIntersects(room.rect, otherRoom.rect)){return true}
   }
   return false;
 };
@@ -194,76 +189,7 @@ function addRoomToLevel(level, room, topLeft){
   };
 };
 
-function markNextToRoom(level, room){
-  let index;
-
-  let width;
-  let height;
-
-  let startX;
-  let startY;
-
-  let endX;
-  let endY;
-
-  let margins = {
-    "top": {
-      "startX": room.boundRect.topLeft[0],
-      "startY": room.boundRect.topLeft[1],
-      "endX": room.boundRect.topRight[0],
-      "endY": room.boundRect.topLeft[1] + room.margin
-    },
-    "bottom": {
-      "startX": room.boundRect.bottomLeft[0],
-      "startY": room.boundRect.bottomLeft[1] - room.margin,
-      "endX": room.boundRect.bottomRight[0],
-      "endY": room.boundRect.bottomLeft[1]
-    },
-    "left": {
-      "startX": room.boundRect.topLeft[0],
-      "startY": room.boundRect.topLeft[1] + 1,
-      "endX": room.boundRect.topLeft[0] + room.margin,
-      "endY": room.boundRect.bottomLeft[1] - 1
-    },
-    "right": {
-      "startX": room.boundRect.topRight[0] - room.margin,
-      "startY": room.boundRect.topRight[1] + 1,
-      "endX": room.boundRect.topRight[0],
-      "endY": room.boundRect.bottomRight[1] - 1
-    },
-  }
-
-  // Mark horizontal margins of room.
-  for(let [side, margin] of Object.entries(margins)){
-    startX = clamp(margin.startX, 0, level.width);
-    startY = clamp(margin.startY, 0, level.height);
-
-    endX = clamp(margin.endX, 0, level.width);
-    endY = clamp(margin.endY, 0, level.height);
-
-    // If the starting spot is inside the rect then there is no space for margin.
-    // right side bricks if margin === 1, so I added the extra condition to account for that.
-    if((side !== "right" && room.margin !== 1) && pointInRect(startX, startY, room.rect) === true){
-      continue;
-    };
-
-    width = endX - startX;
-    height = endY - startY
-
-    index = convertCoordsToIndex(startX, startY, level.width);
-
-    for(let y = 0; y < height; y++){
-      for(let x = 0; x < width; x++){
-        level.tileData[index] = NEXTTOVALUE;
-        index += 1;
-      };
-      index += level.width - width;
-    }
-  };
-}
-
-function placeRoom(level, room, maxAttempts=10){
-  let levelData = level.array;
+function randomlyPlaceRoom(level, room, maxAttempts=10){
   let topLeft;
 
   let placed = false;
@@ -274,7 +200,6 @@ function placeRoom(level, room, maxAttempts=10){
 
     if(!overlapsRooms(level, room)){
       addRoomToLevel(level, room, topLeft);
-      markNextToRoom(level, room);
       placed = true;
       level.rooms.push(room)
     }
@@ -284,105 +209,54 @@ function placeRoom(level, room, maxAttempts=10){
   return placed;
 };
 
-// Check available tiles for corridors.
-function getStartPoints(level){
-  let startPoints = []; // Contains indexes of potential corridor start points.
+function appendRoom(level, lastRoom, room){
+  let sides = ["top", "bottom", "left", "right"];
 
-  let banned = [ROOMVALUE, DOORVALUE, NEXTTOVALUE];
+  let placed = false;
+  let maxAttempts = 10; // maxAttempts per side.
+  let side;
+  let attempts;
+  let x;
+  let y;
+  while(!placed && sides.length > 0){
+    attempts = 0;
+    side = sides[getRandomInt(0, sides.length - 1)]; // Pick a random side.
 
-  let x = 0;
-  let y = 0;
-
-  let canPlace = false;
-
-  index = 0;
-  for(let y = 0; y < level.height; y++){
-    for(let x = 0; x < level.width; x++){
-
-      canPlace = !banned.includes(level.tileData[index]);
-
-      // Check index to left.
-      if(canPlace && x > 0){
-        canPlace = !banned.includes(level.tileData[index - 1]);
+    while(!placed && attempts <= maxAttempts){
+      switch(side){
+        case "top":
+          x = getRandomInt(lastRoom.rect.topLeft[0], lastRoom.rect.topRight[0]);
+          y = lastRoom.rect.topLeft[1] - room.height - 1;
+          break;
+        case "bottom":
+          x = getRandomInt(lastRoom.rect.bottomLeft[0], lastRoom.rect.bottomRight[0]);
+          y = lastRoom.rect.topLeft[1] + 1;
+          break;
+        case "left":
+          x = lastRoom.rect.topLeft[0] - room.width - 1;
+          y = getRandomInt(lastRoom.rect.topLeft[1], lastRoom.rect.bottomLeft[1]);
+          break;
+        case "right":
+          x = lastRoom.rect.topRight[0] + 1;
+          y = getRandomInt(lastRoom.rect.topRight[1], lastRoom.rect.bottomRight[1]);
+          break;
       }
 
-      // Check index to right.
-      if(canPlace && x < level.width){
-        canPlace = !banned.includes(level.tileData[index + 1]);
-      }
+      room.setTopLeft([x, y]);
+      if(!overlapsRooms(level, room) && inLevelBounds(level, room)){
+        addRoomToLevel(level, room, room.rect.topLeft);
+        placed = true;
+        level.rooms.push(room);
+      };
 
-      // Check index above.
-      if(canPlace && y > 0){
-        canPlace = !banned.includes(level.tileData[index - level.width]);
-      }
-
-      // Check index below.
-      if(canPlace && y < level.height){
-        canPlace = !banned.includes(level.tileData[index + level.width]);
-      }
-
-      // Don't place on border.
-      if(x === 0 || x === level.width - 1 || y === 0 || y === level.height - 1){
-        canPlace = false;
-      }
-
-      if(canPlace){
-        startPoints.push(index);
-      }
-      index += 1;
-    };
-  };
-
-  return startPoints;
-};
-
-function growCorridor(level, startIndex){
-  let next = [startIndex];
-  let visited = new Set();
-
-  let index = startIndex;
-  let startPos = convertIndexToCoords(startIndex, level.width); // Get current position;
-  let x = startPos[0];
-  let y = startPos[1];
-
-
-
-  let possibleMoves;
-  let banned = [ROOMVALUE, DOORVALUE, NEXTTOVALUE, CORRIDORVALUE];
-  let max = 100;
-  while(next.length > 0 && max > 0){
-
-    index = next.pop();
-    visited.add(index);
-    level.tileData[index] = CORRIDORVALUE;
-
-    possibleMoves = {
-      "up": index - level.width,
-      "down": index + level.width,
-      "right": index + 1,
-      "left": index - 1
+      attempts++;
     }
 
-    // If at border, delete relevant options.
-    if(x === 0){delete possibleMoves.left};
-    if(x === level.width - 1){delete possibleMoves.right};
-    if(y === 0){delete possibleMoves.up};
-    if(y === level.height - 1){delete possibleMoves.down};
-
-    for(let move of Object.values(possibleMoves)){
-      if(!visited.has(move) && !banned.includes(level.tileData[move])){
-        next.push(move)
-        max -= 1
-      };
+    if(placed === false){
+      sides.splice(sides.indexOf(side), 1);
     };
   }
-
-};
-
-function generateCorridors(level){
-  let startPoints = getStartPoints(level);
-  let start = startPoints[getRandomInt(0, startPoints.length)];
-  growCorridor(level, start);
+  return placed;
 };
 
 function generateLevel(){
@@ -395,20 +269,30 @@ function generateLevel(){
   };
   level.tileData = new Array(GRIDWIDTH * GRIDHEIGHT).fill(EMPTYVALUE) // Fill level with empty cells.
 
-  let totalRooms = 20;
+  let totalRooms = 10;
   let roomCount = 0;
 
   let room;
+  let lastRoom;
   let placed;
-  while(roomCount < totalRooms){
+  let maxAttempts = 100;
+  let attempts = 0;
+  while(roomCount < totalRooms && attempts < maxAttempts){
     room = generateRoom();
-    placed = placeRoom(level, room);
+
+    if(roomCount === 0){
+      placed = randomlyPlaceRoom(level, room); // Place starting room.
+    }
+    else {
+      placed = appendRoom(level, lastRoom, room);
+    }
+
     if(placed === true){
+      lastRoom = room;
       roomCount++;
     }
+
+    attempts++;
   };
-
-  generateCorridors(level);
-
   return level;
 }

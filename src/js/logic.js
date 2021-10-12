@@ -5,35 +5,73 @@
 
 /**
  * Custom scene object. Will essentially represent a level in the game.
- *
+ * Also a de facto entity manager.
 */
-function Scene(spriteSheet, sceneData){
+function Scene(engine, spriteSheet, sceneData){
+  this.engine = engine;
   this.name = sceneData.name;
   this.spriteSheet = spriteSheet; // Shared spriteSheet of all the tiles in the scene.
   this.tileMap = new TileMap(sceneData.width, sceneData.height, sceneData.tileData);
   // A map of all entities in the scene. keys are entity ids. values are entity objects.
   this.entities = new Map();
+  this._genericID = 0; // For creating ids for generic entities.
   // A spatial hashmap of all entities in the scene. keys are tile positions in the map occupied by entity(s).
   // values are an array of all entities contained in the tile.
   this.spatialHashmap = new Map();
   this.movingEntities = []; // An array of all entities currently moving.
   this.entityMovingStates = ["moving", "walking", "sprinting"];
-  this.camera = new Camera();
+  this.camera = new Camera(this);
+
+  if(sceneData.entities !== undefined){
+    this._addPresetEntities(sceneData.entities)
+  };
 };
 
-Scene.prototype._createEntityRect = function(entity){
+Scene.prototype._getGenericID = function(){
+  let id = this._genericID;
+  this._genericID += 1;
+  return 'entity_' + id.toString();
+};
+
+// Precondition: each entity in presetEntities is properly formatted.
+Scene.prototype._addPresetEntities = function(presetEntities){
+  let entity;
+  for(let entityData of presetEntities){
+    entity = this.createEntity(entityData.name, entityData.id);
+
+    // If an attribute value is defined in entityData, we update from the default here.
+    for(let attribute of Object.keys(entityData)){
+      if(attribute === "name" || attribute === "id"){continue};
+      entity.attributes[attribute] = entityData[attribute];
+    };
+    this.addEntity(entity);
+  };
+};
+
+Scene.prototype.entitiesInTile = function(tileIndex){
+  return this.spatialHashmap.has(tileIndex);
+};
+
+Scene.prototype.getTileEntities = function(tileIndex){
+  return this.spatialHashmap.get(tileIndex);
+};
+
+Scene.prototype.createEntityRect = function(entity){
   let entityWidth = entity.attributes["width"];
   let entityHeight = entity.attributes["height"];
   let entityX = entity.attributes["x"];
   let entityY = entity.attributes["y"];
-  let entityTopLeft = [entityX - (entityWidth / 2), entityY - (entityHeight / 2)];
+  let entityTopLeft = this.getEntityTopLeft(entity);
   return new Rect(entityTopLeft, entityWidth, entityHeight);
 };
 
+// Shorthand.
 Scene.prototype._getTilesEntityIsIn = function(entity){
-  let inBetween = Engine.prototype.inBetween;
-  let entityRect = this._createEntityRect(entity);
-  let rectPositions = [entityRect.topLeft, entityRect.topRight, entityRect.bottomLeft, entityRect.bottomRight];
+  return this.getTilesRectIntersects(this.createEntityRect(entity));
+};
+
+Scene.prototype.getTilesRectIntersects = function(rect){
+  let rectPositions = [rect.topLeft, rect.topRight, rect.bottomLeft, rect.bottomRight];
   let encompassingTiles = new Set();
   // Check each corner to find which tile(s) the entity is currently in.
   for(const p of rectPositions){
@@ -43,7 +81,6 @@ Scene.prototype._getTilesEntityIsIn = function(entity){
         encompassingTiles.add(nearestTile);
       };
   };
-
   return encompassingTiles;
 };
 
@@ -54,11 +91,11 @@ Scene.prototype._addEntityToHashmap = function(entity){
 
   encompassingTiles.forEach(tileIndex => {
     if(this.spatialHashmap.has(tileIndex) === false){
-      this.spatialHashmap.set(tileIndex, [entity]);
+      this.spatialHashmap.set(tileIndex, new Set().add(entity));
     }
     else {
-      let entityArrray = this.spatialHashmap.get(tileIndex);
-      entityArray.push(entity);
+      let entitySet = this.spatialHashmap.get(tileIndex);
+      entitySet.add(entity);
     }
   });
 };
@@ -69,16 +106,44 @@ Scene.prototype._removeEntityfromHashmap = function(entity){
   let encompassingTiles = tileGetterFunc(entity);
 
   encompassingTiles.forEach(tileIndex => {
-    let entityArray = this.spatialHashmap.get(tileIndex);
+    let entitySet = this.spatialHashmap.get(tileIndex);
 
-    if(entityArray.length <= 1){
+    if(entitySet.size <= 1){
       this.spatialHashmap.delete(tileIndex);
     }
     else {
-      // Remove entity from array.
-      entityArray.splice(entityArray.indexOf(entity), 1);
+      // Remove entity from set.
+      entitySet.delete(entity);
     }
   });
+};
+
+Scene.prototype.createEntity = function(entityName, id=undefined){
+  let entity;
+  switch (entityName) {
+    case "player":
+      entity = new PlayerEntity(this.engine);
+      break;
+    case "anna":
+      entity = new AnnaEntity(this.engine);
+      break;
+    case "darius":
+      entity = new DariusEntity(this.engine);
+      break;
+    case "dummyMan":
+      entity = new DummyManEntity(this.engine);
+      break;
+    case "tower_watch1":
+    case "tower_watch2":
+      entity = new TowerWatchEntity(this.engine, entityName.slice(-1));
+      break;
+    default:
+      console.error(`entityName ${entityName} is invalid!`);
+  };
+
+  if(id != undefined){entity.id = id}
+  else entity.id = this._getGenericID();
+  return entity;
 };
 
 Scene.prototype.addEntity = function(entity){
@@ -132,26 +197,6 @@ Scene.prototype.getEntityTopLeft = function(entity){
   let topLeftX = entity.attributes["x"] - (entity.attributes["width"] / 2);
   let topLeftY = entity.attributes["y"] - (entity.attributes["height"] / 2);
   return [topLeftX, topLeftY];
-};
-
-/**
- * Custom scene manager object. Will be responsible for transition betweening
- * through different scenes.
-*/
-function SceneManager(){
-  this.currentScene;
-  this.sceneHistory = [];
-};
-
-SceneManager.prototype.setScene = function(newScene){
-  if(this.currentScene !== undefined){
-    this.sceneHistory.push(newScene);
-  };
-  this.currentScene = newScene;
-};
-
-SceneManager.prototype.clearHistory = function(){
-  this.sceneHistory = [];
 };
 
 /**
@@ -212,19 +257,30 @@ TileMap.prototype.getTileID = function(tileIndex){
   return id;
 };
 
-// Get the nearest TOPLEFT tile.
+// Return the index of the nearest TOPLEFT tile.
 // position is an object's TRUE position (i.e. in pixels).
+// If position is out of bounds a value of undefined is returned
 TileMap.prototype.getNearestTileIndex = function(position){
   let posX = position[0];
   let posY = position[1];
   // Create a rect representing the tileMap in pixels.
   let tileMapRect = new Rect([0, 0], this.width * this.tileSize, this.height * this.tileSize);
+  // let errorFunc = () => console.error(`${position} is out of tileMap bounds.`);
 
   if(Engine.prototype.pointInRect(posX, posY, tileMapRect) === true){
     let tileX = Math.floor(posX / this.tileSize);
     let tileY = Math.floor(posY / this.tileSize);
-    return this.convertCoordsToIndex(tileX, tileY);
-  } else console.error(`${position} is out of tileMap bounds.`);
+    let tileIndex = this.convertCoordsToIndex(tileX, tileY);
+
+    // Potential edge cases.
+    if(tileIndex >= this.tiles.length || posX === tileMapRect.width ||
+      posY === tileMapRect.height){
+      return undefined
+    }
+
+    else return tileIndex;
+
+  } else return undefined
 }
 
 // Shorthand.
@@ -303,23 +359,25 @@ TileMap.prototype._checkIsValidIndex = function(tileIndex){
 
 /*
  * Simple camera; will move based on what it's tracking.
- * NOTE: ALL coordinates will be relative to the SCENE.
+ * NOTE: most coordinates used by the camera are "world coordinates".
+ * with a few exceptions that need to account for spriteScaling.
 */
-function Camera(){
-  this.topLeft; // An ARRAY representing the x and y position of the camera viww's topelft.
+function Camera(parent){
+  this.parent = parent // A reference to the Scene the camera belongs to.
+  this.topLeft; // An array in format [x, y]
   this.centerX;
   this.centerY;
   this.viewWidth;
   this.viewHeight;
+  this.spriteScale = parent.engine.spriteScale;
 };
 
 // For initializing the camera.
-Camera.prototype.setup = function(centerX, centerY, viewWidth, viewHeight, spriteScale=1){
+Camera.prototype.setup = function(centerX, centerY, viewWidth, viewHeight){
   this.centerX = centerX;
   this.centerY = centerY;
   this.viewWidth = viewWidth;
   this.viewHeight = viewHeight;
-  this.spriteScale = spriteScale;
   this.calculateTopLeft();
 };
 
@@ -329,24 +387,23 @@ Camera.prototype.calculateTopLeft = function(){
   this.topLeft = [x, y];
 };
 
-// Change the position of the camera's CENTER.
-Camera.prototype.setPos = function(newX, newY){
-  this.centerX = newX;
-  this.centerY = newY;
+// Centers the camera at (x, y)
+Camera.prototype.center = function(x, y){
+  this.centerX = x;
+  this.centerY = y;
   this.calculateTopLeft();
+  this.clampView();
 };
 
-// Center the camera based on the location of a source sprite.
-// Centers on the CENTER of the source sprite..
-Camera.prototype.center = function(sourceX, sourceY){
-  this.centerX = sourceX * this.spriteScale;
-  this.centerY = sourceY * this.spriteScale;
-  this.calculateTopLeft();
+// Shorthand centering method.
+Camera.prototype.centerOnEntity =  function(entity){
+  this.center(entity.attributes["x"] * this.spriteScale, entity.attributes["y"] * this.spriteScale);
 };
 
 // Check if position is in view of camera.
+// Precondition: rect coordinates are relative to the view.
 Camera.prototype.rectInView = function(rect){
-  let engine = Engine.prototype;
+  let engine = this.parent.engine;
   let intersectFunc = engine.rectIntersects.bind(engine);
   let cameraRect = new Rect([0, 0], this.viewWidth, this.viewHeight);
   return intersectFunc(rect, cameraRect);
@@ -355,6 +412,55 @@ Camera.prototype.rectInView = function(rect){
 // Get the relative position based on given coordinates.
 Camera.prototype.getRelative = function(trueX, trueY){
   return [trueX - this.topLeft[0], trueY - this.topLeft[1]];
+};
+
+// Prevents the camera view from going off the level bounds.
+Camera.prototype.clampView = function(){
+  let engine = this.parent.engine;
+  let tileMap = this.parent.tileMap;
+
+  let sceneWidth = tileMap.width * tileMap.tileSize * engine.spriteScale;
+  let sceneHeight = tileMap.height * tileMap.tileSize * engine.spriteScale;
+
+  // If for whatever reason the level is smaller than the viewport,
+  // we should just not bother clamping it.
+  if(sceneWidth < this.viewWidth || sceneHeight < this.viewHeight){
+    return;
+  };
+
+  // topLeft
+  let x0 = this.topLeft[0];
+  let y0 = this.topLeft[1];
+
+  // bottomLeft
+  let x1 = this.topLeft[0] + this.viewWidth;
+  let y1 = this.topLeft[1] + this.viewHeight;
+
+  // center.
+  let newX = this.centerX;
+  let newY = this.centerY;
+
+  // check horizontal axises.
+  if(x0 < 0){
+    newX = 0 + (this.viewWidth / 2);
+  }
+  else if(x1 > sceneWidth){
+    newX = sceneWidth - (this.viewWidth / 2);
+  };
+
+  // check vertical axises.
+  if(y0 < 0){
+    newY = 0 + (this.viewHeight / 2);
+  }
+  else if(y1 > sceneHeight){
+    newY = sceneHeight - (this.viewHeight / 2);
+  };
+
+  // Only center if there is a change.
+  // This also prevents infinite recursion.
+  if(newX !== this.centerX || newY !== this.centerY){
+    this.center(newX, newY);
+  };
 };
 
 /**

@@ -4,7 +4,6 @@
       "sword_basic_attack": {
         "loops": false,
         "type": "effect",
-        "timings": 5,
         "offsetX": -32,
         "offsetY": -32},
 

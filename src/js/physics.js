@@ -133,6 +133,10 @@ PhysicsManager.prototype.tilePointofCollision = function(vector, scene, tileInde
 // This function is a general rayMarch implementation. It takes in the
 // the rayVector being checked, the scene the ray is being casted in, and
 // an evaluator method as arguments.
+
+// A null value is returned if there is no collision, and an undefined value is
+// returned if the ray goes out of bounds. The function will otherwise return
+// a precise collision point.
 PhysicsManager.prototype.rayMarch = function(rayVector, scene, evaluator){
     let CELLSIZE = scene.tileMap.tileSize;
     let tileMap = scene.tileMap;
@@ -203,7 +207,9 @@ PhysicsManager.prototype.rayMarch = function(rayVector, scene, evaluator){
       tilePos = [x * CELLSIZE, y * CELLSIZE];
 
       tileIndex = tileMap.getNearestTileIndex(tilePos);
-      result = evaluator(rayVector, scene, tileIndex);
+      if(tileIndex === undefined){return undefined};
+
+      result = evaluator(tileIndex);
       if(result != null){return result};
 
       // Determine which intersection is closer and add to appropriate component.
@@ -221,9 +227,10 @@ PhysicsManager.prototype.rayMarch = function(rayVector, scene, evaluator){
   return null;
 };
 
-// Return the coordinates of the point where rayVector hits something in the scene.
+// Return the coordinates of the point where rayVector hits something in the scene
+// and the surface vector the point touches.
 PhysicsManager.prototype.raycastCollision = function(rayVector, scene){
-  let evaluator = this._checkForCollision.bind(this);
+  let evaluator = this._checkForCollision.bind(this, rayVector, scene);
   result = this.rayMarch(rayVector, scene, evaluator);
   return result;
 };
@@ -242,20 +249,18 @@ PhysicsManager.prototype._checkForCollision = function(rayVector, scene, tileInd
   let tileMap = scene.tileMap;
   if(tileMap.tileIsCollidable(tileIndex) === true){
     return this.tilePointofCollision(rayVector, scene, tileIndex);
-  };
+  }
   return null;
 };
 
 PhysicsManager.prototype.collisionSlide = function(movVector, collisionPoint, collisionSurface){
   let vScalarMultiply = Vector2D.prototype.scalarMultiply;
   let vDotProduct = Vector2D.prototype.dotProduct;
-  let vOrthogonal =  Vector2D.prototype.orthogonal;
-  let vNormalize = Vector2D.prototype.normalize;
   let vSubtract = Vector2D.prototype.subtract;
 
   // let newPos = collisionPoint;
-  let surfaceNormal = vOrthogonal(collisionSurface);
-  surfaceNormal = vNormalize(surfaceNormal);
+  let surfaceNormal = collisionSurface.orthogonal();
+  surfaceNormal = surfaceNormal.normalize();
 
   let dotProduct = vDotProduct(movVector, surfaceNormal);
   let undesired = vScalarMultiply(surfaceNormal, dotProduct);
@@ -265,8 +270,8 @@ PhysicsManager.prototype.collisionSlide = function(movVector, collisionPoint, co
 };
 
 PhysicsManager.prototype.resolveCollision = function(movVector, collisionPoint) {
-  let directionX = Math.sign(movVector.p2[0] - movVector.p1[0]);
-  let directionY = Math.sign(movVector.p2[1] - movVector.p1[1]);
+  let directionX = Math.sign(movVector.dx());
+  let directionY = Math.sign(movVector.dy());
   collisionPoint[0] -= directionX;
   collisionPoint[1] -= directionY;
   return collisionPoint;
@@ -281,6 +286,7 @@ function Rect(topLeft, width, height=undefined){
   this.topRight;
   this.bottomLeft;
   this.bottomRight;
+  this.center;
 
   this.width;
   this.height;
@@ -308,6 +314,7 @@ Rect.prototype._update = function(){
   this.topRight = [this.topLeft[0] + this.width, this.topLeft[1]];
   this.bottomLeft = [this.topLeft[0], this.topLeft[1] + this.height];
   this.bottomRight = [this.topLeft[0] + this.width, this.topLeft[1] + this.height];
+  this.center = [this.topLeft[0] + (this.width / 2), this.topLeft[1] + (this.height / 2)];
 };
 
 /**
@@ -335,6 +342,9 @@ Circle.prototype.setRadius = function(radius){
  * point1 and point2 are its coordinates (lists in the form of [1, 2]).
  * If point2 is not provided, then it'll be assumed that the vector originates
  * from the origin (0, 0).
+ * For all Vector2D methods, if the only parameter is the vector object,
+ * you can also call the method from witthin the vector itself.
+ * i.e. vector1.dx() vs. Vector2D.prototype.dx(vector1)
 */
 function Vector2D(point1, point2){
   if(point2 != undefined){
@@ -347,15 +357,24 @@ function Vector2D(point1, point2){
   };
 };
 
+// If the vector parameter is undefined, then return the vector
+// that the function is being called from.
+Vector2D.prototype._getVector = function(vector){
+  if(vector === undefined){
+    return this;
+  } else return vector;
+};
+
 Vector2D.prototype.copy = function(vector){
+  vector = this._getVector()
   let p1 = [vector.p1[0], vector.p1[1]];
   let p2 = [vector.p2[0], vector.p2[1]];
   return new Vector2D(p1, p2);
 };
 
 Vector2D.prototype.add = function(vector1, vector2){
-  let dx = (vector1.p2[0] - vector1.p1[0]) + (vector2.p2[0] - vector2.p1[0]);
-  let dy = (vector1.p2[1] - vector1.p1[1]) + (vector2.p2[1] - vector2.p1[1]);
+  let dx = vector1.dx() + vector2.dx();
+  let dy = vector1.dy() + vector2.dy();
 
   let p1 = [vector1.p1[0], vector1.p1[1]];
   let p2 = [vector1.p1[0] + dx, vector1.p1[1] + dy];
@@ -363,8 +382,8 @@ Vector2D.prototype.add = function(vector1, vector2){
 };
 
 Vector2D.prototype.subtract = function(vector1, vector2){
-  let dx = (vector1.p2[0] - vector1.p1[0]) - (vector2.p2[0] - vector2.p1[0]);
-  let dy = (vector1.p2[1] - vector1.p1[1]) - (vector2.p2[1] - vector2.p1[1]);
+  let dx = vector1.dx() - vector2.dx();
+  let dy = vector1.dy() - vector2.dy();
 
   let p1 = [vector1.p1[0], vector1.p1[1]];
   let p2 = [vector1.p1[0] + dx, vector1.p1[1] + dy];
@@ -372,8 +391,8 @@ Vector2D.prototype.subtract = function(vector1, vector2){
 };
 
 Vector2D.prototype.scalarMultiply = function(vector, s){
-  let dx = (vector.p2[0] - vector.p1[0]) * s;
-  let dy = (vector.p2[1] - vector.p1[1]) * s;
+  let dx = vector.dx() * s;
+  let dy = vector.dy() * s;
 
   let p1 = [vector.p1[0], vector.p1[1]];
   let p2 = [vector.p1[0] + dx, vector.p1[1] + dy];
@@ -382,8 +401,8 @@ Vector2D.prototype.scalarMultiply = function(vector, s){
 
 Vector2D.prototype.scalarDivide = function(vector, s){
   if(s != 0){
-    let dx = (vector.p2[0] - vector.p1[0]) / s;
-    let dy = (vector.p2[1] - vector.p1[1]) / s;
+    let dx = vector.dx() / s;
+    let dy = vector.dy() / s;
 
     let p1 = [vector.p1[0], vector.p1[1]];
     let p2 = [vector.p1[0] + dx, vector.p1[1] + dy];
@@ -392,13 +411,7 @@ Vector2D.prototype.scalarDivide = function(vector, s){
 };
 
 Vector2D.prototype.dotProduct = function(vector1, vector2){
-  let dx1 = (vector1.p2[0] - vector1.p1[0]);
-  let dy1 = (vector1.p2[1] - vector1.p1[1]);
-
-  let dx2 = (vector2.p2[0] - vector2.p1[0]);
-  let dy2 = (vector2.p2[1] - vector2.p1[1]);
-
-  return (dx1 * dx2) + (dy1 * dy2);
+  return (vector1.dx() * vector2.dx()) + (vector1.dy() * vector2.dy());
 };
 
 // This function assumes that both vectors originate from the same point i.e. the origin..
@@ -440,6 +453,7 @@ Vector2D.prototype.vectorsIntersect = function(vector1, vector2){
 // can optionally have the output be in degrees by setting inDegrees = true
 // Precondition: vector.p1 = [0, 0]
 Vector2D.prototype.calculateAngle = function(vector, inDegrees=false){
+  vector = this._getVector(vector);
   let x = vector.p2[0];
   let y = vector.p2[1];
   let angle = Math.atan2(y, x);
@@ -450,24 +464,38 @@ Vector2D.prototype.calculateAngle = function(vector, inDegrees=false){
   return angle;
 };
 
+Vector2D.prototype.dx = function(vector){
+  vector = this._getVector(vector);
+  return vector.p2[0] - vector.p1[0];
+};
+
+Vector2D.prototype.dy = function(vector){
+  vector = this._getVector(vector);
+  return vector.p2[1] - vector.p1[1];
+};
+
 // Return magnitude of horizontal component of vector.
 Vector2D.prototype.width = function(vector){
-  return Math.abs(vector.p2[0] - vector.p1[0])
+  vector = this._getVector(vector);
+  return Math.abs(vector.dx())
 };
 
 // Return magnitude of vertical component of vector.
 Vector2D.prototype.height = function(vector){
-  return Math.abs(vector.p2[1] - vector.p1[1])
+  vector = this._getVector(vector);
+  return Math.abs(vector.dy())
 };
 
 Vector2D.prototype.length = function(vector){
-  let a = Vector2D.prototype.width(vector);
-  let b = Vector2D.prototype.height(vector);
+  vector = this._getVector(vector);
+  let a = vector.width();
+  let b = vector.height();
   return Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
 };
 
 Vector2D.prototype.normalize = function(vector){
-  let length = Vector2D.prototype.length(vector);
+  vector = this._getVector(vector);
+  let length = vector.length();
   if(length > 0){
     return Vector2D.prototype.scalarDivide(vector, length);
   };
@@ -475,8 +503,7 @@ Vector2D.prototype.normalize = function(vector){
 
 // Return the vector orthogonal to the input vector.
 Vector2D.prototype.orthogonal = function(vector){
-  let dx = vector.p2[0] - vector.p1[0];
-  let dy = vector.p2[1] - vector.p1[1];
+  vector = this._getVector(vector);
   let p1 = [vector.p1[0], vector.p1[1]];
-  return new Vector2D(p1, [vector.p1[0] - dy, vector.p1[1] + dx]);
+  return new Vector2D(p1, [vector.p1[0] - vector.dy(), vector.p1[1] + vector.dx()]);
 };

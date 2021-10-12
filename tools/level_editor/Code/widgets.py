@@ -21,7 +21,7 @@ from .file import load_json, load_stylesheet, write_level_json, get_filename_fro
 from .data import LevelData, AbstractTile
 
 def is_level(d: dict) -> bool:
-    """Simply checks that the first key is 'levelData'
+    """Simply checks that the first key is the level key
     For preventing the loading of non-level data .json files.
     """
     return list(d.keys())[0] == cfg.LEVEL_KEY
@@ -219,17 +219,17 @@ class MainWindow(QMainWindow):
             }
 
         if newFile:
-            file = {'levelData': {levelName: data_dict}}
+            file = {cfg.LEVEL_KEY: {levelName: data_dict}}
             self.workingDirectory = None
         else:
             file = self.levelData.getLevelJson()
 
-            if levelName in file['levelData']: # Check if level already exists.
+            if levelName in file[cfg.LEVEL_KEY]: # Check if level already exists.
                 msg = f'Detected an existing level in file with name {levelName}. Do you want to overwrite this data?'
                 if QMessageBox.question(self, 'Message', msg, QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
                     return
 
-            file['levelData'][levelName] = data_dict
+            file[cfg.LEVEL_KEY][levelName] = data_dict
 
         if newLevelDialog:
             newLevelDialog.close()
@@ -564,12 +564,12 @@ class MapView(CustomView):
                 if tile_data[2] == cfg.EMPTY_TILE_ID:
                     tile_data[2] = 'FL'
                 new_id = '-'.join(tile_data)
-                levelData.fillTiles(index, source_id, new_id, fill_indexes=(0, 2))
+                levelData.fillTiles(index, new_id, fill_indexes=(0, 2))
             elif cursorMode == 'fill' and activeTileMenu == 'Tile Ids' and selectedTile:
                 source_id = '-'.join(tile_data)
                 tile_data[2] = str(selectedTile.getMetaData()["id"])
                 new_id = '-'.join(tile_data)
-                levelData.fillTiles(index, source_id, new_id, fill_indexes=(2, cfg.TILE_ARRAY_SIZE))
+                levelData.fillTiles(index, new_id, fill_indexes=(2, cfg.TILE_ARRAY_SIZE))
 
             # Checks if there was a change made.
             if oldTileData != levelData.getTileData():
@@ -891,6 +891,7 @@ class TileSpriteMenu(TileMenu):
         """
         # Load tileset sprite into scene.
         spriteSheet = QPixmap(spriteSheetURL)
+        print(spriteSheetURL)
         self.scene().addPixmap(spriteSheet)
         # Note that this range only works because the tiles are squares.
         for y in range(0, spriteSheet.height(), cfg.TILESIZE):
@@ -1117,7 +1118,6 @@ class SpriteInput(QWidget):
             filename = get_filename_from_path(path).replace('.png', '')
             self.textInput.setText(filename)
 
-# TODO: Implement
 class ResizeMapWindow(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
@@ -1177,6 +1177,8 @@ class ResizeMapWindow(QDialog):
             anchorPoint = self.anchorMenu.getAnchorPoint()
             level.resizeTileArray(anchorPoint, newWidth, newHeight)
             self.parent.mapView.redrawLevel()
+            mapSize = ' {}x{} '.format(newWidth, newHeight)
+            self.parent.statusComponents['levelSize'].setText(mapSize)
             self.close()
         else:
             msg = 'Incorrect input detected. Please ensure dimensions are correct and try again.'

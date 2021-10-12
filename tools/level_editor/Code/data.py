@@ -122,63 +122,56 @@ class LevelData:
         empty_id = '0-0-{}'.format(cfg.EMPTY_TILE_ID)
         self.setTile(tile_index, empty_id, levelName)
 
-    def fillTiles(self, tile_index: int, source_id: str, new_id: str, levelName=None, fill_indexes=None, history=set()):
+    def fillTiles(self, tile_index: int, new_id: str, levelName=None, fill_indexes=(0, cfg.TILE_ARRAY_SIZE)):
         """Recursively fill the tiles of the array.
 
         levelName is an optional parameter to specify the level being filled. (default is active level).
 
         fill_indexes is an optional pair of integers in the format (start, end)
-        that tells the function to only check if source_id and tile_id are equal
-        within those indexes (the indexes are split by the hyphens '-').
+        that tells the function to only checks and replaces within those indexes.
 
         If fill_indexes is not specified then the function just checks that the
         full ids are equal.
-
-        history is for optimization. Do change the value for it.
         """
-
-        tile_id = self.getTileData(levelName)[tile_index]
-        tile_id = tile_id.split('-')
-        source_id = source_id.split('-')
+        array_width, array_height = self.getMapSize(1)
+        fill_start, fill_end = fill_indexes
+        source_id = None
         new_id = new_id.split('-')
 
-        if fill_indexes and source_id[2] != cfg.EMPTY_TILE_ID: # Assume fill_indexes is a tuple.
-            start, end = fill_indexes
-            can_fill = (source_id[start:end] == tile_id[start:end])
+        in_map = lambda x, y : 0 <= x and x < array_width and 0 <= y and y < array_height
+        can_fill = lambda source_id, tile_id : source_id[fill_start:fill_end] == tile_id[fill_start:fill_end]
+        get_id = lambda levelName, tile_index : self.getTileData(levelName)[tile_index].split('-')
+
+        stack = [tile_index]
+        history = set()
+
+        while stack:
+
+            tile_index = stack.pop()
+            tile_id = get_id(levelName, tile_index)
+            if source_id is None:
+                source_id = tile_id.copy()
+                # Filling empty tiles are a special case.
+                if source_id[2] == cfg.EMPTY_TILE_ID:
+                    can_fill = lambda source_id, tile_id : source_id[2] == tile_id[2]
+                    fill_start, fill_end = (0, cfg.TILE_ARRAY_SIZE)
 
             # We only replace indexes specified in fill_indexes
-            replacement_tile = tile_id.copy()
-            replacement_tile[start:end] = new_id[start:end]
-            replacement_tile = '-'.join(replacement_tile)
-        else:
-            if source_id[2] == cfg.EMPTY_TILE_ID:
-                can_fill = (tile_id[2] == cfg.EMPTY_TILE_ID)
-            else:
-                can_fill = (source_id == tile_id)
+            tile_id[fill_start:fill_end] = new_id[fill_start:fill_end]
+            tile_id = '-'.join(tile_id)
 
-            replacement_tile = '-'.join(new_id)
+            self.setTile(tile_index, tile_id, levelName)
 
-        tile_id = '-'.join(tile_id)
-        source_id = '-'.join(source_id)
-        new_id = '-'.join(new_id)
-
-        array_width, array_height = self.getMapSize(1)
-        x, y = self.get2DFrom1D(tile_index, array_width)
-        if source_id != new_id and can_fill:
-            self.setTile(tile_index, replacement_tile, levelName)
+            x, y = self.get2DFrom1D(tile_index, array_width)
             history.add((x, y))
-            if y - 1 >= 0 and (x, y - 1) not in history:
-                index_above = self.get1DFrom2D(x, y - 1, array_width)
-                self.fillTiles(index_above, source_id, new_id, levelName, fill_indexes, history)
-            if x + 1 <= array_width - 1 and (x + 1, y) not in history:
-                index_right = self.get1DFrom2D(x + 1, y, array_width)
-                self.fillTiles(index_right, source_id, new_id, levelName, fill_indexes, history)
-            if y + 1 <= array_height - 1 and (x, y + 1) not in history:
-                index_below = self.get1DFrom2D(x, y + 1, array_width)
-                self.fillTiles(index_below, source_id, new_id, levelName, fill_indexes, history)
-            if x - 1 >= 0 and (x - 1, y) not in history:
-                index_left = self.get1DFrom2D(x - 1, y, array_width)
-                self.fillTiles(index_left, source_id, new_id, levelName, fill_indexes, history)
+
+            adjacents = [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
+            for pos in adjacents:
+                if pos not in history and in_map(pos[0], pos[1]):
+                    tile_index = self.get1DFrom2D(pos[0], pos[1], array_width)
+                    tile_id = get_id(levelName, tile_index)
+                    if can_fill(source_id, tile_id):
+                        stack.append(tile_index)
 
     def resizeTileArray(self, anchorPoint: str, newWidth: int, newHeight: int):
         #These are variables needed to resize the level

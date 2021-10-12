@@ -18,7 +18,6 @@ function Game(engine){
   this.debugMenu = null;
 
   this.gameStateObject = {
-    "events": new Map(), // A map of game events. Currently unused.
     "frameData": null, // The main loop data.
     "scene": null, // Current scene.
   };
@@ -42,7 +41,6 @@ function Game(engine){
 
   // Create components.
   this.stateMachine = new StateMachine(this, allStates, this.startingState);
-  this.sceneManager = new SceneManager();
   this.physicsManager = new PhysicsManager(this.engine);
 
   // Setup callbacks.
@@ -53,6 +51,8 @@ function Game(engine){
     "applySettings": this._applySettings.bind(this),
     "goToPreviousState": this.stateMachine.goToPreviousState.bind(this.stateMachine)
   };
+
+  this._addListeners();
 };
 
 Game.prototype.update = function(){
@@ -78,31 +78,11 @@ Game.prototype.update = function(){
       this._updateMenu(this.gameStateObject["menu"], events);
       break;
     case "inLevel":
-      let scene = this.gameStateObject["scene"];
-      if(this.controller.hasCommands() === true){this.controller.clearCommands()}; // Clear any leftover commands.
-      let inputData = this.controller.getInputs(events, data);
-      this.controller.addCommands(inputData); // Raw input data is added to command stack.
-      this.controller.updatePatterns(inputData); // Check for complex command inputs.
-      this._updatePlayer(scene);
-      let level = this.gameStateObject["scene"];
-      let player = this.gameStateObject["scene"].getEntity("player");
-      let camera = level.camera;
-      let posArray = [player.attributes["x"], player.attributes["y"]];
-      camera.center(posArray[0], posArray[1]);
-      let relPosArray = camera.getRelative(posArray[0], posArray[1]);
+      this._updateLevel(this.gameStateObject["scene"], events);
 
-      // Update player graphic.
-      // TODO: Make more elaborate and applicable to theoretically any entity.
-      player.attributes["sprite"] = this.animationManager.getSprite(player.attributes["currentAnimation"]);
-      let currentAnimation = player.attributes["currentAnimation"];
-      this.animationManager.nextFrame(currentAnimation);
-      if(currentAnimation.effects.length > 0){
-        for(const effect of currentAnimation.effects){
-          effectAnim = player.attributes["animations"].get(effect);
-          this.animationManager.nextFrame(effectAnim);
-        };
-      };
-
+      // Debug menu crap.
+      let player = this.gameStateObject["scene"].getEntity("player")
+      let scene = this.gameStateObject["scene"]
       this.debugMenu.updateVariable("singleTap-space state", this.controller.patterns.get("singleTap-space")["state"]);
       this.debugMenu.updateVariable("player state", player.attributes["state"]);
       this.debugMenu.updateVariable("player x", player.attributes["x"]);
@@ -111,6 +91,7 @@ Game.prototype.update = function(){
       this.debugMenu.updateVariable("animation frame", player.attributes["currentAnimation"].frameIndex);
       this.debugMenu.updateVariable("current animation", player.attributes["currentAnimation"].id);
       this.debugMenu.updateVariable("commands", this.controller.getCommands());
+      this.debugMenu.updateVariable("camera topLeft", scene.camera.topleft);
       break;
   };
 };
@@ -127,30 +108,7 @@ Game.prototype.draw = function(){
       renderer.drawMenu(this.gameStateObject["menu"]);
       break;
     case "inLevel":
-      let level = this.gameStateObject["scene"];
-      let player = this.gameStateObject["scene"].getEntity("player");
-      let camera = level.camera;
-      let sceneOrigin = camera.getRelative(0, 0);
-      let playerCenter = this.engine.getSpriteScaledPosition(player.attributes["x"], player.attributes["y"]);
-
-      playerCenter = camera.getRelative(playerCenter[0], playerCenter[1]);
-
-      renderer.drawTiles(this.gameStateObject["scene"]);
-      this.renderer.drawEntity(level, player);
-
-      //
-      let currentAnimation = player.attributes["currentAnimation"];
-      if(currentAnimation.effects.length > 0 && currentAnimation.active === true){
-        for(const effect of player.attributes["currentAnimation"].effects){
-          this.renderer.drawEffect(level, player, player.attributes["animations"].get(effect));
-        };
-      };
-
-      this._drawEntityColliders(player, level);
-      // renderer.drawRect(0xff0000, playerCenter[0], playerCenter[1], 4, 4);
-      // renderer.drawRect(0xff0000, playerCenter[0] - (16 * this.engine.spriteScale), playerCenter[1] - (16 * this.engine.spriteScale), 4, 4);
-      // renderer.drawRect(0xff0000, playerCenter[0] + (16 * this.engine.spriteScale), playerCenter[1] + (16 * this.engine.spriteScale), 4, 4);
-      // renderer.drawRect(0xff0000, sceneOrigin[0], sceneOrigin[1], 4, 4);
+      this._drawLevel(this.gameStateObject["scene"]);
   };
 
   if(this.debugModeOn === true && this.debugMenu != null){
@@ -158,7 +116,100 @@ Game.prototype.draw = function(){
   };
 };
 
-Game.prototype._drawEntityColliders = function(entity, scene){
+// ========================================
+// gameStateObject specific update methods.
+// ========================================
+
+Game.prototype._updateFrameData = function(){
+  this.gameStateObject["frameData"] = this.engine.data;
+};
+
+Game.prototype._refreshEvents = function(){
+  this.gameStateObject["events"] = new Map();
+};
+
+Game.prototype._updateEvents = function(newEvents){
+  this.gameStateObject["events"] = newEvents;
+};
+
+// =======================
+// Gemeral update methods.
+// =======================
+
+Game.prototype._updateLevel = function(scene, events){
+  this.controller.clearCommands(); // Clear any commands from last cycle.
+
+  // Get input data and update command stack.
+  let inputData = this.controller.getInputs(events, data);
+  this.controller.addCommands(inputData); // Raw input data is added to command stack.
+  this.controller.updatePatterns(inputData);
+
+  for(let entity of scene.entities.values()){
+    this._updateEntity(scene, entity);
+  };
+};
+
+Game.prototype._updateEntity = function(scene, entity){
+  switch(entity.attributes["type"]){
+    case "player":
+      this._handleHitboxCollision(entity, scene);
+      this._updatePlayer(scene);
+      this._updateCharacterAnimation(entity);
+      this._updateEntityAnimations(entity);
+      break;
+    case "darius":
+    case "anna":
+    case "tower_watch1":
+    case "tower_watch2":
+    this._updateCharacterAnimation(entity);
+     this._updateEntityAnimations(entity);
+     break;
+  };
+
+  this._handleEntityMove(entity, scene);
+  if(entity.attributes["type"] === "player"){scene.camera.centerOnEntity(entity)};
+};
+
+// Set entity.hitBoxes to the current Animation's hitboxes if applicable.
+// Precondition: entity.attributes["currentAnimation"] exists.
+Game.prototype._updateEntityHitboxes = function(entity){
+  let currentAnimation = entity.attributes["currentAnimation"];
+  if(currentAnimation.active === true && currentAnimation.hitBoxes !== null &&
+    currentAnimation.hitBoxes[currentAnimation.frameIndex] !== undefined){
+      entity.attributes["hitBoxes"] = currentAnimation.hitBoxes[currentAnimation.frameIndex];
+  } else entity.attributes["hitBoxes"] = null;
+};
+
+// =====================
+// Gemeral draw methods.
+// =====================
+
+Game.prototype._drawLevel = function(scene){
+  this.renderer.drawTiles(scene);
+  for(let entity of scene.entities.values()){
+    this._drawEntity(scene, entity);
+    // this._drawEntityColliders(scene, entity);
+  };
+};
+
+Game.prototype._drawEntity = function(scene, entity){
+  this.renderer.drawEntity(scene, entity);
+
+  switch(entity.attributes["type"]){
+    case "player":
+      // Draw any effects.
+      let currentAnimation = entity.attributes["currentAnimation"];
+      if(currentAnimation.effects.length > 0 && currentAnimation.active === true){
+        for(const effect of entity.attributes["currentAnimation"].effects){
+          this.renderer.drawEffect(scene, entity, entity.attributes["animations"].get(effect));
+        };
+      };
+      break;
+  };
+};
+
+// Mostly for debugging purposes.
+Game.prototype._drawEntityColliders = function(scene, entity){
   let renderer = this.renderer;
   let camera = scene.camera;
   let entityTopLeft = [entity.attributes["x"] - (entity.attributes["width"] / 2), entity.attributes["y"] - (entity.attributes["height"] / 2)];
@@ -167,12 +218,13 @@ Game.prototype._drawEntityColliders = function(entity, scene){
     entity.attributes["wallCollider"]
   ];
 
-  let currentAnimation = entity.attributes["currentAnimation"];
-  if(currentAnimation.active === true && currentAnimation.hitBoxes !== null && currentAnimation.hitBoxes[currentAnimation.frameIndex] !== undefined){
-    for(let rectData of Object.values(currentAnimation.hitBoxes[currentAnimation.frameIndex])){
+  if(entity.attributes["hitBoxes"] !== null){
+    for(let rectData of Object.values(entity.attributes["hitBoxes"])){
       colliders.push(new Rect(rectData.topLeft, rectData.width, rectData.height));
     };
   };
+
+  if(entity.attributes["hurtBox"] !== null){colliders.push(entity.attributes["hurtBox"])}
 
   let x;
   let y;
@@ -199,10 +251,28 @@ Game.prototype._drawEntityColliders = function(entity, scene){
 
 };
 
-// ===============
+// ======================================
 // Game callbacks + menu related methods.
-// ===============
-Game.prototype._applySettings = function(){
+// ======================================
+
+Game.prototype._addListeners = function(){
+  let element = this.engine.context;
+  element.addEventListener("fullscreenchange", this._fullScreenHandler.bind(this));
+};
+
+Game.prototype._fullScreenHandler = function(){
+  if(this.gameStateObject["menu"]){
+    this.engine.guiManager.updateMenuGraphics(this.gameStateObject["menu"]);
+
+    // In settingsMenu and we're exiting fullscreen mode.
+    if(this.stateMachine.currentState === "settingsMenu" && this.renderer.isFullscreen === false){
+      // let resolution = this.engine.guiManager.getWidgetbyId(menu, "gameResolution");
+      console.log("test");
+    };
+  };
+};
+
+Game.prototype._applySettings = async function(){
   if(this.stateMachine.currentState != "settingsMenu"){
     console.error(`Invalid state to apply settings! Detected state: ${this.stateMachine.currentState}`)
   }
@@ -216,6 +286,10 @@ Game.prototype._applySettings = function(){
       this.renderer.requestFullscreen();
     }
     else {
+      if(this.renderer.isFullscreen === true){
+        await this.renderer.exitFullscreen()
+      };
+
       // Assumes resolution text will be in the format "WidthxHeight"
       let oldScreenSize = this.renderer.getScreenSize();
       let newScreenSize = resolution.split('x').map(e => Number(e));
@@ -250,6 +324,7 @@ Game.prototype._updateMenu = function(menu, events){
 // =========================
 // State transition methods.
 // =========================
+
 Game.prototype._clearGameStateObject = function(){
   this.gameStateObject = Object.assign({}, this._emptyGSO);
 };
@@ -274,72 +349,64 @@ Game.prototype._loadGame = function(){
 };
 
 // Set the gameStateObject's scene.
-Game.prototype._loadLevel = function(levelData){
+Game.prototype._loadLevel = function(levelName){
+  let levelData = this.engine.getLoadedAsset(this.engine.levelKey).get(levelName);
   let levelSpriteSheet = this.engine.renderer.getSheetFromId(levelData.spriteSheet);
-  let level = new Scene(levelSpriteSheet, levelData);
+  let level = new Scene(this.engine, levelSpriteSheet, levelData);
   level.camera.setup(0, 0, this.engine.windowWidth, this.engine.windowHeight, this.engine.spriteScale);
   this.gameStateObject["scene"] = level;
   this.audioManager.playSong("dungeon1", true);
 };
 
 Game.prototype._loadTestLevel = function(){
-  let spawnpoint = [16 + 32, 16 + 32];
-  let levelData = this.engine.getLoadedAsset(this.engine.levelKey).get("testLevel");
-  this._loadLevel(levelData);
+  let spawnpoint = [16 + (32 * 10), 16 + (32 * 18)];
+  this._loadLevel("startingArea");
   let scene = this.gameStateObject["scene"];
-  let player = new PlayerEntity(this.engine, this);
+  let player = new PlayerEntity(this.engine);
   player.attributes["x"] = spawnpoint[0];
   player.attributes["y"] = spawnpoint[1];
 
+  let dummy = new DummyManEntity(this.engine);
+  dummy.attributes["x"] = spawnpoint[0] + 64;
+  dummy.attributes["y"] = spawnpoint[1] + 64;
+
   scene.addEntity(player);
-  this.sceneManager.setScene(scene);
+  scene.addEntity(dummy);
   let camera = scene.camera;
-  let posArray = [player.attributes["x"], player.attributes["y"]];
-  camera.center(posArray[0], posArray[1], player.attributes["sprite"].height);
+  camera.centerOnEntity(player);
 };
 
 // =======================
-// Gemeral update methods.
+// Entity related methods.
 // =======================
-// TODO: Make more elaborate.
-/*
-Game.prototype._updateLevel = function(scene){
-  if(scene.entities.has("player") === true){
-    this._updatePlayer(scene);
-  };
-};
-*/
 
-// ===============================
-// gameStateObject update methods.
-// ===============================
-Game.prototype._updateFrameData = function(){
-  this.gameStateObject["frameData"] = this.engine.data;
+Game.prototype._applyEntityForce = function(entity, fx, fy){
+  let vAdd = Vector2D.prototype.add
+  let forceVector = new Vector2D([fx, fy]);
+  if(entity.attributes["appliedForces"] === null){
+    entity.attributes["appliedForces"] = forceVector;
+  }
+  else {
+    entity.attributes["appliedForces"] = vAdd(entity.attributes["appliedForces"], forceVector);
+  }
 };
 
-Game.prototype._refreshEvents = function(){
-  this.gameStateObject["events"] = new Map();
+Game.prototype._resetEntityForce = function(entity){
+  entity.attributes["appliedForces"] = null;
 };
 
-Game.prototype._updateEvents = function(newEvents){
-  this.gameStateObject["events"] = newEvents;
-};
-
-// ===============================
-// General entity related methods.
-// ===============================
-
+// Assumes wallCollider.constructor === Circle
 Game.prototype._handleEntityWallCollision = function(entity, scene){
-  let collider = entity.attributes["wallCollider"]; // Assumes wallCollider.constructor === Circle
+  let collider = entity.attributes["wallCollider"];
   let directionX = Math.sign(entity.attributes["dx"]);
   let directionY = Math.sign(entity.attributes["dy"]);
 
   // Player center relative to its top left.
-  let playerCenter = [entity.attributes["width"] / 2, entity.attributes["height"] / 2];
+  let entityCenter = [entity.attributes["width"] / 2, entity.attributes["height"] / 2];
 
   // Offset between the collider's center and the player's center.
-  let offsetX = collider.center[0] - playerCenter[0];
-  let offsetY = collider.center[1] - playerCenter[1];
+  let offsetX = collider.center[0] - entityCenter[0];
+  let offsetY = collider.center[1] - entityCenter[1];
 
   let circleDx = collider.radius * directionX;
   let circleDy = collider.radius * directionY;
@@ -352,10 +419,20 @@ Game.prototype._handleEntityWallCollision = function(entity, scene){
   let dy = entity.attributes["dy"] + circleDy;
   let x = colliderTruePos[0];
   let y = colliderTruePos[1];
-  let newPos = this._handleCollision(x, y, dx, dy, scene);
+  let newPos = this._handleCollision(x, y, dx, dy, scene, entity);
   newPos[0] -= offsetX + circleDx;
   newPos[1] -= offsetY + circleDy;
   return newPos;
+};
+
+Game.prototype._handleEntityMove = function(entity, scene){
+  if(entity.attributes["appliedForces"] === null){return};
+
+  entity.attributes["dx"] = entity.attributes["appliedForces"].dx();
+  entity.attributes["dy"] = entity.attributes["appliedForces"].dy();
+  let newPos = this._handleEntityWallCollision(entity, scene);
+  scene.moveEntity(entity, newPos);
+  this._resetEntityForce(entity);
 };
 
 // Checks for collision from point (x, y) to point (x + dx, y + dy)
@@ -369,6 +446,10 @@ Game.prototype._handleCollision = function(x, y, dx, dy, scene){
   collision = this.physicsManager.raycastCollision(movVector, scene);
   this.debugMenu.updateVariable("collision? ", collision !== null);
   if(collision !== null){
+    if(collision === undefined){collision = this._handleBoundaryCollision(movVector, scene)};
+    if(collision[1] === undefined){
+      this._handleBoundaryCollision(movVector, scene);
+    }
 
     // Initial collision.
     newPos = this.physicsManager.resolveCollision(movVector, collision[0]);
@@ -379,6 +460,7 @@ Game.prototype._handleCollision = function(x, y, dx, dy, scene){
       movVector = this.physicsManager.collisionSlide(movVector, collision[0], collision[1]);
       collision = this.physicsManager.raycastCollision(movVector, scene);
       if(collision !== null){
+        if(collision === undefined){collision = this._handleBoundaryCollision(movVector, scene)};
         newPos = this.physicsManager.resolveCollision(movVector, collision[0]);
       } else newPos = [movVector.p2[0], movVector.p2[1]];
     };
@@ -390,15 +472,114 @@ Game.prototype._handleCollision = function(x, y, dx, dy, scene){
   return newPos;
 };
 
+// Precondition: movVector.p2 is out of bounds.
+Game.prototype._handleBoundaryCollision = function(movVector, scene){
+  let engine = this.engine;
+  let tileMap = scene.tileMap;
+  let sceneWidth = tileMap.width * tileMap.tileSize;
+  let sceneHeight = tileMap.height * tileMap.tileSize;
+
+  let collision = [];
+  // Calculate the collision point with boundary.
+  let x = engine.clamp(movVector.p2[0], 0, sceneWidth);
+  let y = engine.clamp(movVector.p2[1], 0, sceneHeight);
+  collision.push([x, y]);
+
+  let boundaries = []
+
+  // Figure out the collision boundary
+  if(x === 0){
+    boundaries.push(new Vector2D([0, 0], [0, sceneHeight])); // Left boundary.
+  }
+  else if(x === sceneWidth){
+    boundaries.push(new Vector2D([sceneWidth, 0], [sceneWidth, sceneHeight])); // Right boundary.
+  }
+
+  if(y === 0){
+    boundaries.push(new Vector2D([0, 0], [sceneWidth, 0])); // Top boundary.
+  }
+  else if(y === sceneHeight){
+    boundaries.push(new Vector2D([0, sceneHeight], [sceneWidth, sceneHeight])); // Bottom boundary.
+  }
+
+  // Corner case doesn't appaear to happen ever soooooo guess I'm good with this.
+  collision.push(boundaries[0]);
+
+  return collision
+};
+
+Game.prototype._handleHitboxCollision = function(sourceEntity, scene){
+  if(sourceEntity.attributes["hitBoxes"] == null){return};
+
+  let attacked = new Set(); // Since entities can occupy more than one tile, we keep track.
+  let attackForce;
+  let knockBack;
+  // Iterate through active hitboxes.
+  for(let hitBox of sourceEntity.attributes["hitBoxes"]){
+    knockBack = hitBox.knockBack;
+    hitBox = this._getHitboxRect(sourceEntity, hitBox);
+    // get all tiles hitbox intersects.
+    for(let tileIndex of scene.getTilesRectIntersects(hitBox)){
+      if(scene.entitiesInTile(tileIndex)){
+        // Iterate through potential attacked enemies.
+        let hurtBox;
+        for(let otherEntity of scene.getTileEntities(tileIndex)){
+          if(otherEntity === sourceEntity || attacked.has(otherEntity)){continue};
+          hurtBox = this._getHitboxRect(otherEntity, otherEntity.attributes["hurtBox"]);
+          if(Engine.prototype.rectIntersects(hitBox, hurtBox) === true){
+            attackForce = this._calculateHitboxForce(sourceEntity, otherEntity, hitBox, hurtBox, knockBack);
+            this._applyEntityForce(otherEntity, Math.round(attackForce.dx()), Math.round(attackForce.dy()));
+            attacked.add(otherEntity);
+          };
+        };
+      };
+    };
+  };
+};
+
+// Precondition: hitBox.knockBack != null and
+// hitBox and hurtBox have already been converted via this._getHitboxRect()
+Game.prototype._calculateHitboxForce = function(sourceEntity, otherEntity, hitBoxRect, hurtBoxRect, knockBack){
+  let directionVector;
+
+  if(sourceEntity.attributes["attackVector"] != null){
+    directionVector = sourceEntity.attributes["attackVector"].copy();
+  }
+  else {
+    let dx = Engine.prototype.clamp(hurtBoxRect.center[0] - hitBoxRect.center[0], -1, 1);
+    let dy = Engine.prototype.clamp(hurtBoxRect.center[1] - hitBoxRect.center[1], -1, 1);
+    directionVector = new Vector2D([dx, dy]);
+  }
+  return Vector2D.prototype.scalarMultiply(sourceEntity.attributes["attackVector"], knockBack);
+}
+
+// Calculates the true world position of a given hitbox relative to its
+// sourceEntity and returns the information as a new Rect object.
+// this also works for hurtboxes too.
+Game.prototype._getHitboxRect = function(sourceEntity, hitBox){
+  let x = sourceEntity.attributes["x"] + hitBox.topLeft[0];
+  let y = sourceEntity.attributes["y"] + hitBox.topLeft[1];
+  return new Rect([x, y], hitBox.width, hitBox.height);
+};
+
 Game.prototype._resetEntityDisplacement = function(entity){
   entity.attributes["dx"] = 0;
   entity.attributes["dy"] = 0;
 };
 
-// Updates the sprite of an entity.
-// Currently assumes the entity is animated.
-Game.prototype._updateEntitySprite = function(entity){
-  entity.attributes["sprite"]
+Game.prototype._updateEntityAnimations = function(entity){
+  entity.attributes["sprite"] = this.animationManager.getSprite(entity.attributes["currentAnimation"]);
+
+  let currentAnimation = entity.attributes["currentAnimation"];
+  this.animationManager.nextFrame(currentAnimation);
+  if(currentAnimation.effects.length > 0){
+    for(const effect of currentAnimation.effects){
+      effectAnim = entity.attributes["animations"].get(effect);
+      this.animationManager.setFrame(effectAnim, currentAnimation.frameIndex);
+    };
+  };
+
+  this._updateEntityHitboxes(entity);
 };
 
 Game.prototype._changeEntityAnimation = function(entity, oldAnimation, newAnimation){
@@ -408,6 +589,7 @@ Game.prototype._changeEntityAnimation = function(entity, oldAnimation, newAnimat
 
   this._deactiveEntityEffects(entity, oldAnimation);
   this._activateEntityEffects(entity, newAnimation);
+  this._updateEntityHitboxes(entity);
 };
 
 Game.prototype._activateEntityEffects = function(entity, animation){
@@ -426,17 +608,15 @@ Game.prototype._deactiveEntityEffects = function(entity, animation){
   };
 };
 
-// =====================
+// =======================
 // Player related methods.
-// =====================
-Game.prototype._updatePlayer = function(scene){
-  let updateControlAttribs = this._handlePlayerControlAttributes.bind(this);
-  let handleStates = this._handlePlayerStates.bind(this);
-  let updateAnim = this._updatePlayerAnimation.bind(this);
+// =======================
 
-  updateControlAttribs(scene);
+Game.prototype._updatePlayer = function(scene){
+  let handleStates = this._handlePlayerStates.bind(this);
+
+  this._handlePlayerControlAttributes(scene);
   handleStates(scene);
-  updateAnim(scene);
 };
 
 Game.prototype._handlePlayerControlAttributes = function(scene){
@@ -454,12 +634,11 @@ Game.prototype._handlePlayerStates = function(scene){
   let attackCommands = ["singleTap-leftPress", "singleTap-rightPress"];
   let playerState = player.attributes["state"];
   let oldPos = [player.attributes["x"], player.attributes["y"]];
-  let isMoving = false;
 
   let test = attackCommands.some(c => commands.includes(c))
 
   if(playerState === "dodging"){
-    isMoving = this._handlePlayerDodge(player, commands);
+    this._handlePlayerDodge(player, commands);
   }
   // Check if we want to dodge
   else if(player.attributes["canDodge"] === true && commands.includes("singleTap-space") && ["walking", "sprinting"].includes(playerState)){
@@ -468,21 +647,11 @@ Game.prototype._handlePlayerStates = function(scene){
   }
   else if(playerState === "attacking" || player.attributes["canAttack"] === true && attackCommands.some(c => commands.includes(c))
   && ["idle", "walking", "sprinting", "attacking"].includes(playerState)){
-    isMoving = this._handlePlayerAttack(scene, player, commands);
+    this._handlePlayerAttack(scene, player, commands);
   }
   else {
     // This function also handles when the player is idling.
-    isMoving = this._walkPlayer(player, commands);
-  };
-
-  if(isMoving === true){
-    let newPos = this._handleEntityWallCollision(player, scene)
-    // let newPos = this._handleCollision(player.attributes["x"], layer.attributes["y"], player.attributes["dx"],  player.attributes["dy"], scene);
-    scene.moveEntity(player, newPos);
-  };
-
-  if(playerState === "idle"){
-    this._resetEntityDisplacement(player);
+    this._walkPlayer(player, commands);
   };
 };
 
@@ -515,8 +684,7 @@ Game.prototype._handlePlayerDodgeStart = function(player, commands){
   };
 
   player.attributes["state"] = "dodging";
-  player.attributes["dx"] = dMap["dx"];
-  player.attributes["dy"] = dMap["dy"];
+  player.attributes["dodgeVector"] = new Vector2D([dMap["dx"], dMap["dy"]]);
 };
 
 // Precondition: player.attributes["state"] === "dodging"
@@ -524,23 +692,14 @@ Game.prototype._handlePlayerDodge = function(player, commands){
   let dodgeAnimation = player.attributes["currentAnimation"];
   if(dodgeAnimation.active === false){ // Dodge ends.
     player.attributes["state"] = "idle";
+    player.attributes["dodgeVector"] = null;
     this.timerManager.setTimer(player.attributes["dodgeCooldown"], 'playerDodgeCooldown');
     return false;
   }
   else {
-    let physicsManager = this.physicsManager;
     let dodgeSpeed = player.attributes["dodgeSpeed"];
-
-    for(const d of ["dx", "dy"]){
-      if(player.attributes[d] > 0){
-        player.attributes[d] = dodgeSpeed;
-      }
-      else if(player.attributes[d] < 0){
-        player.attributes[d] = -dodgeSpeed;
-      }
-      // We do nothing if displacement is 0.
-    };
-    return true;
+    let dodgeVector = player.attributes["dodgeVector"];
+    this._applyEntityForce(player, dodgeVector.dx() * dodgeSpeed, dodgeVector.dy() * dodgeSpeed);
   };
 };
 
@@ -593,13 +752,8 @@ Game.prototype._walkPlayer = function(player, commands){
       };
     };
 
-    player.attributes["dx"] = dMap["dx"];
-    player.attributes["dy"] = dMap["dy"];
-
-    return true; // Yes we are moving
+    this._applyEntityForce(player, dMap["dx"], dMap["dy"]);
   };
-  this._resetEntityDisplacement(player);
-  return false; // We are not moving this frame.
 };
 
 // Handles all of player attacking, including animations.
@@ -610,7 +764,6 @@ Game.prototype._handlePlayerAttack = function(scene, player, commands){
   let allAnims = player.attributes["animations"];
   let attackQueue = player.attributes["attackQueue"];
   let currentAnimation = player.attributes["currentAnimation"];
-  let isMoving = false;
 
   // Check for basic attack command input.
   if(commands.includes(basicAttackCommand)){
@@ -671,16 +824,11 @@ Game.prototype._handlePlayerAttack = function(scene, player, commands){
     && currentAnimation.velocity[currentAnimation.frameIndex] != undefined){
       let magnitude = currentAnimation.velocity[currentAnimation.frameIndex];
       let movVector = Vector2D.prototype.scalarMultiply(player.attributes["attackVector"], magnitude);
-      player.attributes["dx"] = Math.round(movVector.p2[0] - movVector.p1[0]);
-      player.attributes["dy"] = Math.round(movVector.p2[1] - movVector.p1[1]);
-      isMoving = true;
+      this._applyEntityForce(player, Math.round(movVector.dx()), Math.round(movVector.dy()));
   };
-
-  return isMoving;
 };
 
 
-// TODO: Implement support for fullscreen mode.
 // Returns an array of 2 elements in the format ["direction", dirVector]
 // where "direction" is the direction of the attack animation
 // (can only be up, down, left, or right) and dirVector
@@ -689,7 +837,6 @@ Game.prototype._calculatePlayerAttackDirection = function(scene, player){
   if(this.controller.mode === "keyboard"){
     // Mouse coordinates are relative to game canvas.
     let mouseCoords = this.engine.inputManager.inputDevices.get("mouse").getCoords();
-    // if(this.renderer.isFullscreen === true){};
 
     // We want the center of where the player is being drawn on the screen.
     // So we calculate position the similar to how we calculate where to draw the player's sprite.
@@ -721,48 +868,47 @@ Game.prototype._calculatePlayerAttackDirection = function(scene, player){
   };
 };
 
-Game.prototype._updatePlayerAnimation = function(scene){
-  // Can set aliases here because we we're just checking their values.
-  let player = scene.getEntity("player");
-  let playerState = player.attributes["state"];
-  let playerDirection = player.attributes["direction"];
-  let allAnims = player.attributes["animations"];
-  let animMap;
-  switch (playerState){
+Game.prototype._updateCharacterAnimation = function(entity){
+  let type = entity.attributes["type"];
+  let direction = entity.attributes["direction"];
+  let allAnims = entity.attributes["animations"];
+  let state = entity.attributes["state"];
+
+  switch (state){
     case "walking":
     case "sprinting":
       animMap = {
-        "up": allAnims.get("player_walk_back"),
-        "down": allAnims.get("player_walk_front"),
-        "left": allAnims.get("player_walk_left"),
-        "right": allAnims.get("player_walk_right")
+        "up": allAnims.get(type + "_walk_back"),
+        "down": allAnims.get(type + "_walk_front"),
+        "left": allAnims.get(type + "_walk_left"),
+        "right": allAnims.get(type + "_walk_right")
       };
       break;
     case "dodging":
       animMap = {
-        "up": allAnims.get("player_dodge_back"),
-        "down": allAnims.get("player_dodge_front"),
-        "left": allAnims.get("player_dodge_left"),
-        "right": allAnims.get("player_dodge_right")
+        "up": allAnims.get(type + "_dodge_back"),
+        "down": allAnims.get(type + "_dodge_front"),
+        "left": allAnims.get(type + "_dodge_left"),
+        "right": allAnims.get(type + "_dodge_right")
       };
       break;
     case "attacking":
       return; // Exit if we're in attacking state because that's handled elsewhere.
     default: // Let's treat idle as default.
       animMap = {
-        "up": allAnims.get("player_idle_back"),
-        "down": allAnims.get("player_idle_front"),
-        "left": allAnims.get("player_idle_left"),
-        "right": allAnims.get("player_idle_right")
+        "up": allAnims.get(type + "_idle_back"),
+        "down": allAnims.get(type + "_idle_front"),
+        "left": allAnims.get(type + "_idle_left"),
+        "right": allAnims.get(type + "_idle_right")
       };
   };
 
-  let oldAnimation = player.attributes["currentAnimation"];
-  let newAnimation = animMap[playerDirection];
+  let oldAnimation = entity.attributes["currentAnimation"];
+  let newAnimation = animMap[direction];
 
   // If there's a change in animation...
   if(oldAnimation !== newAnimation){
     // Switch to new animation.
-    this._changeEntityAnimation(player, oldAnimation, newAnimation);
+    this._changeEntityAnimation(entity, oldAnimation, newAnimation);
   };
 };

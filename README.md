@@ -37,7 +37,13 @@ Then open your browser of choice (I suggest in private browsing), navigate to
 localhost:8000 and the game should load.
 
 ## Preview Images
+![Screenshot of Main Menu](https://github.com/bdon-htb/damons-tower/blob/master/misc/preview_images/game_preview1.png)
 
+![Screenshot of Settings Menu](https://github.com/bdon-htb/damons-tower/blob/master/misc/preview_images/game_preview2.png)
+
+![Gameplay Screenshot](https://github.com/bdon-htb/damons-tower/blob/master/misc/preview_images/game_preview3.png)
+
+![Level Editor Screenshot](https://github.com/bdon-htb/damons-tower/blob/master/misc/preview_images/game_preview3.png)
 
 ## Licensing
 Damon's Tower is licensed under the GPL License.

@@ -43,7 +43,7 @@ localhost:8000 and the game should load.
 
 ![Gameplay Screenshot](https://github.com/bdon-htb/damons-tower/blob/master/misc/preview_images/game_preview3.png)
 
-![Level Editor Screenshot](https://github.com/bdon-htb/damons-tower/blob/master/misc/preview_images/game_preview3.png)
+![Level Editor Screenshot](https://github.com/bdon-htb/damons-tower/blob/master/misc/preview_images/editor_preview.png)
 
 ## Licensing
 Damon's Tower is licensed under the GPL License.

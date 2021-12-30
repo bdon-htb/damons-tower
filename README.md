@@ -1,7 +1,7 @@
 # Damon's Tower &middot; [![GPLv3 license](https://img.shields.io/badge/License-GPLv3-blue.svg)](http://perso.crans.org/besson/LICENSE.html) [![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/) [![made-with-javascript](https://img.shields.io/badge/Made%20with-JavaScript-1f425f.svg)](https://www.javascript.com) [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
 
 
-Formally known as js-roguelite. This repo contains all the work I have completed
+Formerly known as js-roguelite. This repo contains all the work I have completed
 towards what would have been a 2D action game with procedurally generated dungeons (a.k.a roguelite).
 
 In addition to the game's full source code, the repo includes a custom level editor
